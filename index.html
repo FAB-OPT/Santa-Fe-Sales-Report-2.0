@@ -3928,12 +3928,14 @@ body { background: var(--bg); color: var(--txt); }
         const out = {};
         Object.keys(obj).forEach(k => {
           if (k === "mode" || k === "_row" || k === "entries") return;
+          // form ส่ง "branch" — schema ใช้ "branch_name"
+          const key = (k === "branch") ? "branch_name" : k;
           let v = obj[k];
           if (_SUPA_NUM_FIELDS.indexOf(k) >= 0) {
             const n = parseFloat(String(v ?? "").replace(/,/g, ""));
             v = isFinite(n) ? n : 0;
           }
-          out[k] = v;
+          out[key] = v;
         });
         return out;
       }
@@ -3981,7 +3983,8 @@ body { background: var(--bg); color: var(--txt); }
 
             const { error } = await sb.from("sales_data").insert(payload);
             if (error) {
-              cb({ ok: false, error: error.message, userMessage: "ไม่สามารถบันทึกข้อมูลได้" });
+              console.error("[Supabase submit error]", error, "payload:", payload);
+              cb({ ok: false, error: error.message, userMessage: "บันทึกไม่ได้: " + error.message });
               return;
             }
             cb({ ok: true });
