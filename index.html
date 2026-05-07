@@ -2722,8 +2722,16 @@ body { background: var(--bg); color: var(--txt); }
           <button class="btn btn-sm" onclick="loadDash()" style="background:#f1f5f9;color:#475569;flex-shrink:0">🔄 รีเฟรช</button>
         </div>
 
-        <!-- รายเดือน — 4 stats เต็มแถว (บน) -->
-        <div id="dashMonthTitle" class="dash-sec-title">สรุปรายเดือน</div>
+        <!-- รายเดือน — 4 stats เต็มแถว (บน) + month nav -->
+        <div class="dash-month-bar" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+          <div id="dashMonthTitle" class="dash-sec-title" style="margin:0">สรุปรายเดือน</div>
+          <div class="dash-month-nav" style="display:flex;align-items:center;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
+            <button class="btn btn-sm" onclick="dashPrevMonth()" style="background:none;border:none;width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt2)">‹</button>
+            <span id="dashMonthLabel" style="font-size:13px;font-weight:700;min-width:120px;text-align:center;color:var(--txt)">—</span>
+            <button class="btn btn-sm" onclick="dashNextMonth()" style="background:none;border:none;width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt2)">›</button>
+            <button class="btn btn-sm btn-outline" onclick="dashThisMonth()" style="margin-left:6px;font-size:12px;padding:4px 10px">เดือนนี้</button>
+          </div>
+        </div>
         <div class="dash-stats-grid dash-stats-row" id="dashStatsGrid">
           <div class="dash-stat"><div class="ds-val">-</div><div class="ds-lbl">Actual Sale</div></div>
           <div class="dash-stat"><div class="ds-val">-</div><div class="ds-lbl">% ของ Plan</div></div>
@@ -3200,11 +3208,48 @@ body { background: var(--bg); color: var(--txt); }
         loadDash();
       }
 
-      let _dashRows = []; // cache rows for date picker re-render
+      let _dashRows  = [];          // cache rows for date picker re-render
+      let _dashMonth = undefined;   // 0-11
+      let _dashYear  = undefined;
+      let _dashPlans = {};          // { "yyyy-mm-dd": amount }
+
+      function dashPrevMonth() {
+        if (--_dashMonth < 0) { _dashMonth = 11; _dashYear--; }
+        loadDash();
+      }
+      function dashNextMonth() {
+        if (++_dashMonth > 11) { _dashMonth = 0; _dashYear++; }
+        loadDash();
+      }
+      function dashThisMonth() {
+        const now = new Date();
+        _dashMonth = now.getMonth();
+        _dashYear  = now.getFullYear();
+        loadDash();
+      }
 
       function loadDash() {
+        // init month เป็นเดือนปัจจุบันถ้ายังไม่มี
+        if (_dashMonth === undefined) {
+          const now = new Date();
+          _dashMonth = now.getMonth();
+          _dashYear  = now.getFullYear();
+        }
+
+        // คำนวณช่วงวันของเดือนที่เลือก
+        const ym = _dashYear + "-" + String(_dashMonth + 1).padStart(2, "0");
+        const startDate = ym + "-01";
+        const lastDay   = new Date(_dashYear, _dashMonth + 1, 0).getDate();
+        const endDate   = ym + "-" + String(lastDay).padStart(2, "0");
+
+        // อัพเดท label เดือน
+        document.getElementById("dashMonthLabel").textContent = TH_MONTHS[_dashMonth] + " " + (_dashYear + 543);
+        document.getElementById("dashMonthTitle").textContent = "สรุปรายเดือน — " + TH_MONTHS[_dashMonth] + " " + (_dashYear + 543);
+
         const sub = document.getElementById("dashPageSub");
         if (sub) sub.textContent = S.branch + (S.dm ? "  ·  BZM: " + S.dm : "");
+
+        // Loading state
         document.getElementById("dashTodayGrid").innerHTML =
           `<div class="dash-today-card"><div class="dtc-slot">🕓 รอบ 16.00</div><div class="dtc-status" style="color:#94a3b8">⏳ กำลังโหลด...</div></div>` +
           `<div class="dash-today-card"><div class="dtc-slot">🌙 รอบสิ้นวัน</div><div class="dtc-status" style="color:#94a3b8">⏳ กำลังโหลด...</div></div>`;
@@ -3213,22 +3258,48 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("dashRecentBody").innerHTML =
           `<tr><td colspan="5" style="color:#94a3b8;padding:16px">⏳ กำลังโหลด...</td></tr>`;
 
-        // ตั้งค่า date picker เป็นวันนี้ถ้ายังไม่มีค่า
+        // ตั้ง date picker — ถ้านอกเดือน ให้ตั้งเป็นวันแรกของเดือน (หรือวันนี้ถ้าอยู่ในเดือนนั้น)
         const picker = document.getElementById("dashDatePicker");
-        if (!picker.value) picker.value = todayStr();
+        const today = todayStr();
+        if (!picker.value || picker.value < startDate || picker.value > endDate) {
+          picker.value = (today >= startDate && today <= endDate) ? today : startDate;
+        }
+        picker.min = startDate;
+        picker.max = endDate;
 
-        apiCall({ mode: "history", branch_code: S.code, days: 31 }, function(res) {
-          if (!res || !res.ok) {
+        // Fetch parallel: history + plans
+        let _hist = null, _plan = null, _done = 0;
+        function _onDone() {
+          if (++_done < 2) return;
+          if (!_hist || !_hist.ok) {
             document.getElementById("dashRecentBody").innerHTML =
               `<tr><td colspan="5" style="color:#dc2626;padding:16px">⚠️ โหลดไม่สำเร็จ</td></tr>`;
             return;
           }
-          _dashRows = res.rows || [];
-          const today = todayStr();
-          renderDashToday(_dashRows, picker.value || today);
-          renderDashMonthly(_dashRows, today);
+          // Build plan lookup จากตาราง plan_sale (authoritative)
+          const planByDate = {};
+          if (_plan && _plan.ok && Array.isArray(_plan.rows)) {
+            _plan.rows.forEach(r => { planByDate[r.date] = parseFloat(r.plan_sale) || 0; });
+          }
+          _dashPlans = planByDate;
+
+          // Merge: ใช้ plan จากตาราง plan_sale แทน plan_sale ที่ฝังในแถว (แม่นยำกว่า)
+          _dashRows = (_hist.rows || []).map(r => ({
+            ...r,
+            plan_sale: planByDate[r.submit_date] !== undefined
+              ? planByDate[r.submit_date]
+              : (parseFloat(r.plan_sale) || 0)
+          }));
+
+          renderDashToday(_dashRows, picker.value);
+          renderDashMonthly(_dashRows);
           renderDashRecent(_dashRows);
-        });
+        }
+
+        apiCall({ mode:"history", branch_code:S.code, start_date:startDate, end_date:endDate },
+                function(res) { _hist = res; _onDone(); });
+        apiCall({ mode:"getPlan", branch_code:S.code, year_month:ym },
+                function(res) { _plan = res; _onDone(); });
       }
 
       // เรียกเมื่อเปลี่ยนวันที่ใน date picker (ไม่ fetch ใหม่)
@@ -3278,12 +3349,14 @@ body { background: var(--bg); color: var(--txt); }
           cardHtml("🌙", "รอบสิ้นวัน", rEod);
       }
 
-      function renderDashMonthly(rows, today) {
-        // สรุปทุกเดือนที่มีข้อมูล (รอบสิ้นวันทั้งหมด)
+      function renderDashMonthly(rows) {
+        // สรุปเดือนที่เลือก (รอบสิ้นวัน)
         const eodRows = rows.filter(r => r.submit_time_slot === "สิ้นวัน");
 
+        // total Plan ดึงจาก _dashPlans (ตาราง plan_sale ทั้งเดือน) — ไม่จำเป็นต้องส่งจริงมาก่อน
+        const totalPlan = Object.values(_dashPlans).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+
         const totalActual     = eodRows.reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0);
-        const totalPlan       = eodRows.reduce((s, r) => s + (parseFloat(r.plan_sale) || 0), 0);
         const totalTrans      = eodRows.reduce((s, r) => s + (parseFloat(r.total_trans) || 0), 0);
         const totalLabourBaht = eodRows.reduce((s, r) => s + (parseFloat(r.labour_baht) || 0), 0);
         const days = eodRows.length || 1;
@@ -3291,10 +3364,6 @@ body { background: var(--bg); color: var(--txt); }
         const pctPlan   = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) + "%" : "-";
         const transDay  = (totalTrans / days).toFixed(1);
         const labourPct = totalActual > 0 ? ((totalLabourBaht / totalActual) * 100).toFixed(1) + "%" : "-";
-
-        const mm = parseInt(today.slice(5, 7)) - 1;
-        const yy = parseInt(today.slice(0, 4));
-        document.getElementById("dashMonthTitle").textContent = "สรุปรายเดือน — " + TH_MONTHS[mm] + " " + (yy + 543);
 
         document.getElementById("dashStatsGrid").innerHTML = `
           <div class="dash-stat">
@@ -4013,17 +4082,20 @@ body { background: var(--bg); color: var(--txt); }
 
           /* ─────── HISTORY ─────── */
           if (mode === "history") {
-            const days = parseInt(params.days) || 31;
-            const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
-            const { data, error } = await sb
-              .from("sales_data")
-              .select("*")
-              .eq("branch_code", params.branch_code)
-              .gte("submit_date", since)
-              .order("submit_date", { ascending: false })
-              .order("submit_time_slot", { ascending: false });
+            let q = sb.from("sales_data").select("*").eq("branch_code", params.branch_code);
+
+            if (params.start_date) q = q.gte("submit_date", params.start_date);
+            if (params.end_date)   q = q.lte("submit_date", params.end_date);
+            if (!params.start_date && params.days) {
+              const days = parseInt(params.days) || 31;
+              const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+              q = q.gte("submit_date", since);
+            }
+            q = q.order("submit_date", { ascending: false })
+                 .order("submit_time_slot", { ascending: false });
+
+            const { data, error } = await q;
             if (error) { cb({ ok: false, error: error.message }); return; }
-            // map id → _row (ให้ openEdit ใช้แบบเดิม)
             const rows = (data || []).map(r => ({ ...r, _row: r.id }));
             cb({ ok: true, rows });
             return;
