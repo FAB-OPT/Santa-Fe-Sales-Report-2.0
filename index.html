@@ -2858,14 +2858,41 @@ body { background: var(--bg); color: var(--txt); }
 ════════════════════════════════════════ -->
     <script>
       /* ════════════════════════════════════════════
-         CONFIG — Supabase backend
+         CONFIG — Supabase backend (primary) + Google Sheets (mirror)
       ════════════════════════════════════════════ */
       const SUPABASE_URL = "https://jvsjrqjrzdiujhxtahho.supabase.co";
       const SUPABASE_KEY = "sb_publishable_c0-2mEMzgunEQQAsT6n4XQ_fVW38Cwx";
       const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // legacy ref (some old code still reads this var) — ไม่ใช้แล้วแต่เก็บไว้กันพัง
+      // Google Sheets Web App — fire-and-forget mirror (write-only)
+      const SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzN3gTiE4uDzJItr7RvjY7W8K980ShYzDHt-D5hAj3BdFu4xPCWq2OryzlV6wi8JpbJfA/exec";
+
+      // legacy ref — ไม่ใช้แล้ว
       const WEB_APP_URL = "";
+
+      /* ─ Push ไปที่ Sheet (async, ไม่ block user) ─ */
+      function pushToSheet(action, data) {
+        if (!SHEETS_WEBAPP_URL) return;
+        try {
+          const params = new URLSearchParams();
+          params.append("action", action);
+          Object.keys(data || {}).forEach(k => {
+            if (k === "mode" || k === "_row") return;
+            // Sheet ใช้ชื่อ branch_name
+            const key = (k === "branch") ? "branch_name" : k;
+            let v = data[k];
+            if (v === undefined || v === null) v = "";
+            if (typeof v === "object") v = JSON.stringify(v);
+            params.append(key, String(v));
+          });
+          // mode: no-cors — GAS Web App ไม่รองรับ preflight
+          fetch(SHEETS_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: params
+          }).catch(() => { /* ignore */ });
+        } catch (_) { /* Sheet mirror ล้มไม่กระทบ user */ }
+      }
 
       /* ────────────────────────────────────────
          BRANCH → DM MAP (ล็อกอัตโนมัติ)
@@ -3987,6 +4014,8 @@ body { background: var(--bg); color: var(--txt); }
               cb({ ok: false, error: error.message, userMessage: "บันทึกไม่ได้: " + error.message });
               return;
             }
+            // mirror → Google Sheets (fire-and-forget)
+            pushToSheet("submit_sales", payload);
             cb({ ok: true });
             return;
           }
@@ -4008,6 +4037,8 @@ body { background: var(--bg); color: var(--txt); }
               cb({ ok: false, error: error.message, userMessage: "แก้ไขไม่ได้: " + error.message });
               return;
             }
+            // mirror → Google Sheets (upsert ใน sheet ตาม branch+date+slot)
+            pushToSheet("submit_sales", { ...payload, edit_count: (data && data.edit_count) || 1 });
             cb({ ok: true, edited: true, editCount: (data && data.edit_count) || 1 });
             return;
           }
@@ -4054,6 +4085,8 @@ body { background: var(--bg); color: var(--txt); }
               .from("plan_sale")
               .upsert(upserts, { onConflict: "branch_code,plan_date" });
             if (error) { cb({ ok: false, error: error.message }); return; }
+            // mirror → Google Sheets
+            pushToSheet("save_plan", { branch_code: params.branch_code, entries: params.entries });
             cb({ ok: true, saved: entries.length });
             return;
           }
