@@ -3997,9 +3997,18 @@ body { background: var(--bg); color: var(--txt); }
             if (!id) { cb({ ok: false, error: "missing row id" }); return; }
             const payload = _supaCleanPayload(params);
             // edit_count + last_edited_at อัพเดทอัตโนมัติด้วย trigger
-            const { error } = await sb.from("sales_data").update(payload).eq("id", id);
-            if (error) { cb({ ok: false, error: error.message }); return; }
-            cb({ ok: true });
+            const { data, error } = await sb
+              .from("sales_data")
+              .update(payload)
+              .eq("id", id)
+              .select("edit_count")
+              .single();
+            if (error) {
+              console.error("[Supabase edit error]", error, "payload:", payload);
+              cb({ ok: false, error: error.message, userMessage: "แก้ไขไม่ได้: " + error.message });
+              return;
+            }
+            cb({ ok: true, edited: true, editCount: (data && data.edit_count) || 1 });
             return;
           }
 
