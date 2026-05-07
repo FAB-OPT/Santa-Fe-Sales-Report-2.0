@@ -3899,10 +3899,50 @@ body { background: var(--bg); color: var(--txt); }
         if (!submitter) { showAlert("⚠️", "กรอกข้อมูลไม่ครบ", "กรุณากรอกชื่อผู้ส่ง"); return; }
 
         const isEod = (_editRow.submit_time_slot === "สิ้นวัน");
+        const errs = [];
+
+        // Actual Sale บังคับทุกรอบ
+        if (eNum("e_actual") <= 0)
+          errs.push("Actual Sale: ยังไม่ได้ระบุยอดขาย");
+
+        // EOD: ถ้ามี Actual Sale ต้องมี Total Trans
+        if (isEod && eNum("e_actual") > 0 && eNum("e_trans") <= 0)
+          errs.push("Total Trans: ถ้ามียอดขายต้องระบุจำนวน Trans ด้วย");
+
+        // ผลรวม Sale ย่อย ต้องเท่ากับ Actual Sale (เฉพาะกรณีกรอกย่อย)
+        const saleSub = eNum("e_din_s") + eNum("e_ta_s") + eNum("e_grab_s") +
+                        eNum("e_line_s") + eNum("e_shp_s");
+        if (saleSub > 0 && Math.round(saleSub * 100) !== Math.round(eNum("e_actual") * 100))
+          errs.push("ยอดขาย: ผลรวมช่องย่อยไม่เท่ากับ Actual Sale");
+
+        // ผลรวม Trans ย่อย ต้องเท่ากับ Total Trans
+        const transSub = eNum("e_din_t") + eNum("e_ta_t") + eNum("e_grab_t") +
+                         eNum("e_line_t") + eNum("e_shp_t");
+        if (transSub > 0 && Math.round(transSub * 100) !== Math.round(eNum("e_trans") * 100))
+          errs.push("Trans: ผลรวมช่องย่อยไม่เท่ากับ Total Trans");
+
+        // Sale-Trans cross-pairing แต่ละช่องทาง
+        [["e_din_s",  "e_din_t",  "Dine In"],
+         ["e_ta_s",   "e_ta_t",   "Take Away"],
+         ["e_grab_s", "e_grab_t", "Grab"],
+         ["e_line_s", "e_line_t", "Lineman"],
+         ["e_shp_s",  "e_shp_t",  "Shopee Food"]
+        ].forEach(([s, t, lbl]) => {
+          if (eNum(s) > 0 && eNum(t) <= 0)
+            errs.push(lbl + ": มี Sale แต่ยังไม่มี Trans");
+          if (eNum(t) > 0 && eNum(s) <= 0)
+            errs.push(lbl + ": มี Trans แต่ยังไม่มี Sale");
+        });
+
+        // EOD: Labour Hour < Labour Baht
         const lh = isEod ? eNum("e_lhour") : 0;
         const lb = isEod ? eNum("e_lbaht") : 0;
-        if (isEod && lh >= lb) {
-          showAlert("⚠️", "เงื่อนไขไม่ผ่าน", "Labour Hour ต้องน้อยกว่า Labour Baht");
+        if (isEod && (lh > 0 || lb > 0) && lh >= lb)
+          errs.push("Labour: Hour ต้องน้อยกว่า Baht");
+
+        if (errs.length) {
+          showAlert("⚠️", "พบข้อผิดพลาด " + errs.length + " รายการ",
+            errs.map(e => "• " + e).join("\n"));
           return;
         }
 
