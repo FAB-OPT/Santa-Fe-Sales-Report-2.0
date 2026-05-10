@@ -4268,8 +4268,11 @@ body { background: var(--bg); color: var(--txt); }
         openM("mAlert");
       }
 
-      // Close modal on backdrop click
+      // Close modal on backdrop click — เฉพาะ modal ที่ไม่มี form data
+      // (mAlert, mPlanLoad ปิดได้, ส่วน mEdit / mReview ห้ามปิด เพราะอาจเสียข้อมูล)
+      const NO_BACKDROP_CLOSE = ["mEdit", "mReview"];
       document.querySelectorAll(".modal-bg").forEach(bg => {
+        if (NO_BACKDROP_CLOSE.indexOf(bg.id) >= 0) return;
         bg.addEventListener("click", function (e) {
           if (e.target === bg) closeM(bg.id);
         });
