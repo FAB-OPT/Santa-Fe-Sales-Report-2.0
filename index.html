@@ -2736,9 +2736,10 @@ body { background: var(--bg); color: var(--txt); }
     <div id="sPlan" class="screen">
       <div class="plan-wrap">
 
-        <!-- Month nav -->
+        <!-- Month nav + admin branch filter -->
         <div class="plan-month-bar">
           <h2>📅 Plan Sale รายเดือน</h2>
+          <select id="planBranchFilter" onchange="loadPlanMonth()" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;min-width:200px;margin-right:8px"></select>
           <div class="plan-month-nav">
             <button class="btn btn-sm btn-outline" onclick="planPrevMonth()">‹</button>
             <span class="plan-month-lbl" id="planMonthLbl"></span>
@@ -3477,12 +3478,13 @@ body { background: var(--bg); color: var(--txt); }
         const testLbl = document.getElementById("testModeLabel");
         if (testLbl) testLbl.style.display = isAdmin ? "inline-flex" : "none";
 
-        // ซ่อน "ส่งยอดขาย" + "Plan Sale" สำหรับ admin
-        ["dnForm","dnPlan"].forEach(id => {
+        // ซ่อน "ส่งยอดขาย" สำหรับ admin (admin ไม่กรอกฟอร์ม)
+        // แต่ Plan Sale ยังเห็นอยู่ — admin เลือกสาขาแล้วแก้ Plan ได้
+        ["dnForm"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = isAdmin ? "none" : "flex";
         });
-        ["mnForm","mnPlan"].forEach(id => {
+        ["mnForm"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = isAdmin ? "none" : "flex";
         });
@@ -4706,13 +4708,43 @@ body { background: var(--bg); color: var(--txt); }
         loadPlanMonth();
       }
 
+      /* Admin: populate Plan branch filter (admin only) */
+      function populatePlanBranchFilter() {
+        const sel = document.getElementById("planBranchFilter");
+        if (!sel) return;
+        if (S.code !== "ADMIN") { sel.style.display = "none"; return; }
+        sel.style.display = "inline-block";
+        const current = sel.value;
+        const codes = Object.keys(BRANCH_DM_MAP).sort();
+        sel.innerHTML = `<option value="">— เลือกสาขา —</option>` +
+          codes.map(c => `<option value="${c}">${c} · ${escHtml(BRANCH_DM_MAP[c].branch || "")}</option>`).join("");
+        if (current) sel.value = current;
+      }
+      function getPlanBranchCode() {
+        if (S.code === "ADMIN") {
+          return document.getElementById("planBranchFilter")?.value || "";
+        }
+        return S.code;
+      }
+
       function loadPlanMonth() {
+        populatePlanBranchFilter();
+        const branchCode = getPlanBranchCode();
         const ym = _planYear + "-" + String(_planMonth + 1).padStart(2, "0");
         document.getElementById("planMonthLbl").textContent = TH_MONTHS[_planMonth] + " " + (_planYear + 543);
+
+        // ถ้า admin ยังไม่เลือกสาขา → แสดงข้อความเตือน
+        if (!branchCode) {
+          document.getElementById("planGridBody").innerHTML =
+            `<div style="padding:48px 24px;text-align:center;color:var(--txt2)"><div style="font-size:2.5rem;margin-bottom:12px">📋</div><div style="font-weight:600">กรุณาเลือกสาขาก่อน</div><div style="font-size:13px;margin-top:6px">เลือกจาก dropdown ด้านบนเพื่อดู/แก้ไข Plan ของสาขานั้น</div></div>`;
+          _planData = {};
+          return;
+        }
+
         document.getElementById("planGridBody").innerHTML =
           `<div style="padding:32px;text-align:center"><div class="spinner"></div></div>`;
 
-        apiCall({ mode: "getPlan", branch_code: S.code, year_month: ym }, function (res) {
+        apiCall({ mode: "getPlan", branch_code: branchCode, year_month: ym }, function (res) {
           _planData = {};
           if (res && res.ok && res.rows) {
             res.rows.forEach(r => { _planData[r.date] = parseFloat(r.plan_sale) || 0; });
@@ -4783,6 +4815,11 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       function savePlanMonth() {
+        const branchCode = getPlanBranchCode();
+        if (!branchCode) {
+          showAlert("⚠️", "ยังไม่ได้เลือกสาขา", "กรุณาเลือกสาขาก่อนบันทึก Plan");
+          return;
+        }
         const entries = [];
         document.querySelectorAll(".plan-inp").forEach(inp => {
           const date = inp.dataset.date;
@@ -4796,19 +4833,18 @@ body { background: var(--bg); color: var(--txt); }
 
         apiCall({
           mode: "savePlan",
-          branch_code: S.code,
+          branch_code: branchCode,
           submitter_name: localStorage.getItem(LS_NAME) || S.branch,
           entries: JSON.stringify(entries)
         }, function (res) {
           btn.disabled = false; btn.textContent = "💾 บันทึก Plan เดือนนี้";
           if (res && res.ok) {
-            // update local caches (ทั้ง Plan Sale page + Submit form)
+            // update local caches
             document.querySelectorAll(".plan-inp").forEach(inp => {
               const v = parseFloat(inp.value.replace(/,/g, "")) || 0;
               const d = inp.dataset.date;
               _planData[d] = v;
-              // sync ไปยัง cache ของหน้าส่งยอด (ป้องกัน stale value)
-              _planCache[S.code + "|" + d] = v;
+              _planCache[branchCode + "|" + d] = v;
             });
             showAlert("✅", "บันทึกสำเร็จ", "บันทึก Plan " + res.saved + " วันเรียบร้อยแล้ว");
           } else {
