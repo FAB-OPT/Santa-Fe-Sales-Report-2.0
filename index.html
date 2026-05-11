@@ -3847,7 +3847,7 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("adminZoneIn").innerHTML = inZone.length
           ? inZone.map(b => `
               <div class="admin-zone-item">
-                <span><strong>${escHtml(b.branch_code)}</strong> ${escHtml(b.branch_name)}</span>
+                <span>${escHtml(b.branch_name || b.branch_code)}</span>
                 <button class="admin-zone-btn admin-zone-btn-remove" onclick="adminMoveBranchToBzm('${escHtml(b.branch_code)}', '')">⇄ ออก</button>
               </div>`).join("")
           : `<div style="color:#94a3b8;padding:14px;text-align:center;font-size:13px">ยังไม่มีสาขาในโซนนี้</div>`;
@@ -3855,7 +3855,7 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("adminZoneOut").innerHTML = outZone.length
           ? outZone.map(b => `
               <div class="admin-zone-item">
-                <span><strong>${escHtml(b.branch_code)}</strong> ${escHtml(b.branch_name)}<br><span style="color:var(--txt2);font-size:11px">BZM: ${escHtml(b.district_manager || "—")}</span></span>
+                <span>${escHtml(b.branch_name || b.branch_code)}<br><span style="color:var(--txt2);font-size:11px">BZM: ${escHtml(b.district_manager || "—")}</span></span>
                 <button class="admin-zone-btn" onclick="adminMoveBranchToBzm('${escHtml(b.branch_code)}', '${escHtml(targetBzm).replace(/'/g, "\\'")}')">⇄ ย้ายมา</button>
               </div>`).join("")
           : `<div style="color:#94a3b8;padding:14px;text-align:center;font-size:13px">ไม่พบสาขาอื่น</div>`;
