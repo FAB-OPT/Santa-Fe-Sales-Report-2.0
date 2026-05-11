@@ -2765,10 +2765,10 @@ body { background: var(--bg); color: var(--txt); }
           </div>
 
           <div class="dash-col-right">
-            <!-- กราฟ Actual vs Plan รายวัน -->
-            <div class="dash-sec-title">กราฟยอดขายรายวัน (รอบสิ้นวัน)</div>
+            <!-- กราฟยอดสะสม Actual vs Plan -->
+            <div class="dash-sec-title">กราฟยอดสะสม Actual vs Plan (รอบสิ้นวัน)</div>
             <div class="dash-card-wrap" style="padding:16px;margin-bottom:24px">
-              <div style="position:relative;height:280px">
+              <div style="position:relative;height:300px">
                 <canvas id="dashChart"></canvas>
               </div>
             </div>
@@ -2781,8 +2781,8 @@ body { background: var(--bg); color: var(--txt); }
                   <th>วันที่</th>
                   <th style="text-align:right">Plan</th>
                   <th style="text-align:right">Actual (%)</th>
-                  <th style="text-align:right">Labour (Hour)</th>
-                  <th style="text-align:right">Labour (บาท) / %</th>
+                  <th style="text-align:right">Labour Hour</th>
+                  <th style="text-align:right">Labour Baht (%)</th>
                 </tr></thead>
                 <tbody id="dashRecentBody"><tr><td colspan="5" style="color:#94a3b8;padding:16px">⏳ กำลังโหลด...</td></tr></tbody>
               </table>
@@ -3435,55 +3435,89 @@ body { background: var(--bg); color: var(--txt); }
             <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(plan)}</td>
             <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(actual)} <span style="color:${pctColor};font-weight:700">(${pct})</span></td>
             <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(lh)}</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(lb)} <span style="color:var(--txt2)">/ ${labPct}</span></td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(lb)} <span style="color:var(--txt2)">(${labPct})</span></td>
           </tr>`;
         }).join("");
       }
 
-      /* ─── Dashboard Chart (Actual vs Plan รายวัน) ─── */
+      /* ─── Dashboard Chart — ยอดสะสมรายวัน (cumulative line) ─── */
       let _dashChartInstance = null;
       function renderDashChart(eodRows) {
         const ctx = document.getElementById("dashChart");
         if (!ctx) return;
 
-        // ทำลายกราฟเก่าก่อนสร้างใหม่ (กัน memory leak)
-        if (_dashChartInstance) {
-          _dashChartInstance.destroy();
-          _dashChartInstance = null;
+        if (_dashChartInstance) { _dashChartInstance.destroy(); _dashChartInstance = null; }
+
+        // ใช้เดือนที่เลือกตอนนี้
+        const ym = _dashYear + "-" + String(_dashMonth + 1).padStart(2, "0");
+        const lastDay = new Date(_dashYear, _dashMonth + 1, 0).getDate();
+        const today = todayStr();
+
+        // จัดข้อมูลตามวันที่
+        const actualMap = {};
+        eodRows.forEach(r => {
+          actualMap[r.submit_date] = parseFloat(r.actual_sale) || 0;
+        });
+
+        // สะสมทีละวัน
+        const labels = [];
+        const cumPlan = [];
+        const cumActual = [];
+        let pPlan = 0, pActual = 0;
+        let hasAnyActual = false;
+
+        for (let d = 1; d <= lastDay; d++) {
+          const date = ym + "-" + String(d).padStart(2, "0");
+          labels.push(String(d));
+
+          pPlan += (_dashPlans[date] || 0);
+          cumPlan.push(pPlan);
+
+          // ถ้าเป็นวันในอนาคต → ไม่ใส่ actual (เส้นจะหยุดที่วันนี้)
+          if (date <= today) {
+            const a = actualMap[date] || 0;
+            pActual += a;
+            cumActual.push(pActual);
+            if (a > 0) hasAnyActual = true;
+          } else {
+            cumActual.push(null);
+          }
         }
 
-        if (!eodRows.length) {
+        // ถ้าไม่มี actual และไม่มี plan เลย → แสดงข้อความ
+        if (!hasAnyActual && pPlan === 0) {
           ctx.getContext("2d").clearRect(0, 0, ctx.width, ctx.height);
           return;
         }
 
-        const labels  = eodRows.map(r => {
-          const [y, m, d] = r.submit_date.split("-");
-          return `${parseInt(d)}/${parseInt(m)}`;
-        });
-        const actuals = eodRows.map(r => parseFloat(r.actual_sale) || 0);
-        const plans   = eodRows.map(r => parseFloat(r.plan_sale)   || 0);
-
         _dashChartInstance = new Chart(ctx, {
-          type: "bar",
+          type: "line",
           data: {
             labels,
             datasets: [
               {
-                label: "Plan",
-                data: plans,
-                backgroundColor: "rgba(148,163,184,0.55)",
+                label: "Plan สะสม",
+                data: cumPlan,
                 borderColor: "rgba(148,163,184,1)",
-                borderWidth: 1,
-                borderRadius: 4
+                backgroundColor: "rgba(148,163,184,0.10)",
+                borderWidth: 2,
+                borderDash: [6, 4],
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0,
+                pointHoverRadius: 5
               },
               {
-                label: "Actual",
-                data: actuals,
-                backgroundColor: "rgba(242,108,28,0.85)",
+                label: "Actual สะสม",
+                data: cumActual,
                 borderColor: "rgba(242,108,28,1)",
-                borderWidth: 1,
-                borderRadius: 4
+                backgroundColor: "rgba(242,108,28,0.15)",
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.15,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                spanGaps: false   // หยุดเส้นที่อนาคต (ไม่ลากผ่าน null)
               }
             ]
           },
@@ -3495,16 +3529,34 @@ body { background: var(--bg); color: var(--txt); }
               legend: { position: "top", labels: { font: { size: 12 }, boxWidth: 14 } },
               tooltip: {
                 callbacks: {
-                  label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
+                  title: (items) => `วันที่ ${items[0].label}`,
+                  label: (ctx) => {
+                    if (ctx.parsed.y === null) return null;
+                    return `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`;
+                  },
+                  afterBody: (items) => {
+                    const planV   = items.find(i => i.dataset.label === "Plan สะสม");
+                    const actualV = items.find(i => i.dataset.label === "Actual สะสม");
+                    if (planV && actualV && planV.parsed.y > 0) {
+                      const pct = (actualV.parsed.y / planV.parsed.y * 100).toFixed(1);
+                      return [`% ของ Plan: ${pct}%`];
+                    }
+                    return [];
+                  }
                 }
               }
             },
             scales: {
-              x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+              x: {
+                title: { display: true, text: "วันที่ของเดือน", font: { size: 11 }, color: "#64748b" },
+                ticks: { font: { size: 10 } },
+                grid: { display: false }
+              },
               y: {
                 beginAtZero: true,
+                title: { display: true, text: "ยอดสะสม (บาท)", font: { size: 11 }, color: "#64748b" },
                 ticks: {
-                  font: { size: 11 },
+                  font: { size: 10 },
                   callback: (v) => v >= 1000 ? (v/1000).toFixed(0) + "k" : v
                 },
                 grid: { color: "rgba(0,0,0,.06)" }
