@@ -3545,7 +3545,8 @@ body { background: var(--bg); color: var(--txt); }
           body.innerHTML = `<tr><td colspan="4" style="color:#dc2626;padding:16px;text-align:center">⚠️ ${error.message}</td></tr>`;
           return;
         }
-        _adminBranches = data || [];
+        // Filter ออก sentinel rows (_SYS_*) — ไม่แสดงในตาราง admin
+        _adminBranches = (data || []).filter(b => !b.branch_code.startsWith("_"));
         // Sync ไปเป็น BRANCH_DM_MAP ด้วย (ให้ login ใช้ได้)
         _adminBranches.forEach(b => {
           BRANCH_DM_MAP[b.branch_code] = { branch: b.branch_name, dm: b.district_manager };
@@ -3827,23 +3828,24 @@ body { background: var(--bg); color: var(--txt); }
         renderAdminZone();
       }
 
-      /* ───── TEST MODE (global, ดึงจาก app_settings table) ───── */
+      /* ───── TEST MODE (global, เก็บใน row พิเศษของตาราง branches) ─────
+         ไม่ต้องสร้าง table ใหม่ — ใช้ branch_code = "_SYS_TEST_MODE_"
+         branch_name = "true" / "false" */
+      const SETTINGS_ROW_CODE = "_SYS_TEST_MODE_";
       let _testMode = false;
       async function loadTestModeFromDB() {
         try {
-          const { data } = await sb.from("app_settings").select("value").eq("key", "test_mode").maybeSingle();
-          _testMode = (data && data.value === "true");
+          const { data } = await sb.from("branches").select("branch_name")
+            .eq("branch_code", SETTINGS_ROW_CODE).maybeSingle();
+          _testMode = !!(data && data.branch_name === "true");
         } catch (_) { _testMode = false; }
         applyTestModeUI();
       }
       function applyTestModeUI() {
-        // hidden checkbox in form
         const cb = document.getElementById("testMode");
         if (cb) cb.checked = _testMode;
-        // banner — เห็นเมื่อ logged in + test mode on
         const banner = document.getElementById("testModeBanner");
         if (banner) banner.style.display = (_testMode && S.code) ? "block" : "none";
-        // admin button status
         const status = document.getElementById("testModeStatus");
         if (status) {
           status.textContent = _testMode ? "เปิด" : "ปิด";
@@ -3857,10 +3859,13 @@ body { background: var(--bg); color: var(--txt); }
       }
       async function saveTestModeToDB(val) {
         const v = val ? "true" : "false";
-        const { error } = await sb.from("app_settings")
-          .upsert({ key: "test_mode", value: v, updated_at: new Date().toISOString() }, { onConflict: "key" });
+        const { error } = await sb.from("branches").upsert({
+          branch_code: SETTINGS_ROW_CODE,
+          branch_name: v,
+          district_manager: "system"
+        }, { onConflict: "branch_code" });
         if (error) {
-          showAlert("❌", "บันทึกไม่สำเร็จ", error.message + "\n\nหมายเหตุ: ต้องสร้าง table app_settings ใน Supabase ก่อน (ดู supabase_schema.sql)");
+          showAlert("❌", "บันทึกไม่สำเร็จ", error.message);
           return false;
         }
         _testMode = val;
@@ -3891,6 +3896,8 @@ body { background: var(--bg); color: var(--txt); }
           const { data } = await sb.from("branches").select("*");
           if (data && data.length) {
             data.forEach(b => {
+              // ข้าม sentinel/settings rows
+              if (b.branch_code && b.branch_code.startsWith("_")) return;
               BRANCH_DM_MAP[b.branch_code] = { branch: b.branch_name, dm: b.district_manager };
             });
           } else {
