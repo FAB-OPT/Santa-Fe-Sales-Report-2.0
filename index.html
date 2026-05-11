@@ -3991,7 +3991,7 @@ body { background: var(--bg); color: var(--txt); }
         const current = sel.value || "ALL";
         const codes = Object.keys(BRANCH_DM_MAP).sort();
         sel.innerHTML = `<option value="ALL">— ทุกสาขา (${codes.length}) —</option>` +
-          codes.map(c => `<option value="${c}">${c} · ${escHtml(BRANCH_DM_MAP[c].branch || "")}</option>`).join("");
+          codes.map(c => `<option value="${c}">${escHtml(BRANCH_DM_MAP[c].branch || c)}</option>`).join("");
         sel.value = current;
         return sel.value;
       }
@@ -4717,7 +4717,7 @@ body { background: var(--bg); color: var(--txt); }
         const current = sel.value;
         const codes = Object.keys(BRANCH_DM_MAP).sort();
         sel.innerHTML = `<option value="">— เลือกสาขา —</option>` +
-          codes.map(c => `<option value="${c}">${c} · ${escHtml(BRANCH_DM_MAP[c].branch || "")}</option>`).join("");
+          codes.map(c => `<option value="${c}">${escHtml(BRANCH_DM_MAP[c].branch || c)}</option>`).join("");
         if (current) sel.value = current;
       }
       function getPlanBranchCode() {
