@@ -3412,20 +3412,33 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       function doLogout() {
-        localStorage.removeItem(LS_CODE);
-        S = { code: "", branch: "", dm: "" };
-        _branchOtp.fill(""); _adminOtp.fill("");
-        [0, 1, 2, 3].forEach(i => { const e = document.getElementById("lc" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
-        [0, 1, 2, 3, 4, 5].forEach(i => { const e = document.getElementById("ac" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
-        document.getElementById("loginBtn").disabled = true;
-        document.getElementById("appHdr").style.display = "none";
-        document.getElementById("hdrLogoutBtn").style.display = "none";
-        document.getElementById("deskSidebar").classList.add("hidden");
-        document.getElementById("mobNav").classList.remove("visible");
-        // Hide test mode banner (เห็นเฉพาะตอน login)
-        const banner = document.getElementById("testModeBanner");
-        if (banner) banner.style.display = "none";
-        showScreen("sLogin");
+        try {
+          localStorage.removeItem(LS_CODE);
+          S = { code: "", branch: "", dm: "" };
+          if (_branchOtp && _branchOtp.fill) _branchOtp.fill("");
+          if (_adminOtp  && _adminOtp.fill)  _adminOtp.fill("");
+          [0, 1, 2, 3].forEach(i => { const e = document.getElementById("lc" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
+          [0, 1, 2, 3, 4, 5].forEach(i => { const e = document.getElementById("ac" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
+          const lb = document.getElementById("loginBtn"); if (lb) lb.disabled = true;
+          const ah = document.getElementById("appHdr"); if (ah) ah.style.display = "none";
+          const hl = document.getElementById("hdrLogoutBtn"); if (hl) hl.style.display = "none";
+          const ds = document.getElementById("deskSidebar"); if (ds) ds.classList.add("hidden");
+          const mn = document.getElementById("mobNav"); if (mn) mn.classList.remove("visible");
+          // Hide test mode banner + reset body class (กัน layout offset ค้าง)
+          const banner = document.getElementById("testModeBanner");
+          if (banner) banner.style.display = "none";
+          document.body.classList.remove("test-mode-on");
+          // Clear active state ทุก nav button
+          document.querySelectorAll(".mob-nav-btn, .desk-nav-btn").forEach(b => b.classList.remove("active"));
+          // ซ่อน admin-only buttons (กันเห็นค้าง)
+          document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
+          const tmb = document.getElementById("testModeBtn"); if (tmb) tmb.style.display = "none";
+          showScreen("sLogin");
+        } catch (e) {
+          console.error("[doLogout error]", e);
+          // กรณีฉุกเฉิน — reload หน้า
+          location.reload();
+        }
       }
 
       /* ════════════════════════════════════════════
