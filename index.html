@@ -4466,9 +4466,11 @@ body { background: var(--bg); color: var(--txt); }
           }
 
           // ── BLOCK ตรวจลำดับการส่งยอด ──
-          const testMode = document.getElementById("testMode")?.checked;
-          if (!testMode) {
+          // ใช้ _testMode (global state) แทน DOM checkbox — แม่นยำกว่า
+          console.log("[submit] testMode:", _testMode, "slot:", slot, "date:", date);
+          if (!_testMode) {
             checkSubmissionOrder(date, slot, function(check) {
+              console.log("[submit] order check result:", check);
               if (!check.ok) {
                 showAlert("⛔", "ลำดับการส่งไม่ถูกต้อง", check.msg);
                 return;
@@ -4493,7 +4495,8 @@ body { background: var(--bg); color: var(--txt); }
             .eq("submit_date", date)
             .eq("submit_time_slot", "16.00")
             .limit(1)
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+              console.log("[order check สิ้นวัน] query result:", data, "error:", error);
               if (!data || !data.length) {
                 const [yy, mm, dd] = date.split("-");
                 const thDate = `${parseInt(dd)}/${parseInt(mm)}/${parseInt(yy)+543}`;
@@ -4504,15 +4507,19 @@ body { background: var(--bg); color: var(--txt); }
         }
         if (slot === "16.00") {
           // หาวันก่อนหน้า
-          const y = new Date(date);
+          const y = new Date(date + "T00:00:00");  // local timezone
           y.setDate(y.getDate() - 1);
-          const ystr = y.toISOString().slice(0, 10);
+          const ystr = y.getFullYear() + "-" +
+                       String(y.getMonth()+1).padStart(2, "0") + "-" +
+                       String(y.getDate()).padStart(2, "0");
+          console.log("[order check 16.00] looking for สิ้นวัน of", ystr);
           sb.from("sales_data").select("id")
             .eq("branch_code", S.code)
             .eq("submit_date", ystr)
             .eq("submit_time_slot", "สิ้นวัน")
             .limit(1)
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+              console.log("[order check 16.00] yesterday สิ้นวัน:", data, "error:", error);
               if (!data || !data.length) {
                 // เช็คว่าสาขามีข้อมูลย้อนหลังที่ผ่านมาบ้างไหม (กันบล็อกสาขาที่เพิ่งเริ่มใช้ระบบ)
                 sb.from("sales_data").select("id")
@@ -4520,8 +4527,8 @@ body { background: var(--bg); color: var(--txt); }
                   .lt("submit_date", date)
                   .limit(1)
                   .then(({ data: pastData }) => {
+                    console.log("[order check 16.00] past data:", pastData);
                     if (!pastData || !pastData.length) {
-                      // สาขายังไม่เคยส่งเลย — ผ่านได้ (first submission)
                       cb({ ok: true });
                       return;
                     }
