@@ -1275,15 +1275,188 @@
       }
 
       /* ─────────────────────────────────────────
-   MOBILE BOTTOM TAB BAR
+   MOBILE BOTTOM TAB BAR + DRAWER
 ───────────────────────────────────────── */
+      /* Hamburger button (header) */
+      .mob-menu-btn {
+        background: transparent;
+        border: none;
+        font-size: 22px;
+        line-height: 1;
+        padding: 6px 10px;
+        margin-right: 4px;
+        border-radius: 8px;
+        color: var(--txt);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .12s;
+      }
+      .mob-menu-btn:hover { background: rgba(0,0,0,.05); }
+      .mob-menu-ico { display: inline-block; transform: translateY(-1px); }
+
+      /* Drawer + backdrop */
+      .mob-drawer-bg {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .45);
+        backdrop-filter: blur(2px);
+        z-index: 150;
+        animation: mdFade .18s ease-out;
+      }
+      .mob-drawer-bg.open { display: block; }
+      @keyframes mdFade { from { opacity: 0 } to { opacity: 1 } }
+
+      .mob-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 290px;
+        max-width: 85vw;
+        background: #fff;
+        z-index: 160;
+        transform: translateX(-100%);
+        transition: transform .26s cubic-bezier(.4,0,.2,1);
+        box-shadow: 4px 0 24px rgba(0,0,0,.18);
+        padding: 16px 14px 14px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .mob-drawer.open { transform: translateX(0); }
+
+      .md-hdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px 12px;
+        border-bottom: 1px solid var(--bd);
+        margin-bottom: 12px;
+      }
+      .md-brand { display: flex; align-items: center; gap: 10px; }
+      .md-brand-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .md-brand-name { font-size: 14px; font-weight: 800; color: var(--brand); line-height: 1.1; }
+      .md-brand-sub  { font-size: 11px; color: var(--txt2); margin-top: 1px; }
+      .md-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f1f5f9;
+        border-radius: 50%;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--txt2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .12s;
+      }
+      .md-close:hover { background: #e2e8f0; color: var(--txt); }
+
+      .md-info {
+        background: linear-gradient(135deg, var(--brand-l), #fffbeb);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+      }
+      .md-info-name { font-size: 13.5px; font-weight: 800; color: var(--txt); line-height: 1.25; }
+      .md-info-dm   { font-size: 11px; color: var(--brand-d); margin-top: 3px; font-weight: 600; }
+
+      .md-section-lbl {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--txt2);
+        padding: 0 8px 6px;
+        letter-spacing: .8px;
+        text-transform: uppercase;
+      }
+
+      .md-nav { display: flex; flex-direction: column; gap: 2px; }
+      .md-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: transparent;
+        border: none;
+        padding: 11px 12px;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 14px;
+        color: var(--txt);
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        transition: background .12s, color .12s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .md-nav-btn:hover { background: var(--brand-l); }
+      .md-nav-btn.active {
+        background: var(--brand);
+        color: #fff;
+        font-weight: 700;
+      }
+      .md-nav-btn.active .md-nav-ico { filter: brightness(1.1); }
+      .md-nav-ico { font-size: 17px; width: 22px; text-align: center; }
+      .md-nav-lbl { flex: 1; }
+
+      .md-footer {
+        margin-top: auto;
+        padding-top: 14px;
+        border-top: 1px solid var(--bd);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .md-test-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: left;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .md-test-btn:hover { background: #fde68a; }
+      .md-logout {
+        padding: 12px 14px;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .12s, color .12s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .md-logout:hover { background: #fecaca; }
+
+      /* Hamburger ปรากฏเฉพาะ mobile/tablet */
+      @media (min-width: 901px) { .mob-menu-btn { display: none !important; } }
+
       .mob-nav {
         display: none;
       }
 
       @media (max-width: 640px) {
         .mob-nav.visible {
-          display: flex;
+          display: block;
           position: fixed;
           bottom: 0;
           left: 0;
@@ -1295,14 +1468,38 @@
           padding-bottom: env(safe-area-inset-bottom);
         }
 
+        /* Scrollable horizontal container — แท็บล้นจอ → เลื่อนได้ */
+        .mob-nav.visible { position: fixed; }
+        .mob-nav.mob-nav-scroll { position: fixed; }
+        .mob-nav.mob-nav-scroll::after {
+          content: "";
+          position: absolute;
+          top: 0; right: 0; bottom: 0;
+          width: 24px;
+          background: linear-gradient(to right, transparent, var(--surface));
+          pointer-events: none;
+          opacity: .8;
+        }
+        .mob-nav-inner {
+          display: flex;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x proximity;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .mob-nav-inner::-webkit-scrollbar { display: none; }
+
         .mob-nav-btn {
-          flex: 1;
+          flex: 0 0 auto;
+          min-width: 72px;
+          scroll-snap-align: start;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 3px;
-          padding: 8px 2px 10px;
+          padding: 8px 6px 10px;
           background: none;
           border: none;
           cursor: pointer;
@@ -2495,6 +2692,10 @@ body { background: var(--bg); color: var(--txt); }
     </div>
 
     <header class="hdr" id="appHdr" style="display:none">
+      <!-- Mobile hamburger menu (ซ่อนบน desktop) -->
+      <button id="mobMenuBtn" class="mob-menu-btn" onclick="openMobDrawer()" aria-label="เมนู" style="display:none">
+        <span class="mob-menu-ico">☰</span>
+      </button>
       <div class="hdr-logo">
         <img src="536282464_1192954076197758_7560981869126705598_n.jpg" alt="Santa Fe Happy Steak" class="hdr-logo-img">
       </div>
@@ -2566,6 +2767,73 @@ body { background: var(--bg); color: var(--txt); }
 
       <!-- Logout — centered -->
       <button class="desk-logout-btn" onclick="doLogout()" style="justify-content:center;margin-left:auto;margin-right:auto">ออกจากระบบ</button>
+    </aside>
+
+    <!-- ════════════════════════════════════════
+     MOBILE DRAWER (slide-out menu — เห็นเฉพาะมือถือ)
+════════════════════════════════════════ -->
+    <div id="mobDrawerBg" class="mob-drawer-bg" onclick="closeMobDrawer()"></div>
+    <aside id="mobDrawer" class="mob-drawer" aria-label="เมนู">
+      <!-- Header: brand + close -->
+      <div class="md-hdr">
+        <div class="md-brand">
+          <img src="536282464_1192954076197758_7560981869126705598_n.jpg" alt="Santa Fe" class="md-brand-logo">
+          <div>
+            <div class="md-brand-name">Santa Fe</div>
+            <div class="md-brand-sub">Sales Report</div>
+          </div>
+        </div>
+        <button class="md-close" onclick="closeMobDrawer()" aria-label="ปิด">×</button>
+      </div>
+
+      <!-- Branch info -->
+      <div class="md-info">
+        <div class="md-info-name" id="mdBranchName">—</div>
+        <div class="md-info-dm" id="mdBranchDm">—</div>
+      </div>
+
+      <!-- Nav menu -->
+      <div class="md-section-lbl">เมนูหลัก</div>
+      <nav class="md-nav">
+        <button class="md-nav-btn" id="mdDash" onclick="showDash(); closeMobDrawer()">
+          <span class="md-nav-ico">📊</span><span class="md-nav-lbl">แดชบอร์ด</span>
+        </button>
+        <button class="md-nav-btn" id="mdForm" onclick="showForm(); closeMobDrawer()">
+          <span class="md-nav-ico">📋</span><span class="md-nav-lbl">ส่งยอดขาย</span>
+        </button>
+        <button class="md-nav-btn" id="mdPlan" onclick="showPlan(); closeMobDrawer()">
+          <span class="md-nav-ico">📅</span><span class="md-nav-lbl">Plan Sale</span>
+        </button>
+        <button class="md-nav-btn" id="mdHistory" onclick="showHistory(); closeMobDrawer()">
+          <span class="md-nav-ico">🗂️</span><span class="md-nav-lbl">ประวัติ</span>
+        </button>
+        <button class="md-nav-btn report-only-nav" id="mdReport" onclick="showReport(); closeMobDrawer()" style="display:none">
+          <span class="md-nav-ico">📈</span><span class="md-nav-lbl">รายงานเต็มรูปแบบ</span>
+        </button>
+      </nav>
+
+      <!-- Admin section -->
+      <div class="md-section-lbl admin-only-nav" style="display:none;margin-top:14px">Admin</div>
+      <nav class="md-nav">
+        <button class="md-nav-btn admin-only-nav" id="mdAdminBranches" onclick="showAdmin('branches'); closeMobDrawer()" style="display:none">
+          <span class="md-nav-ico">🏢</span><span class="md-nav-lbl">จัดการสาขา</span>
+        </button>
+        <button class="md-nav-btn admin-only-nav" id="mdAdminBzms" onclick="showAdmin('bzms'); closeMobDrawer()" style="display:none">
+          <span class="md-nav-ico">👤</span><span class="md-nav-lbl">จัดการ BZM</span>
+        </button>
+        <button class="md-nav-btn admin-only-nav" id="mdAdminZones" onclick="showAdmin('zones'); closeMobDrawer()" style="display:none">
+          <span class="md-nav-ico">🗺️</span><span class="md-nav-lbl">โซน BZM</span>
+        </button>
+      </nav>
+
+      <!-- Footer: test mode + logout -->
+      <div class="md-footer">
+        <button class="md-test-btn admin-only-nav" id="mdTestModeBtn" onclick="toggleTestModeAdmin()" style="display:none">
+          <span class="md-nav-ico">🧪</span>
+          <span>โหมดทดสอบ: <span id="mdTestModeStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
+        </button>
+        <button class="md-logout" onclick="doLogout()">ออกจากระบบ</button>
+      </div>
     </aside>
 
     <!-- ════════════════════════════════════════
@@ -3249,31 +3517,52 @@ body { background: var(--bg); color: var(--txt); }
     <!-- ════════════════════════════════════════
      MOBILE BOTTOM TAB BAR
 ════════════════════════════════════════ -->
-    <nav class="mob-nav" id="mobNav">
-      <button class="mob-nav-btn" id="mnDash" onclick="showDash()">
-        <span class="mob-nav-ico">📊</span>
-        <span class="mob-nav-lbl">แดชบอร์ด</span>
-      </button>
-      <button class="mob-nav-btn" id="mnForm" onclick="showForm()">
-        <span class="mob-nav-ico">📋</span>
-        <span class="mob-nav-lbl">ส่งยอดขาย</span>
-      </button>
-      <button class="mob-nav-btn" id="mnPlan" onclick="showPlan()">
-        <span class="mob-nav-ico">📅</span>
-        <span class="mob-nav-lbl">Plan Sale</span>
-      </button>
-      <button class="mob-nav-btn" id="mnHistory" onclick="showHistory()">
-        <span class="mob-nav-ico">🗂️</span>
-        <span class="mob-nav-lbl">ประวัติ</span>
-      </button>
-      <button class="mob-nav-btn report-only-nav" id="mnReport" onclick="showReport()" style="display:none">
-        <span class="mob-nav-ico">📈</span>
-        <span class="mob-nav-lbl">รายงาน</span>
-      </button>
-      <button class="mob-nav-btn" id="mnAdmin" onclick="showAdmin()" style="display:none">
-        <span class="mob-nav-ico">👑</span>
-        <span class="mob-nav-lbl">Admin</span>
-      </button>
+    <nav class="mob-nav mob-nav-scroll" id="mobNav">
+      <div class="mob-nav-inner">
+        <button class="mob-nav-btn" id="mnDash" onclick="showDash()">
+          <span class="mob-nav-ico">📊</span>
+          <span class="mob-nav-lbl">แดชบอร์ด</span>
+        </button>
+        <button class="mob-nav-btn" id="mnForm" onclick="showForm()">
+          <span class="mob-nav-ico">📋</span>
+          <span class="mob-nav-lbl">ส่งยอดขาย</span>
+        </button>
+        <button class="mob-nav-btn" id="mnPlan" onclick="showPlan()">
+          <span class="mob-nav-ico">📅</span>
+          <span class="mob-nav-lbl">Plan Sale</span>
+        </button>
+        <button class="mob-nav-btn" id="mnHistory" onclick="showHistory()">
+          <span class="mob-nav-ico">🗂️</span>
+          <span class="mob-nav-lbl">ประวัติ</span>
+        </button>
+        <button class="mob-nav-btn report-only-nav" id="mnReport" onclick="showReport()" style="display:none">
+          <span class="mob-nav-ico">📈</span>
+          <span class="mob-nav-lbl">รายงาน</span>
+        </button>
+        <!-- Admin sub-tabs -->
+        <button class="mob-nav-btn admin-only-nav" id="mnAdminBranches" onclick="showAdmin('branches')" style="display:none">
+          <span class="mob-nav-ico">🏢</span>
+          <span class="mob-nav-lbl">สาขา</span>
+        </button>
+        <button class="mob-nav-btn admin-only-nav" id="mnAdminBzms" onclick="showAdmin('bzms')" style="display:none">
+          <span class="mob-nav-ico">👤</span>
+          <span class="mob-nav-lbl">BZM</span>
+        </button>
+        <button class="mob-nav-btn admin-only-nav" id="mnAdminZones" onclick="showAdmin('zones')" style="display:none">
+          <span class="mob-nav-ico">🗺️</span>
+          <span class="mob-nav-lbl">โซน</span>
+        </button>
+        <!-- Test mode (admin only) -->
+        <button class="mob-nav-btn admin-only-nav" id="mnTestMode" onclick="toggleTestModeAdmin()" style="display:none">
+          <span class="mob-nav-ico">🧪</span>
+          <span class="mob-nav-lbl"><span id="mnTestModeStatus">ทดสอบ</span></span>
+        </button>
+        <!-- Logout (เสมอ) -->
+        <button class="mob-nav-btn mob-nav-btn-danger" id="mnLogout" onclick="doLogout()">
+          <span class="mob-nav-ico">🚪</span>
+          <span class="mob-nav-lbl">ออก</span>
+        </button>
+      </div>
     </nav>
 
 
@@ -3656,6 +3945,11 @@ body { background: var(--bg); color: var(--txt); }
           document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
           document.querySelectorAll(".report-only-nav").forEach(el => el.style.display = "none");
           const tmb = document.getElementById("testModeBtn"); if (tmb) tmb.style.display = "none";
+          const mbBtn = document.getElementById("mobMenuBtn"); if (mbBtn) mbBtn.style.display = "none";
+          // ปิด drawer ถ้าค้างอยู่
+          const mDrw = document.getElementById("mobDrawer"); if (mDrw) mDrw.classList.remove("open");
+          const mDbg = document.getElementById("mobDrawerBg"); if (mDbg) mDbg.classList.remove("open");
+          document.body.style.overflow = "";
           showScreen("sLogin");
         } catch (e) {
           console.error("[doLogout error]", e);
@@ -3676,6 +3970,21 @@ body { background: var(--bg); color: var(--txt); }
         document.querySelectorAll(".mob-nav-btn").forEach(b => b.classList.toggle("active", b.id === btnId));
         const deskId = btnId.replace("mn", "dn");
         document.querySelectorAll(".desk-nav-btn").forEach(b => b.classList.toggle("active", b.id === deskId));
+        // sync mobile drawer active state (mn → md)
+        const mdId = btnId.replace("mn", "md");
+        document.querySelectorAll(".md-nav-btn").forEach(b => b.classList.toggle("active", b.id === mdId));
+      }
+
+      /* ─── Mobile drawer (hamburger menu) ─── */
+      function openMobDrawer() {
+        document.getElementById("mobDrawer").classList.add("open");
+        document.getElementById("mobDrawerBg").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeMobDrawer() {
+        document.getElementById("mobDrawer").classList.remove("open");
+        document.getElementById("mobDrawerBg").classList.remove("open");
+        document.body.style.overflow = "";
       }
 
       function enterApp() {
@@ -3686,6 +3995,12 @@ body { background: var(--bg); color: var(--txt); }
         // hdrActions ย้ายไป sidebar แล้ว — ไม่ต้องแสดง
         document.getElementById("hdrBranchName").textContent = S.branch;
         document.getElementById("sidebarBranchName").textContent = S.branch;
+        const mdName = document.getElementById("mdBranchName");
+        if (mdName) mdName.textContent = S.branch;
+
+        // hamburger button + drawer — ปิดใช้งาน (ใช้ scrollable bottom nav แทน)
+        const mbBtn = document.getElementById("mobMenuBtn");
+        if (mbBtn) mbBtn.style.display = "none";
 
         const isAdmin = (S.role === "admin");
         const isVP    = (S.role === "vp");
@@ -3695,17 +4010,23 @@ body { background: var(--bg); color: var(--txt); }
         // admin/vp ไม่ต้องแสดง BZM; bzm แสดง "โซน BZM: <ชื่อ>"
         const hdrDm = document.getElementById("hdrBranchDm");
         const sbDm  = document.getElementById("sidebarBranchDm");
+        const mdDm  = document.getElementById("mdBranchDm");
+        let dmText = "";
         if (isAdmin || isVP) {
           if (hdrDm) hdrDm.style.display = "none";
           if (sbDm)  sbDm.style.display  = "none";
+          dmText = isAdmin ? "Admin" : "VP";
         } else if (isBZM) {
           const label = "โซน BZM";
           if (hdrDm) { hdrDm.style.display = ""; hdrDm.textContent = label; }
           if (sbDm)  { sbDm.style.display  = ""; sbDm.textContent  = label; }
+          dmText = "โซน BZM: " + S.dm;
         } else {
           if (hdrDm) { hdrDm.style.display = ""; hdrDm.textContent = "BZM: " + S.dm; }
           if (sbDm)  { sbDm.style.display  = ""; sbDm.textContent  = "BZM: " + S.dm; }
+          dmText = "BZM: " + S.dm;
         }
+        if (mdDm) mdDm.textContent = dmText;
         document.getElementById("mobNav").classList.add("visible");
         document.getElementById("hdrLogoutBtn").style.display = "";
         document.getElementById("deskSidebar").classList.remove("hidden");
@@ -3718,14 +4039,14 @@ body { background: var(--bg); color: var(--txt); }
         if (testLbl) testLbl.style.display = isAdmin ? "inline-flex" : "none";
 
         // ซ่อน "ส่งยอดขาย" สำหรับทุก management role (admin/vp/bzm)
-        ["dnForm", "mnForm"].forEach(id => {
+        ["dnForm", "mnForm", "mdForm"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = isMgmt ? "none" : "flex";
         });
 
         // Plan Sale: branch + admin เท่านั้น (vp/bzm = read-only ดูยอดอย่างเดียว)
         const hidePlan = isVP || isBZM;
-        ["dnPlan", "mnPlan"].forEach(id => {
+        ["dnPlan", "mnPlan", "mdPlan"].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = hidePlan ? "none" : "flex";
         });
@@ -4215,10 +4536,17 @@ body { background: var(--bg); color: var(--txt); }
           bzms:     "dnAdminBzms",
           zones:    "dnAdminZones"
         };
-        document.querySelectorAll(".mob-nav-btn, .desk-nav-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".mob-nav-btn, .desk-nav-btn, .md-nav-btn").forEach(b => b.classList.remove("active"));
         const dn = document.getElementById(tabMap[tab] || "dnAdminBranches");
         if (dn) dn.classList.add("active");
-        const mn = document.getElementById("mnAdmin"); if (mn) mn.classList.add("active");
+        // sync bottom nav (mn-*)
+        const mnMap = { branches: "mnAdminBranches", bzms: "mnAdminBzms", zones: "mnAdminZones" };
+        const mn = document.getElementById(mnMap[tab] || "mnAdminBranches");
+        if (mn) mn.classList.add("active");
+        // sync drawer (md-*)
+        const mdMap = { branches: "mdAdminBranches", bzms: "mdAdminBzms", zones: "mdAdminZones" };
+        const md = document.getElementById(mdMap[tab] || "mdAdminBranches");
+        if (md) md.classList.add("active");
         adminSwitchTab(tab || _adminCurrentTab || "branches");
       }
 
@@ -4570,15 +4898,24 @@ body { background: var(--bg); color: var(--txt); }
         if (banner) banner.style.display = showBanner ? "block" : "none";
         // toggle body class → CSS จะดัน sidebar / header / content ลง
         document.body.classList.toggle("test-mode-on", showBanner);
-        const status = document.getElementById("testModeStatus");
-        if (status) {
-          status.textContent = _testMode ? "เปิด" : "ปิด";
-          status.style.color = _testMode ? "var(--green)" : "var(--brand)";
-        }
+        [
+          document.getElementById("testModeStatus"),
+          document.getElementById("mdTestModeStatus"),
+          document.getElementById("mnTestModeStatus")
+        ].forEach(s => {
+          if (!s) return;
+          s.textContent = _testMode ? "ทดสอบ ✓" : "ทดสอบ";
+          s.style.color = _testMode ? "var(--green)" : "";
+        });
         const btn = document.getElementById("testModeBtn");
         if (btn) {
           btn.style.background = _testMode ? "var(--brand-l)" : "";
           btn.style.borderLeft = _testMode ? "3px solid var(--brand)" : "";
+        }
+        const mdBtn = document.getElementById("mdTestModeBtn");
+        if (mdBtn) {
+          mdBtn.style.background = _testMode ? "#fde68a" : "#fef3c7";
+          mdBtn.style.borderColor = _testMode ? "#f59e0b" : "#fde68a";
         }
       }
       async function saveTestModeToDB(val) {
@@ -4598,6 +4935,9 @@ body { background: var(--bg); color: var(--txt); }
       }
       function toggleTestModeAdmin() {
         if (S.code !== "ADMIN") return;
+        // ปิด drawer ก่อน (กันบดบัง popup)
+        const mDrw = document.getElementById("mobDrawer");
+        if (mDrw && mDrw.classList.contains("open")) closeMobDrawer();
         const next = !_testMode;
         const action = next ? "เปิด" : "ปิด";
         showConfirm(
@@ -4886,34 +5226,54 @@ body { background: var(--bg); color: var(--txt); }
         // สรุปเดือนที่เลือก (รอบสิ้นวัน)
         const eodRows = rows.filter(r => r.submit_time_slot === "สิ้นวัน");
 
-        // total Plan ดึงจาก _dashPlans (ตาราง plan_sale ทั้งเดือน) — ไม่จำเป็นต้องส่งจริงมาก่อน
+        // total Plan ดึงจาก _dashPlans (ตาราง plan_sale ทั้งเดือน)
         const totalPlan = Object.values(_dashPlans).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
         const totalActual     = eodRows.reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0);
         const totalTrans      = eodRows.reduce((s, r) => s + (parseFloat(r.total_trans) || 0), 0);
         const totalLabourBaht = eodRows.reduce((s, r) => s + (parseFloat(r.labour_baht) || 0), 0);
-        const days = eodRows.length || 1;
 
-        const pctPlan   = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) + "%" : "-";
-        const transDay  = (totalTrans / days).toFixed(1);
-        const labourPct = totalActual > 0 ? ((totalLabourBaht / totalActual) * 100).toFixed(1) + "%" : "-";
+        // จำนวนวันที่มีข้อมูลจริง (unique submit_date รอบสิ้นวัน)
+        const eodDates = new Set();
+        eodRows.forEach(r => { if (r.submit_date) eodDates.add(r.submit_date); });
+        const daysWithData = eodDates.size;
+        const daysInMonth = new Date(_dashYear, _dashMonth + 1, 0).getDate();
+
+        // 1) Actual Sale (%) — ยอด + % ของ Plan
+        const pctVal   = totalPlan > 0 ? (totalActual / totalPlan) * 100 : null;
+        const pctTxt   = pctVal !== null ? pctVal.toFixed(1) + "%" : "-";
+        const pctColor = pctVal !== null && totalActual >= totalPlan ? "var(--green)" : "var(--brand)";
+
+        // 2) ยอดประมาณการปิด — projection = สิ้นวัน × (วันในเดือน / วันที่มีข้อมูล)
+        const projected = daysWithData > 0 ? totalActual * (daysInMonth / daysWithData) : 0;
+        const projTxt   = daysWithData > 0 ? fmt(projected) : "-";
+
+        // 3) Ticket Avg = totalActual / totalTrans
+        const ticketAvg = totalTrans > 0 ? totalActual / totalTrans : null;
+        const ticketTxt = ticketAvg !== null ? ticketAvg.toFixed(2) : "-";
+
+        // 4) Labour Baht (%) — ยอด + % ของ Actual
+        const labPct = totalActual > 0 ? (totalLabourBaht / totalActual) * 100 : null;
+        const labTxt = totalLabourBaht > 0
+          ? `${fmt(totalLabourBaht)}${labPct !== null ? ` <span style="font-size:.55em;color:var(--txt2);font-weight:600">(${labPct.toFixed(1)}%)</span>` : ""}`
+          : "-";
 
         document.getElementById("dashStatsGrid").innerHTML = `
           <div class="dash-stat">
-            <div class="ds-val">${fmt(totalActual)}</div>
-            <div class="ds-lbl">Actual Sale</div>
+            <div class="ds-val">${fmt(totalActual)}${pctVal !== null ? ` <span style="font-size:.55em;color:${pctColor};font-weight:700">(${pctTxt})</span>` : ""}</div>
+            <div class="ds-lbl">Actual Sale (%)</div>
           </div>
           <div class="dash-stat">
-            <div class="ds-val" style="color:${totalPlan > 0 && totalActual >= totalPlan ? 'var(--green)' : 'var(--brand)'}">${pctPlan}</div>
-            <div class="ds-lbl">% ของ Plan</div>
+            <div class="ds-val">${projTxt}</div>
+            <div class="ds-lbl">ยอดประมาณการปิด</div>
           </div>
           <div class="dash-stat">
-            <div class="ds-val">${transDay}</div>
-            <div class="ds-lbl">Trans/วัน</div>
+            <div class="ds-val">${ticketTxt}</div>
+            <div class="ds-lbl">Ticket Avg</div>
           </div>
           <div class="dash-stat">
-            <div class="ds-val">${labourPct}</div>
-            <div class="ds-lbl">Labour %</div>
+            <div class="ds-val">${labTxt}</div>
+            <div class="ds-lbl">Labour Baht (%)</div>
           </div>`;
       }
 
