@@ -728,21 +728,22 @@
 
       .hist-card {
         background: var(--surface);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 16px;
-        margin-bottom: 10px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        padding: 11px 13px;
+        margin-bottom: 7px;
+        border: 1px solid var(--bd);
       }
 
       .hist-card-top {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
       }
 
       .hist-card-date {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         flex: 1;
       }
@@ -751,24 +752,26 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 4px 0;
-        font-size: 13.5px;
+        padding: 2px 0;
+        font-size: 12.5px;
       }
 
       .hist-card-row+.hist-card-row {
-        border-top: 1px solid #f8fafc;
+        border-top: 1px solid #f1f5f9;
       }
 
       .hist-card-lbl {
         color: var(--txt2);
+        font-size: 12px;
       }
 
       .hist-card-val {
         font-weight: 700;
+        font-size: 12.5px;
       }
 
       .hist-card-actions {
-        margin-top: 12px;
+        margin-top: 8px;
         display: flex;
         justify-content: flex-end;
       }
@@ -896,11 +899,17 @@
         border-left: 3px solid #f59e0b;
       }
 
+      .plan-day-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        line-height: 1.15;
+      }
+
       .plan-holiday-name {
         font-size: 11px;
         color: #b45309;
         font-weight: 600;
-        margin-left: 8px;
       }
 
       .plan-day-num {
@@ -1491,7 +1500,7 @@
         .mob-nav-inner::-webkit-scrollbar { display: none; }
 
         .mob-nav-btn {
-          flex: 0 0 auto;
+          flex: 1 0 72px;   /* grow=1 → กระจายเต็มจอเมื่อรายการน้อย; basis 72px ขั้นต่ำ */
           min-width: 72px;
           scroll-snap-align: start;
           display: flex;
@@ -3156,13 +3165,14 @@ body { background: var(--bg); color: var(--txt); }
 
         <!-- ───────── SECTION 1: สรุปรายเดือน ───────── -->
         <div class="dash-section">
-          <h2 class="dash-section-h" id="dashMonthTitle">สรุปรายเดือน</h2>
-          <!-- ปุ่มเลื่อนเดือน อยู่ใต้หัวข้อ -->
-          <div class="dash-month-nav" style="display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:10px;padding:6px 10px;margin-bottom:16px">
-            <button class="btn btn-sm" onclick="dashPrevMonth()" style="background:#fff;border:1px solid var(--bd);width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt);border-radius:6px">‹</button>
-            <span id="dashMonthLabel" style="font-size:13px;font-weight:700;min-width:130px;text-align:center;color:var(--txt);background:#fff;padding:6px 14px;border-radius:6px;border:1px solid var(--bd)">—</span>
-            <button class="btn btn-sm" onclick="dashNextMonth()" style="background:#fff;border:1px solid var(--bd);width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt);border-radius:6px">›</button>
-            <button class="btn btn-sm btn-outline" onclick="dashThisMonth()" style="font-size:12px;padding:6px 12px;margin-left:4px">เดือนนี้</button>
+          <!-- ปุ่มเลื่อนเดือน + หัวข้อ (อยู่บรรทัดเดียวกัน) -->
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+            <div class="dash-month-nav" style="display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:10px;padding:6px 10px">
+              <button class="btn btn-sm" onclick="dashPrevMonth()" style="background:#fff;border:1px solid var(--bd);width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt);border-radius:6px">‹</button>
+              <span id="dashMonthLabel" style="font-size:13px;font-weight:700;min-width:130px;text-align:center;color:var(--txt);background:#fff;padding:6px 14px;border-radius:6px;border:1px solid var(--bd)">—</span>
+              <button class="btn btn-sm" onclick="dashNextMonth()" style="background:#fff;border:1px solid var(--bd);width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt);border-radius:6px">›</button>
+            </div>
+            <h2 class="dash-section-h" id="dashMonthTitle" style="margin:0">สรุปรายเดือน</h2>
           </div>
           <!-- 4 stat cards -->
           <div class="dash-stats-grid dash-stats-row" id="dashStatsGrid">
@@ -3214,16 +3224,16 @@ body { background: var(--bg); color: var(--txt); }
 
         <!-- ───────── SECTION 2: สรุปตามช่วงวันที่ ───────── -->
         <div class="dash-section" style="margin-top:32px">
-          <h2 class="dash-section-h">สรุปตามช่วงวันที่</h2>
-          <!-- Date range picker อยู่ใต้หัวข้อ -->
-          <div class="dash-date-range" style="background:#f1f5f9;border-radius:10px;padding:10px 12px;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-            <input type="date" id="dashDateFrom" onchange="renderDashFromCache()"
-                   style="background:#fff;border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--txt);outline:none">
-            <span style="font-size:12px;color:var(--txt2);font-weight:600">ถึง</span>
-            <input type="date" id="dashDateTo" onchange="renderDashFromCache()"
-                   style="background:#fff;border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--txt);outline:none">
-            <button class="btn btn-sm btn-outline" onclick="setDashDateToday()"
-                    style="font-size:12px;padding:6px 12px">วันนี้</button>
+          <!-- Date range picker + หัวข้อ (อยู่บรรทัดเดียวกัน) -->
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+            <div class="dash-date-range" style="background:#f1f5f9;border-radius:10px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <input type="date" id="dashDateFrom" onchange="renderDashFromCache()"
+                     style="background:#fff;border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--txt);outline:none">
+              <span style="font-size:12px;color:var(--txt2);font-weight:600">ถึง</span>
+              <input type="date" id="dashDateTo" onchange="renderDashFromCache()"
+                     style="background:#fff;border:1px solid var(--bd);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--txt);outline:none">
+            </div>
+            <h2 class="dash-section-h" style="margin:0">สรุปตามช่วงวันที่</h2>
           </div>
           <div class="dash-today-grid" id="dashTodayGrid">
             <div class="dash-today-card"><div class="dtc-slot">🕓 รอบ 16.00</div><div class="dtc-status" style="color:#94a3b8">⏳ กำลังโหลด...</div></div>
@@ -3232,8 +3242,8 @@ body { background: var(--bg); color: var(--txt); }
         </div>
 
         <!-- ───────── SECTION 3: 30 วันล่าสุด ───────── -->
-        <div class="dash-section" style="margin-top:32px">
-          <h2 class="dash-section-h">30 วันล่าสุด <span style="font-weight:400;font-size:0.7em;color:var(--txt2)">(รอบสิ้นวัน)</span></h2>
+        <div class="dash-section" style="margin-top:40px">
+          <h2 class="dash-section-h" style="margin-bottom:14px">30 วันล่าสุด <span style="font-weight:400;font-size:0.7em;color:var(--txt2)">(รอบสิ้นวัน)</span></h2>
           <div class="dash-card-wrap">
             <table class="dash-tbl">
               <thead><tr>
@@ -6105,11 +6115,14 @@ body { background: var(--bg); color: var(--txt); }
 
           const inpCls = hasVal ? "plan-inp has-val" : "plan-inp";
           const statusHtml = hasVal ? `<span class="plan-status ok">✓</span>` : `<span class="plan-status"></span>`;
-          const holidayLbl = isHoliday ? `<span class="plan-holiday-name">🎌 ${escHtml(dayType.name)}</span>` : "";
+          const holidaySub = isHoliday ? `<span class="plan-holiday-name">${escHtml(dayType.name)}</span>` : "";
 
           html += `<div class="${rowCls}">
       <span class="plan-day-num">${d}</span>
-      <span class="${dayCls}">${TH_DAYS[dow]}${holidayLbl}</span>
+      <span class="plan-day-cell">
+        <span class="${dayCls}">${TH_DAYS[dow]}</span>
+        ${holidaySub}
+      </span>
       <input class="${inpCls}" id="pd_${dateStr}" type="text" inputmode="decimal"
         placeholder="0" value="${hasVal ? val : ""}"
         oninput="onPlanInput(this)" data-date="${dateStr}">
