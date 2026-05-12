@@ -3362,9 +3362,15 @@ body { background: var(--bg); color: var(--txt); }
                       style="background:#fff;border:1px solid var(--bd);padding:7px 10px;font-size:12px;color:var(--txt);border-radius:6px;font-weight:700">พอดีจอ</button>
             </div>
 
-            <!-- Export button -->
-            <button class="btn btn-brand btn-sm" onclick="exportReportExcel()" style="padding:8px 16px;font-size:13px">
-              ⬇️ Export Excel
+            <!-- Open Google Sheet (รายงานหลัก) -->
+            <a href="https://docs.google.com/spreadsheets/d/1GBrc4S2lSu40bMOelAHvEzRGf7EIBhFGOKSISa-EZRU/edit" target="_blank" rel="noopener"
+               class="btn btn-sm"
+               style="padding:8px 14px;font-size:13px;background:#0f9d58;color:#fff;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;border-radius:8px;font-weight:700">
+              📊 เปิด Google Sheet
+            </a>
+            <!-- Export to Excel (ดึงข้อมูลจากระบบ) -->
+            <button class="btn btn-brand btn-sm" onclick="exportReportExcel()" style="padding:8px 14px;font-size:13px">
+              ⬇️ ดึงข้อมูล (Excel)
             </button>
           </div>
 
