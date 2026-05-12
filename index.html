@@ -3358,6 +3358,8 @@ body { background: var(--bg); color: var(--txt); }
                     style="font-size:12px;font-weight:700;min-width:50px;text-align:center;color:var(--txt);background:#fff;padding:7px 8px;border-radius:6px;cursor:pointer;user-select:none">100%</span>
               <button class="btn btn-sm" onclick="reportZoomIn()" title="ซูมเข้า"
                       style="background:#fff;border:1px solid var(--bd);width:32px;height:32px;padding:0;font-size:1rem;color:var(--txt);border-radius:6px">+</button>
+              <button class="btn btn-sm" onclick="reportZoomFit()" title="พอดีจอ (ไม่ต้องเลื่อน)"
+                      style="background:#fff;border:1px solid var(--bd);padding:7px 10px;font-size:12px;color:var(--txt);border-radius:6px;font-weight:700">พอดีจอ</button>
             </div>
 
             <!-- Export button -->
@@ -3381,9 +3383,9 @@ body { background: var(--bg); color: var(--txt); }
 
     <!-- Report table styling (Google Sheet-style — โทนส้ม Santa Fe) -->
     <style>
-      /* override global thead — ตารางรายงานใช้สีของตัวเอง */
       .report-tbl thead tr { background: transparent !important; }
-      .report-tbl th, .report-tbl td { border:1px solid #e5d4c4; padding:6px 8px; white-space:nowrap; font-variant-numeric:tabular-nums }
+      .report-tbl { width: 100%; }
+      .report-tbl th, .report-tbl td { border:1px solid #e5d4c4; padding:5px 7px; white-space:nowrap; font-variant-numeric:tabular-nums; }
       /* Group header (Sale / Trans / Customer & Labour / Productivity) — ส้มเข้ม + ขาว */
       .report-tbl thead tr.report-grp-row th {
         background: var(--brand) !important;
@@ -3392,42 +3394,47 @@ body { background: var(--bg); color: var(--txt); }
         font-size: 13px;
         font-weight: 800;
         letter-spacing: .3px;
-        padding: 8px 10px;
+        padding: 7px 8px;
       }
-      /* Sub-header (Plan Sale / Actual Sale / ...) — peach อ่อน + ตัวเข้ม */
+      /* Sub-header (Plan Sale / Actual Sale / ...) — peach + ตัวเข้ม */
       .report-tbl thead tr:not(.report-grp-row) th {
-        background: #ffe5d0 !important;
-        color: #7c2d12 !important;
-        font-weight: 700;
+        background: #ffd4ab !important;
+        color: #5c1a08 !important;
+        font-weight: 800;
         text-align: center;
-        font-size: 11.5px;
-        border-bottom: 1px solid #fed7aa !important;
+        font-size: 11px;
+        border-bottom: 2px solid #fb923c !important;
+        padding: 6px 4px;
       }
-      .report-tbl tbody td { font-size:12px; color:#1e293b }
-      /* แถวสาขา — สลับสี (white / peach อ่อนสุด) */
-      .report-tbl tr.report-branch td { background:#fff }
-      .report-tbl tr.report-branch:nth-of-type(even) td { background:#fffaf5 }
-      /* BZM header row — แถบส้มกลาง + ตัวอักษรน้ำตาลเข้ม */
+      .report-tbl tbody td { font-size:11.5px; color:#1e293b; font-weight: 500; }
+      /* แถวสาขา — สลับสี ชัดขึ้น */
+      .report-tbl tr.report-branch td { background:#fffefc; }
+      .report-tbl tr.report-branch:nth-of-type(even) td { background:#fff5e8; }
+      /* BZM header row — แถบส้มน้ำตาล อ่านง่าย */
       .report-tbl tr.report-bzm-hdr td {
-        background: #fed7aa !important;
-        font-weight: 700;
-        color: #7c2d12;
-        font-size: 12.5px;
-        border-top: 2px solid var(--brand);
-      }
-      /* Subtotal ต่อ BZM — peach กลาง */
-      .report-tbl tr.report-bzm-sub td {
-        background: #ffd9b5 !important;
-        font-weight: 700;
-        color: #7c2d12;
-      }
-      /* Grand total — ส้มเข้ม + ขาว เหมือน group header */
-      .report-tbl tr.report-total td {
-        background: var(--brand) !important;
+        background: #c2410c !important;
         color: #fff !important;
         font-weight: 800;
-        border-top: 3px solid var(--brand-d) !important;
+        font-size: 12.5px;
+        border-top: 2px solid var(--brand-d) !important;
+        letter-spacing: .3px;
+        padding: 6px 10px;
+      }
+      /* Subtotal ต่อ BZM — peach เข้มกว่าแถวปกติ */
+      .report-tbl tr.report-bzm-sub td {
+        background: #fdba74 !important;
+        font-weight: 800;
+        color: #431407 !important;
+        border-bottom: 2px solid #fb923c !important;
+      }
+      /* Grand total — ส้มเข้ม + ขาว เด่นสุด */
+      .report-tbl tr.report-total td {
+        background: #9a3412 !important;
+        color: #fff !important;
+        font-weight: 800;
+        border-top: 3px solid #7c2d12 !important;
         font-size: 13px;
+        padding: 8px 8px;
       }
       .report-tbl td.r { text-align:right }
       .report-tbl td.c { text-align:center }
@@ -4188,6 +4195,23 @@ body { background: var(--bg); color: var(--txt); }
       function reportZoomIn()    { _reportZoom = Math.min(1.5, +(_reportZoom + 0.1).toFixed(2)); applyReportZoom(); }
       function reportZoomOut()   { _reportZoom = Math.max(0.5, +(_reportZoom - 0.1).toFixed(2)); applyReportZoom(); }
       function reportZoomReset() { _reportZoom = 1.0; applyReportZoom(); }
+      /* คำนวณ zoom ให้ตารางพอดีจอ (ไม่ต้องเลื่อนซ้าย-ขวา) */
+      function reportZoomFit() {
+        const scroller = document.getElementById("reportScroller");
+        const wrap     = document.getElementById("reportZoomWrap");
+        const table    = document.getElementById("reportTable");
+        if (!scroller || !wrap || !table) return;
+        // reset ก่อนวัด
+        wrap.style.zoom = 1;
+        const containerW = scroller.clientWidth;
+        const tableW = table.scrollWidth;
+        if (tableW <= 0 || containerW <= 0) return;
+        let factor = containerW / tableW;
+        if (factor > 1) factor = 1;        // ไม่ต้องขยายเกิน 100%
+        if (factor < 0.3) factor = 0.3;     // ไม่ให้เล็กเกินไป
+        _reportZoom = +factor.toFixed(2);
+        applyReportZoom();
+      }
 
       const REPORT_COLS = [
         // key, label, group ('sale'|'trans'|'cl'|'prod'), align, computed?
@@ -4495,6 +4519,8 @@ body { background: var(--bg); color: var(--txt); }
         const total = sumReportRows(_reportRows, "รวมทุกสาขา");
         if (total) html += rowHtml(total, "report-total");
         body.innerHTML = html;
+        // auto-fit ให้ตารางพอดีจอ (ไม่ต้องเลื่อน)
+        setTimeout(reportZoomFit, 30);
       }
 
       /* Export ตารางปัจจุบันเป็น Excel ผ่าน SheetJS */
