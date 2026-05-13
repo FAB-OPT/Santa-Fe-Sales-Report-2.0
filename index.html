@@ -965,6 +965,7 @@
         color: #94a3b8;
         cursor: not-allowed;
         border-color: #e2e8f0;
+        pointer-events: none; /* ปล่อยให้ click ทะลุไปยัง row parent (เปิด popup) */
       }
 
       .plan-status {
@@ -3085,6 +3086,13 @@ body { background: var(--bg); color: var(--txt); }
           </div>
         </div>
 
+        <!-- Hint: ที่นี่แก้ได้เฉพาะ "วันนี้+อนาคต" — อดีตต้องไปประวัติ -->
+        <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.55">
+          <strong>📌 วิธีแก้ Plan Sale</strong><br>
+          • <strong>วันนี้ + วันในอนาคต</strong> → แก้ที่นี่ได้เลย<br>
+          • <strong>วันที่ผ่านมาแล้ว 🔒</strong> → ไปที่หน้า <strong>"ประวัติ"</strong> → กดแก้ไขรอบ <strong>16.00</strong> ของวันนั้น
+        </div>
+
         <!-- Summary cards -->
         <div class="plan-summary">
           <div class="plan-sum-card">
@@ -3350,7 +3358,7 @@ body { background: var(--bg); color: var(--txt); }
 
           <!-- Action buttons + Zoom (ขวา) -->
           <div class="report-actions-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px">
-            <a href="https://docs.google.com/spreadsheets/d/1GBrc4S2lSu40bMOelAHvEzRGf7EIBhFGOKSISa-EZRU/edit" target="_blank" rel="noopener"
+            <a href="https://docs.google.com/spreadsheets/d/1OwmLDyuPOKM2rNq4yaXHpVE6Mvfo6Jntk0kJukPHOU4/edit" target="_blank" rel="noopener"
                style="background:#0f9d58;color:#fff;padding:10px 18px;font-size:13.5px;font-weight:700;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(15,157,88,.18)">
               📊 เปิด Google Sheet
             </a>
@@ -6242,11 +6250,16 @@ body { background: var(--bg); color: var(--txt); }
           else if (isSat)  dayCls += " sat";
           else if (isSun)  dayCls += " sun";
 
+          const isLocked = isPast && !isToday;
           const inpCls = hasVal ? "plan-inp has-val" : "plan-inp";
-          const statusHtml = hasVal ? `<span class="plan-status ok">✓</span>` : `<span class="plan-status"></span>`;
+          const statusHtml = isLocked
+            ? `<span class="plan-status" title="ล็อก — แก้ไขผ่านประวัติรอบ 16.00">🔒</span>`
+            : (hasVal ? `<span class="plan-status ok">✓</span>` : `<span class="plan-status"></span>`);
           const holidaySub = isHoliday ? `<span class="plan-holiday-name">${escHtml(dayType.name)}</span>` : "";
+          const rowAttr  = isLocked ? ` onclick="showPastPlanLockMsg('${dateStr}')" style="cursor:pointer"` : "";
+          const lockAttr = isLocked ? " disabled" : "";
 
-          html += `<div class="${rowCls}">
+          html += `<div class="${rowCls}"${rowAttr}>
       <span class="plan-day-num">${d}</span>
       <span class="plan-day-cell">
         <span class="${dayCls}">${TH_DAYS[dow]}</span>
@@ -6254,7 +6267,7 @@ body { background: var(--bg); color: var(--txt); }
       </span>
       <input class="${inpCls}" id="pd_${dateStr}" type="text" inputmode="decimal"
         placeholder="0" value="${hasVal ? val : ""}"
-        oninput="onPlanInput(this)" data-date="${dateStr}">
+        oninput="onPlanInput(this)" data-date="${dateStr}"${lockAttr}>
       ${statusHtml}
     </div>`;
         }
@@ -6281,15 +6294,28 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("planSumAvg").textContent = days > 0 ? fmt(total / days) : "—";
       }
 
+      // วันที่ผ่านมาแล้ว → ห้ามแก้ Plan จาก grid (ต้องไปแก้ผ่านประวัติรอบ 16.00)
+      function showPastPlanLockMsg(dateStr) {
+        const [y, m, d] = dateStr.split("-");
+        const human = `${parseInt(d)}/${parseInt(m)}/${y}`;
+        showAlert(
+          "🔒",
+          "แก้ Plan ของวันที่ผ่านแล้วไม่ได้",
+          `วันที่ ${human} ผ่านมาแล้ว จึงล็อกการแก้ไขในหน้านี้\n\nหากต้องการแก้ Plan Sale ของวันนั้น\nไปที่หน้า "ประวัติ" → เลือกรอบ 16.00 ของวันที่ ${human} → แก้ Plan Sale ในฟอร์มนั้น`
+        );
+      }
+
       function savePlanMonth() {
         const branchCode = getPlanBranchCode();
         if (!branchCode) {
           showAlert("⚠️", "ยังไม่ได้เลือกสาขา", "กรุณาเลือกสาขาก่อนบันทึก Plan");
           return;
         }
+        const today = todayStr();
         const entries = [];
         document.querySelectorAll(".plan-inp").forEach(inp => {
           const date = inp.dataset.date;
+          if (date < today) return; // ข้ามวันที่ผ่านแล้ว — แก้ผ่านประวัติรอบ 16.00 เท่านั้น
           const val = parseFloat(inp.value.replace(/,/g, "")) || 0;
           entries.push({ date: date, plan_sale: val });
         });
@@ -6508,11 +6534,14 @@ body { background: var(--bg); color: var(--txt); }
         const editCnt = parseInt(row.edit_count) || 0;
         const isEod = row.submit_time_slot === "สิ้นวัน";
 
+        const planHint = isEod
+          ? `* แก้ไข Plan Sale ได้เฉพาะรอบ 16.00 เท่านั้น`
+          : `* การแก้ Plan Sale ที่นี่จะอัปเดต Plan Sale ในหน้าปฏิทินด้วย (เป็นค่าเดียวกัน)`;
         document.getElementById("editBanner").innerHTML =
           `<strong>📅 ${row.submit_date}  รอบ ${row.submit_time_slot}</strong><br>` +
           `ส่งครั้งแรกโดย: <strong>${row.submitter_name || "-"}</strong>` +
           (editCnt > 0 ? `&ensp;|&ensp;แก้ไขแล้ว <strong>${editCnt} ครั้ง</strong>` : "") +
-          `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">* แก้ไข Plan Sale ได้เฉพาะรอบ 16.00 เท่านั้น</div>`;
+          `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">${planHint}</div>`;
 
         const fields = [
           { id: "e_submitter", label: "ชื่อผู้ส่ง *", val: row.submitter_name || "", num: false, full: true },
@@ -6830,8 +6859,34 @@ body { background: var(--bg); color: var(--txt); }
               .from("plan_sale")
               .upsert(upserts, { onConflict: "branch_code,plan_date" });
             if (error) { cb({ ok: false, error: error.message }); return; }
+
+            // Propagate ไปยัง sales_data ของวันเดียวกัน (รอบ 16.00 / สิ้นวันที่ส่งแล้ว)
+            // เพื่อกัน sales_data.plan_sale ค้างค่าเก่า และให้ Google Sheet (mirror sales_data) ตรงกับ plan_sale table
+            const planByDate = {};
+            entries.forEach(e => { planByDate[e.date] = parseFloat(e.plan_sale) || 0; });
+            const dates = Object.keys(planByDate);
+            const { data: existingRows } = await sb
+              .from("sales_data")
+              .select("id, submit_date, plan_sale")
+              .eq("branch_code", params.branch_code)
+              .in("submit_date", dates);
+
+            let salesTouched = false;
+            if (existingRows && existingRows.length) {
+              const updates = existingRows
+                .filter(r => (parseFloat(r.plan_sale) || 0) !== planByDate[r.submit_date])
+                .map(r => sb.from("sales_data")
+                  .update({ plan_sale: planByDate[r.submit_date] })
+                  .eq("id", r.id));
+              if (updates.length) {
+                await Promise.all(updates);
+                salesTouched = true;
+              }
+            }
+
             // mirror → Google Sheets
             pushToSheet("save_plan", { branch_code: params.branch_code, entries: params.entries });
+            if (salesTouched) pushToSheet("submit_sales", { _plan_sync: true });
             cb({ ok: true, saved: entries.length });
             return;
           }

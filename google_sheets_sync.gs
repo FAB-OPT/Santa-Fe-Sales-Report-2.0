@@ -22,6 +22,9 @@
 const SUPABASE_URL = "https://zroqklbobvixyohfaimc.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb3FrbGJvYnZpeHlvaGZhaW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTUzNjMsImV4cCI6MjA5NDIzMTM2M30.BSwbqeQ1jsyvATpOkJ-wV04TGZacagaNpj6S4fPC-J4";
 
+// Sheet ID ปลายทาง — hardcode เพื่อให้ทำงานได้ทั้ง standalone และ bound script
+const SHEET_ID = "1OwmLDyuPOKM2rNq4yaXHpVE6Mvfo6Jntk0kJukPHOU4";
+
 // Header ของแต่ละ sheet (ลำดับคอลัมน์)
 const SALES_HEADERS = [
   "id", "branch_code", "branch_name", "district_manager", "submitter_name",
@@ -102,7 +105,7 @@ function syncTable(tableName, sheetName, headers) {
   }
 
   const data = JSON.parse(response.getContentText());
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
   let sheet = ss.getSheetByName(sheetName);
   if (!sheet) sheet = ss.insertSheet(sheetName);
 
