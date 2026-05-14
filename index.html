@@ -2182,6 +2182,13 @@ body { background: var(--bg); color: var(--txt); }
   /* Test mode banner — เพิ่ม padding-top body */
   body.test-mode-on { padding-top: 36px; }
   body.test-mode-on .hdr { top: 36px; }
+  /* Test DATA sandbox banner — แยกขั้นใต้ test mode banner */
+  body.test-data-on:not(.test-mode-on) { padding-top: 36px; }
+  body.test-data-on:not(.test-mode-on) .hdr { top: 36px; }
+  /* ถ้าเปิดทั้ง 2 banners พร้อมกัน → push เพิ่มเป็น 72px + ดัน data banner ลงใต้ test mode */
+  body.test-mode-on.test-data-on { padding-top: 72px; }
+  body.test-mode-on.test-data-on .hdr { top: 72px; }
+  body.test-mode-on #testDataBanner { top: 36px; }
   .hdr-logout-btn {
     background: transparent !important; color: var(--brand) !important;
     font-size: 14px !important; font-weight: 600 !important;
@@ -2446,6 +2453,13 @@ body { background: var(--bg); color: var(--txt); }
   body.test-mode-on .desk-sidebar { top: 36px !important; }
   body.test-mode-on .hdr           { top: 36px !important; }
   body.test-mode-on .screen.active { padding-top: 36px; }
+  /* เมื่อ test DATA sandbox ON → push เหมือนกัน */
+  body.test-data-on:not(.test-mode-on) .desk-sidebar { top: 36px !important; }
+  body.test-data-on:not(.test-mode-on) .screen.active { padding-top: 36px; }
+  /* เปิดทั้งคู่ → 72px */
+  body.test-mode-on.test-data-on .desk-sidebar { top: 72px !important; }
+  body.test-mode-on.test-data-on .hdr           { top: 72px !important; }
+  body.test-mode-on.test-data-on .screen.active { padding-top: 72px; }
 
   /* ─ Admin tabs — เป็นหัวข้อหลักของหน้า ─ */
   .admin-tab {
@@ -2734,6 +2748,11 @@ body { background: var(--bg); color: var(--txt); }
       🧪 โหมดทดสอบเปิดอยู่ — ระบบจะไม่ตรวจสอบลำดับการส่งยอด
     </div>
 
+    <!-- Test data sandbox banner — เมื่อ admin เปิด global flag → ทุกคนเห็น -->
+    <div id="testDataBanner" style="display:none;background:linear-gradient(90deg,#dbeafe,#bfdbfe);color:#1e40af;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;border-bottom:1px solid #93c5fd;position:fixed;top:0;left:0;right:0;z-index:9998">
+      📊 โหมด Test Data Sandbox เปิดอยู่ — ข้อมูลทุกอย่างเข้า/ออกที่ sales_data_test (ไม่กระทบ production)
+    </div>
+
     <header class="hdr" id="appHdr" style="display:none">
       <!-- Mobile hamburger menu (ซ่อนบน desktop) -->
       <button id="mobMenuBtn" class="mob-menu-btn" onclick="openMobDrawer()" aria-label="เมนู" style="display:none">
@@ -2813,6 +2832,12 @@ body { background: var(--bg); color: var(--txt); }
         <span>โหมดทดสอบ: <span id="testModeStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
       </button>
 
+      <!-- Test data view toggle (admin only) — switches all queries to sales_data_test -->
+      <button class="desk-nav-btn admin-only-nav" id="testDataBtn" onclick="toggleTestDataAdmin()" style="display:none;margin:0 10px 8px">
+        <span class="desk-nav-ico">📊</span>
+        <span>ดู Test Data: <span id="testDataStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
+      </button>
+
       <!-- Logout — centered -->
       <button class="desk-logout-btn" onclick="doLogout()" style="justify-content:center;margin-left:auto;margin-right:auto">ออกจากระบบ</button>
     </aside>
@@ -2879,6 +2904,10 @@ body { background: var(--bg); color: var(--txt); }
         <button class="md-test-btn admin-only-nav" id="mdTestModeBtn" onclick="toggleTestModeAdmin()" style="display:none">
           <span class="md-nav-ico">🧪</span>
           <span>โหมดทดสอบ: <span id="mdTestModeStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
+        </button>
+        <button class="md-test-btn admin-only-nav" id="mdTestDataBtn" onclick="toggleTestDataAdmin()" style="display:none">
+          <span class="md-nav-ico">📊</span>
+          <span>ดู Test Data: <span id="mdTestDataStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
         </button>
         <button class="md-logout" onclick="doLogout()">ออกจากระบบ</button>
       </div>
@@ -4069,6 +4098,9 @@ body { background: var(--bg); color: var(--txt); }
           const banner = document.getElementById("testModeBanner");
           if (banner) banner.style.display = "none";
           document.body.classList.remove("test-mode-on");
+          const tdBanner = document.getElementById("testDataBanner");
+          if (tdBanner) tdBanner.style.display = "none";
+          document.body.classList.remove("test-data-on");
           // Clear active state ทุก nav button
           document.querySelectorAll(".mob-nav-btn, .desk-nav-btn").forEach(b => b.classList.remove("active"));
           // ซ่อน admin-only buttons (กันเห็นค้าง)
@@ -4117,7 +4149,10 @@ body { background: var(--bg); color: var(--txt); }
         document.body.style.overflow = "";
       }
 
-      function enterApp() {
+      async function enterApp() {
+        // ซ่อนหน้า login ก่อน (กันแสดงค้างระหว่าง await loadTestDataFromDB ด้านล่าง)
+        const sLogin = document.getElementById("sLogin");
+        if (sLogin) sLogin.classList.remove("active");
         const hdr = document.getElementById("appHdr");
         hdr.style.display = "flex";
         document.getElementById("hdrDivider").style.display = "";
@@ -4195,6 +4230,10 @@ body { background: var(--bg); color: var(--txt); }
 
         // Refresh test mode banner (อาจถูก toggle จาก admin อื่นระหว่าง user offline)
         loadTestModeFromDB();
+        // ⚠️ ลำดับสำคัญ: branches ของจริง → flag test data → merge test branches
+        //    เพื่อให้ BRANCH_DM_MAP มีครบก่อน dashboard fetch
+        await loadBranchesFromSupabase();
+        await loadTestDataFromDB();
 
         if (isAdmin) showAdmin("branches");
         else         showDash();
@@ -4862,7 +4901,7 @@ body { background: var(--bg); color: var(--txt); }
           "ยืนยันการลบประวัติ?",
           `สาขา: ${branchName}\nวันที่: ${date}\nรอบ: ${slot}\n\n⚠️ การลบนี้ไม่สามารถกู้คืนได้\nplan_sale ของวันนี้จะยังอยู่`,
           async function() {
-            const { error } = await sb.from("sales_data").delete().eq("id", id);
+            const { error } = await sb.from(_salesTbl()).delete().eq("id", id);
             if (error) { showAlert("❌", "ลบไม่สำเร็จ", error.message); return; }
             loadHistory(); // refresh
             showAlert("✅", "ลบเรียบร้อย", `ลบประวัติ ${branchName} (${date} ${slot})`);
@@ -5077,8 +5116,8 @@ body { background: var(--bg); color: var(--txt); }
           document.getElementById("hdrTestModeStatus")
         ].forEach(s => {
           if (!s) return;
-          s.textContent = _testMode ? "ทดสอบ ✓" : "ทดสอบ";
-          s.style.color = "";  // ให้ CSS ของปุ่มแม่ตัดสินสี
+          s.textContent = _testMode ? "เปิด" : "ปิด";
+          s.style.color = _testMode ? "var(--green)" : "var(--red)";
         });
         // toggle .on class บนปุ่มใน header
         const hdrTb = document.getElementById("hdrTestModeBtn");
@@ -5124,9 +5163,115 @@ body { background: var(--bg); color: var(--txt); }
             : "เมื่อปิด: ระบบจะกลับมาตรวจลำดับการส่งยอดตามปกติ",
           async function() {
             const ok = await saveTestModeToDB(next);
-            if (ok) showAlert("✅", `${action}โหมดทดสอบเรียบร้อย`, next ? "ทุกสาขาจะเห็น banner แจ้งเตือน" : "ระบบกลับมาตรวจลำดับปกติ");
+            if (ok) {
+              // reload เพื่อให้ banner offset + state ใหม่ใช้งานได้ทันที (กันค้าง)
+              setTimeout(() => location.reload(), 200);
+            }
           },
           { btnText: next ? "เปิด" : "ปิด", danger: !next }
+        );
+      }
+
+      /* ════════════════════════════════════════════
+         TEST DATA SANDBOX (Global) — admin toggles a DB flag → ทุก client
+         (สาขา/BZM/VP/admin) สลับไปอ่าน-เขียน sales_data_test พร้อมกัน
+         เก็บใน branches table row พิเศษ — เหมือน pattern ของ _testMode
+      ════════════════════════════════════════════ */
+      const TEST_DATA_ROW_CODE = "_SYS_TEST_DATA_VIEW_";
+      let _useTestData = false; // โหลดจาก DB ตอน auth
+      function _testDataActive() { return _useTestData; }
+      function _salesTbl() { return _useTestData ? "sales_data_test" : "sales_data"; }
+      function _planTbl()  { return _useTestData ? "plan_sale_test"  : "plan_sale"; }
+      function _pushSalesToSheet(payload) {
+        pushToSheet(_useTestData ? "import_test" : "submit_sales", payload);
+      }
+      function _pushPlanToSheet(payload) {
+        pushToSheet(_useTestData ? "save_plan_test" : "save_plan", payload);
+      }
+      async function loadTestDataFromDB() {
+        try {
+          const { data } = await sb.from("branches").select("branch_name")
+            .eq("branch_code", TEST_DATA_ROW_CODE).maybeSingle();
+          _useTestData = !!(data && data.branch_name === "true");
+        } catch (_) { _useTestData = false; }
+        applyTestDataUI();
+        // ถ้าโหมด test เปิด → merge unique branches จาก sales_data_test เข้า BRANCH_DM_MAP
+        // (test data อาจมีสาขาที่ไม่ได้อยู่ใน branches table ของจริง)
+        if (_useTestData) await mergeTestBranchesIntoMap();
+      }
+      async function mergeTestBranchesIntoMap() {
+        try {
+          const { data } = await sb.from("sales_data_test")
+            .select("branch_code, branch_name, district_manager")
+            .limit(10000);
+          if (!data) return;
+          const seen = new Set();
+          data.forEach(r => {
+            if (!r.branch_code || seen.has(r.branch_code)) return;
+            seen.add(r.branch_code);
+            // ไม่ทับของจริงถ้า BRANCH_DM_MAP มีอยู่แล้ว
+            if (!BRANCH_DM_MAP[r.branch_code]) {
+              BRANCH_DM_MAP[r.branch_code] = {
+                branch: r.branch_name || r.branch_code,
+                dm: r.district_manager || "—"
+              };
+            }
+          });
+        } catch (err) { console.warn("[mergeTestBranches]", err); }
+      }
+      async function saveTestDataToDB(val) {
+        try {
+          const { error } = await sb.from("branches").upsert({
+            branch_code: TEST_DATA_ROW_CODE,
+            branch_name: val ? "true" : "false",
+            district_manager: "_system_"
+          });
+          if (error) throw error;
+          _useTestData = val;
+          applyTestDataUI();
+          return true;
+        } catch (err) {
+          showAlert("❌", "บันทึกไม่สำเร็จ", err.message || String(err));
+          return false;
+        }
+      }
+      function applyTestDataUI() {
+        const showBanner = !!(_useTestData && S.code);
+        const banner = document.getElementById("testDataBanner");
+        if (banner) banner.style.display = showBanner ? "block" : "none";
+        document.body.classList.toggle("test-data-on", showBanner);
+        ["testDataStatus", "mdTestDataStatus"].forEach(id => {
+          const s = document.getElementById(id);
+          if (s) {
+            s.textContent = _useTestData ? "เปิด" : "ปิด";
+            s.style.color = _useTestData ? "var(--green)" : "var(--red)";
+          }
+        });
+        ["testDataBtn", "mdTestDataBtn"].forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.style.background = _useTestData ? "#dbeafe" : "";
+            btn.style.borderLeft = _useTestData ? "3px solid #2563eb" : "";
+          }
+        });
+      }
+      function toggleTestDataAdmin() {
+        if (S.code !== "ADMIN") return;
+        const mDrw = document.getElementById("mobDrawer");
+        if (mDrw && mDrw.classList.contains("open")) closeMobDrawer();
+        const next = !_useTestData;
+        const action = next ? "เปิด" : "ปิด";
+        showConfirm(
+          next ? "📊" : "🔒",
+          `${action}โหมด Test Data Sandbox?`,
+          next
+            ? "เมื่อเปิด: ทุกคน (สาขา/BZM/VP/admin) จะสลับไปใช้ table sales_data_test พร้อมกัน\n• Dashboard / ประวัติ / รายงาน → แสดงข้อมูล test\n• Submit / Edit / Delete → กระทบ test table เท่านั้น\n• sales_data ของจริงไม่ถูกแตะ\n\nระบบจะรีโหลดหน้าให้ครั้งเดียว"
+            : "เมื่อปิด: ทั้งระบบกลับไปใช้ sales_data ของจริงตามปกติ\n(ผู้ใช้คนอื่นต้องรีโหลดหน้าเอง หรือ logout/login ใหม่)",
+          async function() {
+            const ok = await saveTestDataToDB(next);
+            if (ok) setTimeout(() => location.reload(), 200);
+          },
+          { btnText: next ? "เปิด" : "ปิด" }
         );
       }
 
@@ -5474,8 +5619,8 @@ body { background: var(--bg); color: var(--txt); }
         const groups = {}; // dm → { actual, trans, labourBaht, branches:Set }
         eodRows.forEach(r => {
           const info = BRANCH_DM_MAP[r.branch_code];
-          if (!info) return;
-          const dm = info.dm || "—";
+          // fallback: ใช้ district_manager จาก row โดยตรง (กรณี test data ที่สาขาไม่อยู่ใน BRANCH_DM_MAP)
+          const dm = (info && info.dm) || r.district_manager || "—";
           if (!groups[dm]) groups[dm] = { actual:0, trans:0, labourBaht:0, branches:new Set() };
           groups[dm].actual     += parseFloat(r.actual_sale) || 0;
           groups[dm].trans      += parseInt(r.total_trans)   || 0;
@@ -5917,7 +6062,7 @@ body { background: var(--bg); color: var(--txt); }
         //   slot = "สิ้นวัน"  → ต้องมี 16.00 ของวันเดียวกัน
         //   slot = "16.00"   → ต้องมีสิ้นวันของเมื่อวาน (ถ้าเมื่อวานไม่ใช่ขอบเขตข้อมูล)
         if (slot === "สิ้นวัน") {
-          sb.from("sales_data").select("id")
+          sb.from(_salesTbl()).select("id")
             .eq("branch_code", S.code)
             .eq("submit_date", date)
             .eq("submit_time_slot", "16.00")
@@ -5940,7 +6085,7 @@ body { background: var(--bg); color: var(--txt); }
                        String(y.getMonth()+1).padStart(2, "0") + "-" +
                        String(y.getDate()).padStart(2, "0");
           console.log("[order check 16.00] looking for สิ้นวัน of", ystr);
-          sb.from("sales_data").select("id")
+          sb.from(_salesTbl()).select("id")
             .eq("branch_code", S.code)
             .eq("submit_date", ystr)
             .eq("submit_time_slot", "สิ้นวัน")
@@ -5949,7 +6094,7 @@ body { background: var(--bg); color: var(--txt); }
               console.log("[order check 16.00] yesterday สิ้นวัน:", data, "error:", error);
               if (!data || !data.length) {
                 // เช็คว่าสาขามีข้อมูลย้อนหลังที่ผ่านมาบ้างไหม (กันบล็อกสาขาที่เพิ่งเริ่มใช้ระบบ)
-                sb.from("sales_data").select("id")
+                sb.from(_salesTbl()).select("id")
                   .eq("branch_code", S.code)
                   .lt("submit_date", date)
                   .limit(1)
@@ -6699,7 +6844,7 @@ body { background: var(--bg); color: var(--txt); }
 
           /* ─────── HISTORY ─────── */
           if (mode === "history") {
-            let q = sb.from("sales_data").select("*");
+            let q = sb.from(_salesTbl()).select("*");
             // branch_codes (array) takes precedence: null=ไม่กรอง / [c]=eq / [c1,c2,...]=in
             if (Array.isArray(params.branch_codes)) {
               if (params.branch_codes.length === 0) {
@@ -6719,10 +6864,12 @@ body { background: var(--bg); color: var(--txt); }
               q = q.gte("submit_date", since);
             }
             q = q.order("submit_date", { ascending: false })
-                 .order("submit_time_slot", { ascending: false });
+                 .order("submit_time_slot", { ascending: false })
+                 .range(0, 49999); // เผื่อข้อมูล test sandbox ที่มีหลายพันแถว (default 1000)
 
             const { data, error } = await q;
-            if (error) { cb({ ok: false, error: error.message }); return; }
+            if (error) { console.error("[history query]", error); cb({ ok: false, error: error.message }); return; }
+            console.log(`[history] table=${_salesTbl()} rows=${(data||[]).length} dates=${params.start_date}→${params.end_date}`);
             const rows = (data || []).map(r => ({ ...r, _row: r.id }));
             cb({ ok: true, rows });
             return;
@@ -6735,7 +6882,7 @@ body { background: var(--bg); color: var(--txt); }
 
             // เช็ค duplicate ก่อน
             const { data: existing } = await sb
-              .from("sales_data")
+              .from(_salesTbl())
               .select("submit_date, submit_time_slot, submitter_name")
               .eq("branch_code", payload.branch_code)
               .eq("submit_date", payload.submit_date)
@@ -6747,14 +6894,14 @@ body { background: var(--bg); color: var(--txt); }
               return;
             }
 
-            const { error } = await sb.from("sales_data").insert(payload);
+            const { error } = await sb.from(_salesTbl()).insert(payload);
             if (error) {
               console.error("[Supabase submit error]", error, "payload:", payload);
               cb({ ok: false, error: error.message, userMessage: "บันทึกไม่ได้: " + error.message });
               return;
             }
             // mirror → Google Sheets (fire-and-forget)
-            pushToSheet("submit_sales", payload);
+            _pushSalesToSheet( payload);
             cb({ ok: true });
             return;
           }
@@ -6766,7 +6913,7 @@ body { background: var(--bg); color: var(--txt); }
             const payload = _supaCleanPayload(params);
             // edit_count + last_edited_at อัพเดทอัตโนมัติด้วย trigger
             const { data, error } = await sb
-              .from("sales_data")
+              .from(_salesTbl())
               .update(payload)
               .eq("id", id)
               .select("edit_count")
@@ -6779,7 +6926,7 @@ body { background: var(--bg); color: var(--txt); }
             // ถ้ามีการเปลี่ยน plan_sale ที่รอบ 16.00 → sync ไปตาราง plan_sale ด้วย (ตารางคือ source of truth)
             if (params.submit_time_slot === "16.00" && payload.plan_sale > 0 && payload.submit_date) {
               const { error: planErr } = await sb
-                .from("plan_sale")
+                .from(_planTbl())
                 .upsert({
                   branch_code: payload.branch_code,
                   plan_date: payload.submit_date,
@@ -6789,7 +6936,7 @@ body { background: var(--bg); color: var(--txt); }
               if (planErr) console.warn("[plan_sale sync]", planErr);
             }
             // mirror → Google Sheets (upsert ใน sheet ตาม branch+date+slot)
-            pushToSheet("submit_sales", { ...payload, edit_count: (data && data.edit_count) || 1 });
+            _pushSalesToSheet( { ...payload, edit_count: (data && data.edit_count) || 1 });
             cb({ ok: true, edited: true, editCount: (data && data.edit_count) || 1 });
             return;
           }
@@ -6798,7 +6945,7 @@ body { background: var(--bg); color: var(--txt); }
           if (mode === "getPlan") {
             // raw=true → คืน rows มี branch_code (สำหรับ aggregate per BZM)
             const selectCols = params.raw ? "branch_code, plan_date, plan_amount" : "plan_date, plan_amount";
-            let q = sb.from("plan_sale").select(selectCols);
+            let q = sb.from(_planTbl()).select(selectCols);
             if (Array.isArray(params.branch_codes)) {
               if (params.branch_codes.length === 0) { cb({ ok: true, rows: [] }); return; }
               if (params.branch_codes.length === 1) q = q.eq("branch_code", params.branch_codes[0]);
@@ -6820,8 +6967,10 @@ body { background: var(--bg); color: var(--txt); }
               q = q.eq("plan_date", params.date);
             }
 
+            q = q.range(0, 49999); // เผื่อ test sandbox / admin ดูทุกสาขา
             const { data, error } = await q;
-            if (error) { cb({ ok: false, error: error.message }); return; }
+            if (error) { console.error("[getPlan query]", error); cb({ ok: false, error: error.message }); return; }
+            console.log(`[getPlan] table=${_planTbl()} rows=${(data||[]).length}`);
             // raw=true → คืนแถวเดิม (มี branch_code) สำหรับ aggregate ต่อสาขา
             if (params.raw) {
               cb({ ok: true, rows: data || [] });
@@ -6856,7 +7005,7 @@ body { background: var(--bg); color: var(--txt); }
               updated_at: new Date().toISOString()
             }));
             const { error } = await sb
-              .from("plan_sale")
+              .from(_planTbl())
               .upsert(upserts, { onConflict: "branch_code,plan_date" });
             if (error) { cb({ ok: false, error: error.message }); return; }
 
@@ -6866,7 +7015,7 @@ body { background: var(--bg); color: var(--txt); }
             entries.forEach(e => { planByDate[e.date] = parseFloat(e.plan_sale) || 0; });
             const dates = Object.keys(planByDate);
             const { data: existingRows } = await sb
-              .from("sales_data")
+              .from(_salesTbl())
               .select("id, submit_date, plan_sale")
               .eq("branch_code", params.branch_code)
               .in("submit_date", dates);
@@ -6875,7 +7024,7 @@ body { background: var(--bg); color: var(--txt); }
             if (existingRows && existingRows.length) {
               const updates = existingRows
                 .filter(r => (parseFloat(r.plan_sale) || 0) !== planByDate[r.submit_date])
-                .map(r => sb.from("sales_data")
+                .map(r => sb.from(_salesTbl())
                   .update({ plan_sale: planByDate[r.submit_date] })
                   .eq("id", r.id));
               if (updates.length) {
@@ -6885,8 +7034,8 @@ body { background: var(--bg); color: var(--txt); }
             }
 
             // mirror → Google Sheets
-            pushToSheet("save_plan", { branch_code: params.branch_code, entries: params.entries });
-            if (salesTouched) pushToSheet("submit_sales", { _plan_sync: true });
+            _pushPlanToSheet( { branch_code: params.branch_code, entries: params.entries });
+            if (salesTouched) _pushSalesToSheet( { _plan_sync: true });
             cb({ ok: true, saved: entries.length });
             return;
           }

@@ -5,3 +5,12 @@ cods.txt
 telegram-v2-patch.gs
 google-apps-script-v2-additions.gs
 index v1.5.1.html
+index v2.0.html
+
+# Node tooling (used only for one-off import script)
+node_modules/
+package-lock.json
+package.json
+
+# Local Excel test fixture (kept out of repo — heavy + private)
+*.xlsx
