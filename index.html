@@ -4966,7 +4966,7 @@ body { background: var(--bg); color: var(--txt); }
         const groups = {}; // dm → { actual, trans, labourBaht, branches:Set }
         eodRows.forEach(r => {
           const info = BRANCH_DM_MAP[r.branch_code];
-          // fallback: ใช้ district_manager จาก row โดยตรง (กรณี test data ที่สาขาไม่อยู่ใน BRANCH_DM_MAP)
+          // fallback: ใช้ district_manager จาก row โดยตรง (กรณีสาขาไม่อยู่ใน BRANCH_DM_MAP)
           const dm = (info && info.dm) || r.district_manager || "—";
           if (!groups[dm]) groups[dm] = { actual:0, trans:0, labourBaht:0, branches:new Set() };
           groups[dm].actual     += parseFloat(r.actual_sale) || 0;
@@ -6612,7 +6612,7 @@ body { background: var(--bg); color: var(--txt); }
             }
             q = q.order("submit_date", { ascending: false })
                  .order("submit_time_slot", { ascending: false })
-                 .range(0, 49999); // เผื่อข้อมูล test sandbox ที่มีหลายพันแถว (default 1000)
+                 .range(0, 49999); // เผื่อข้อมูลย้อนหลังที่มีหลายพันแถว (default 1000)
 
             const { data, error } = await q;
             if (error) { console.error("[history query]", error); cb({ ok: false, error: error.message }); return; }
@@ -6714,7 +6714,7 @@ body { background: var(--bg); color: var(--txt); }
               q = q.eq("plan_date", params.date);
             }
 
-            q = q.range(0, 49999); // เผื่อ test sandbox / admin ดูทุกสาขา
+            q = q.range(0, 49999); // เผื่อ admin ดูทุกสาขา (default 1000)
             const { data, error } = await q;
             if (error) { console.error("[getPlan query]", error); cb({ ok: false, error: error.message }); return; }
             console.log(`[getPlan] table=${"plan_sale"} rows=${(data||[]).length}`);
