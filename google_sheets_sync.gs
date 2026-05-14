@@ -58,12 +58,6 @@ function doPost(e) {
     else if (action === "save_plan") {
       syncTable("plan_sale", "Plan", PLAN_HEADERS);
     }
-    else if (action === "import_test") {
-      syncTable("sales_data_test", "Sales (Test)", SALES_HEADERS);
-    }
-    else if (action === "save_plan_test") {
-      syncTable("plan_sale_test", "Plan (Test)", PLAN_HEADERS);
-    }
     else {
       return _resp({ ok: false, error: "Unknown action: " + action });
     }
@@ -90,11 +84,9 @@ function _resp(obj) {
 // PULL — sync ทั้ง table ทุก 1 นาที (safety net)
 // ════════════════════════════════════════════
 function syncAll() {
-  syncTable("sales_data",      "Sales",        SALES_HEADERS);
-  syncTable("plan_sale",       "Plan",         PLAN_HEADERS);
-  syncTable("branches",        "Branches",     BRANCHES_HEADERS);
-  syncTable("sales_data_test", "Sales (Test)", SALES_HEADERS);
-  syncTable("plan_sale_test",  "Plan (Test)",  PLAN_HEADERS);
+  syncTable("sales_data", "Sales",    SALES_HEADERS);
+  syncTable("plan_sale",  "Plan",     PLAN_HEADERS);
+  syncTable("branches",   "Branches", BRANCHES_HEADERS);
 }
 
 function syncTable(tableName, sheetName, headers) {
