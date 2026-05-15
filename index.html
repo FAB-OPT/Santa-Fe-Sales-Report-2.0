@@ -4394,10 +4394,18 @@ body { background: var(--bg); color: var(--txt); }
         });
         const branches = Object.values(branchMap);
 
+        // นับ plan entries ล่วงหน้า (เพื่อแสดงใน confirm)
+        const planPreviewSet = new Set();
+        _adminImportRows.forEach(r => {
+          if ((parseFloat(r.plan_sale) || 0) > 0) planPreviewSet.add(r.branch_code + "|" + r.submit_date);
+        });
+
         showConfirm(
-          "📥", `นำเข้า ${total.toLocaleString()} แถว เข้า sales_data?`,
-          `จะ upsert ${branches.length} สาขา + ${total.toLocaleString()} แถวยอดขาย\n` +
-          `(แถวที่ branch+date+slot ซ้ำกับของเดิม → อัปเดตทับ)`,
+          "📥", `นำเข้า ${total.toLocaleString()} แถว?`,
+          `• ${branches.length.toLocaleString()} สาขา → branches\n` +
+          `• ${total.toLocaleString()} แถวยอดขาย → sales_data\n` +
+          `• ${planPreviewSet.size.toLocaleString()} แถว Plan → plan_sale (สำหรับหน้า Plan)\n\n` +
+          `(แถวที่ branch+date+slot ซ้ำกับของเดิม → อัปเดตทับ idempotent)`,
           async function() {
             const btn = document.getElementById("adminImportConfirmBtn");
             btn.disabled = true; btn.style.opacity = ".5"; btn.style.cursor = "not-allowed";
@@ -4431,13 +4439,46 @@ body { background: var(--bg); color: var(--txt); }
                 `${done.toLocaleString()} / ${total.toLocaleString()} (${pct}%)`;
             }
 
-            // Trigger sheet sync (re-fetch sales_data)
+            // 3. plan_sale — extract แถวที่มี plan > 0 (ใช้รอบ 16.00 เป็นหลัก)
+            //    ที่ไม่ใช่รอบ 16.00 ถ้าไม่เจอ 16.00 ของวันนั้น ก็เก็บมาด้วย
+            const planMap = {}; // "branch|date" → plan
+            _adminImportRows.forEach(r => {
+              const p = parseFloat(r.plan_sale) || 0;
+              if (p <= 0) return;
+              const key = r.branch_code + "|" + r.submit_date;
+              // ให้ priority รอบ 16.00 (เขียนทับ entry เดิมจากรอบสิ้นวัน)
+              if (r.submit_time_slot === "16.00" || planMap[key] === undefined) {
+                planMap[key] = p;
+              }
+            });
+            const planRows = Object.keys(planMap).map(k => {
+              const [bc, d] = k.split("|");
+              return { branch_code: bc, plan_date: d, plan_amount: planMap[k], updated_at: new Date().toISOString() };
+            });
+            if (planRows.length) {
+              for (let i = 0; i < planRows.length; i += BATCH) {
+                const chunk = planRows.slice(i, i + BATCH);
+                const { error: pErr } = await sb.from("plan_sale")
+                  .upsert(chunk, { onConflict: "branch_code,plan_date" });
+                if (pErr) {
+                  showAlert("⚠️", "อัปเดต plan_sale บางส่วนไม่สำเร็จ",
+                    "Sales import สำเร็จ แต่ Plan ไม่ครบ: " + pErr.message);
+                  break;
+                }
+              }
+            }
+
+            // Trigger sheet sync (re-fetch sales_data + plan)
             try { pushToSheet("submit_sales", { _import: true }); } catch (_) {}
+            try { pushToSheet("save_plan",    { _import: true }); } catch (_) {}
 
             // Refresh in-memory branch map
             try { await loadBranchesFromSupabase(); } catch (_) {}
 
-            showAlert("✅", "นำเข้าสำเร็จ", `Import ${done.toLocaleString()} แถว เข้า sales_data เรียบร้อย\nGoogle Sheet จะ sync ภายใน 1 นาที`);
+            showAlert("✅", "นำเข้าสำเร็จ",
+              `Import ${done.toLocaleString()} แถวเข้า sales_data\n` +
+              `+ ${planRows.length.toLocaleString()} แถวเข้า plan_sale (หน้า Plan)\n` +
+              `Google Sheet จะ sync ภายใน 1 นาที`);
             adminImportReset();
           },
           { btnText: "เริ่มนำเข้า" }

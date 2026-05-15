@@ -167,7 +167,33 @@ async function main() {
     done += chunk.length;
     process.stdout.write(`\r   ${done}/${mapped.length}`);
   }
-  console.log(`\n\n✅ เสร็จสิ้น — import ${done} แถว เข้า ${TABLE}`);
+  console.log(`\n   ✓ ${done} แถว เข้า ${TABLE}`);
+
+  // ── Upsert plan_sale (สำหรับหน้า Plan) ──
+  // priority: รอบ 16.00 → ใช้เป็น plan ของวันนั้น; ถ้าไม่มี ใช้รอบสิ้นวัน
+  const planMap = {};
+  mapped.forEach(r => {
+    const p = parseFloat(r.plan_sale) || 0;
+    if (p <= 0) return;
+    const key = r.branch_code + "|" + r.submit_date;
+    if (r.submit_time_slot === "16.00" || planMap[key] === undefined) planMap[key] = p;
+  });
+  const planRows = Object.keys(planMap).map(k => {
+    const [bc, d] = k.split("|");
+    return { branch_code: bc, plan_date: d, plan_amount: planMap[k], updated_at: new Date().toISOString() };
+  });
+  if (planRows.length) {
+    console.log(`\n📅 Upsert plan_sale (${planRows.length} rows)...`);
+    for (let i = 0; i < planRows.length; i += BATCH_SIZE) {
+      const chunk = planRows.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase.from("plan_sale")
+        .upsert(chunk, { onConflict: "branch_code,plan_date" });
+      if (error) { console.error(`❌ plan_sale error:`, error.message); break; }
+    }
+    console.log(`   ✓ ${planRows.length} plan rows`);
+  }
+
+  console.log(`\n✅ เสร็จสิ้น`);
   console.log(`📊 Google Sheet จะ sync ภายใน 1 นาที (หรือกด menu "Sync ตอนนี้" ใน Sheet เพื่อ sync ทันที)`);
 }
 
