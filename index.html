@@ -2799,11 +2799,14 @@ body { background: var(--bg); color: var(--txt); }
         <button class="desk-nav-btn admin-only-nav" id="dnAdminZones" onclick="showAdmin('zones')" style="display:none">
           <span class="desk-nav-ico">🗺️</span>โซน BZM
         </button>
-        <button class="desk-nav-btn admin-only-nav" id="dnAdminImport" onclick="showAdmin('import')" style="display:none">
-          <span class="desk-nav-ico">📥</span>นำเข้าข้อมูล
-        </button>
       </nav>
       <div class="desk-nav-sep"></div>
+
+      <!-- Import data (admin only, ใต้ admin section บนปุ่มทดสอบ) -->
+      <button class="desk-nav-btn admin-only-nav" id="dnAdminImport" onclick="showAdmin('import')" style="display:none;margin:0 10px 8px">
+        <span class="desk-nav-ico">📥</span>
+        <span>นำเข้าข้อมูล</span>
+      </button>
 
       <!-- Test mode toggle (admin only, above logout) -->
       <button class="desk-nav-btn admin-only-nav" id="testModeBtn" onclick="toggleTestModeAdmin()" style="display:none;margin:0 10px 8px">
@@ -3477,13 +3480,14 @@ body { background: var(--bg); color: var(--txt); }
         <div class="admin-tab-pane" data-tab="import" style="display:none">
           <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.6">
             <strong>📥 นำเข้าข้อมูลยอดขายเดิมจากไฟล์ Excel</strong><br>
-            • ไฟล์ต้องอยู่ในรูปแบบเดียวกับเทมเพลต (ชีตแรก: row 1 header, row 2 = ชื่อคอลัมน์)<br>
-            • คอลัมน์ที่ต้องมี: <code>สาขา</code>, <code>วันที่</code>, <code>ช่วงเวลา (16/สิ้นวัน)</code>, <code>Plan Sale</code>, <code>Actual Sale</code>, ฯลฯ<br>
-            • การ Import จะใช้ <strong>upsert</strong> (ถ้ามี branch+date+slot ซ้ำ → อัปเดตทับ)<br>
-            • แถวที่ slot ว่างหรือสาขาไม่มีจะถูก<strong>ข้าม</strong>
+            • <strong>โครงสร้างไฟล์:</strong> ชีตแรก, row 1 = ป้าย section, <strong>row 2 = หัวคอลัมน์</strong>, row 3+ = ข้อมูล<br>
+            • แนะนำให้กด <strong>"📋 ดาวน์โหลดเทมเพลต"</strong> ก่อน เพื่อใช้รูปแบบที่ถูกต้อง<br>
+            • Import จะ <strong>upsert</strong> (ถ้ามี branch+date+slot ซ้ำ → อัปเดตทับ idempotent)<br>
+            • แถวที่ slot ว่าง / สาขาว่าง / วันที่ว่าง จะถูก<strong>ข้าม</strong>
           </div>
 
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+            <button class="btn btn-outline" onclick="adminImportDownloadTemplate()" style="font-size:13px">📋 ดาวน์โหลดเทมเพลต</button>
             <input type="file" id="adminImportFile" accept=".xlsx,.xls" onchange="adminImportPreview()"
                    style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px">
             <button class="btn btn-brand" id="adminImportConfirmBtn" onclick="adminImportConfirm()" disabled
@@ -4265,6 +4269,68 @@ body { background: var(--bg); color: var(--txt); }
           labour_hour: _impNum(r[26]),
           labour_baht: _impNum(r[27])
         };
+      }
+
+      function adminImportDownloadTemplate() {
+        // สร้าง template Excel แบบ 2-row header เหมือนไฟล์ที่ระบบรับ
+        // row 1 = section label (sale / Trans), row 2 = ชื่อคอลัมน์, row 3 = ตัวอย่าง
+        const sectionRow = [
+          null, null, null, null,
+          "sale", null, null, null, null, null, null, null, null,
+          "Trans", null, null, null, null, null, null, null, null, null, null,
+          null, null, null, null, null, null, null, null, null
+        ];
+        const headerRow = [
+          "ผู้จัดการเขตที่รับผิดชอบ", "สาขา", "วันที่ส่งข้อมูล", "ช่วงเวลาที่ส่งข้อมูล",
+          "Plan Sale", "Actual Sale", "% sale",
+          "Dine In", "Take away", "Grab", "Line Man", "Shopee Food", "Total Delivery",
+          "Total", "Dine In", "Take away", "Grab", "Line Man", "Shopee Food", "Total Delivery",
+          "Ticket Avg.", "Ticket Dine In", "Ticket Take away", "Ticket Delivery",
+          "Customer", "Customer Avg.", "Labour(hour)", "Labour(Baht)", "%Col",
+          "Productivity Trans", "Productivity Sale", "คนลงข้อมูล", "Brand"
+        ];
+        // ตัวอย่าง 2 แถว — รอบ 16.00 + สิ้นวัน ของวันเดียวกัน
+        const todayISO = todayStr();
+        // แปลง ISO → Excel serial (Date.UTC(1899,11,30) base)
+        const baseMs = Date.UTC(1899, 11, 30);
+        const dayMs  = 86400000;
+        const serial = Math.round((new Date(todayISO + "T00:00:00Z").getTime() - baseMs) / dayMs);
+        const ex1 = [
+          "นพชัย จันทร์รุ่ง (พี่นพ)", "5001 แฟชั่น ไอส์แลนด์", serial, 16,
+          50000, 25000, 0.5,
+          0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, null,
+          null, null, null, null,
+          0, null, 0, 0, null, null, null,
+          "ชื่อผู้กรอก", "Santa fe"
+        ];
+        const ex2 = [
+          "นพชัย จันทร์รุ่ง (พี่นพ)", "5001 แฟชั่น ไอส์แลนด์", serial, "สิ้นวัน",
+          50000, 48500, 0.97,
+          20000, 10000, 5000, 8500, 5000, 18500,
+          250, 100, 50, 30, 40, 30, 200,
+          194, 200, 200, 185,
+          240, 200, 50, 5000, 0.10, 5, 970,
+          "ชื่อผู้กรอก", "Santa fe"
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet([sectionRow, headerRow, ex1, ex2]);
+        // กำหนดความกว้างคอลัมน์ให้อ่านง่าย
+        ws["!cols"] = headerRow.map((h, i) => {
+          if (i === 1) return { wch: 28 }; // สาขา
+          if (i === 0) return { wch: 22 }; // BZM
+          if (i === 31) return { wch: 16 }; // คนลงข้อมูล
+          return { wch: 13 };
+        });
+        // formatวันที่
+        const dateCellAddr = "C3"; XLSX.utils.encode_cell({ c: 2, r: 2 });
+        if (ws[dateCellAddr]) { ws[dateCellAddr].z = "yyyy-mm-dd"; ws[dateCellAddr].t = "n"; }
+        const dateCellAddr2 = "C4";
+        if (ws[dateCellAddr2]) { ws[dateCellAddr2].z = "yyyy-mm-dd"; ws[dateCellAddr2].t = "n"; }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "ใส่สูตร");
+        XLSX.writeFile(wb, "santafe-template-import.xlsx");
       }
 
       function adminImportReset() {
