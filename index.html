@@ -2100,6 +2100,7 @@ body { background: var(--bg); color: var(--txt); }
   position: relative;
 }
 .login-app-hdr {
+  display: flex !important;
   padding: 0 0 22px !important;
   border-bottom: none !important;
   gap: 14px !important;
@@ -2117,8 +2118,13 @@ body { background: var(--bg); color: var(--txt); }
   margin-top: 4px;
 }
 .login-app-logo  {
-  border-radius: 14px !important; box-shadow: 0 6px 18px -6px rgba(242,108,28,.30) !important;
-  width: 78px !important; height: 78px !important; object-fit: cover;
+  display: block !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 18px -6px rgba(242,108,28,.30) !important;
+  width: 78px !important; height: 78px !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+  margin: 0 auto !important;
 }
 /* Tabs: pill */
 .login-tabs {
