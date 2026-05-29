@@ -2861,6 +2861,7 @@ body { background: var(--bg); color: var(--txt); }
 .dash2-kpi-chg.down { color: var(--red); }
 .dash2-kpi-chg.neutral { color: var(--txt2); }
 .dash2-kpi-vs { color: var(--txt2); font-weight: 500; margin-left: 5px; font-size: 11.5px; }
+.dash2-kpi-hint { font-size: 11.5px; color: var(--txt2); margin-top: 6px; line-height: 1.35; font-weight: 500; }
 
 .dash2-row1, .dash2-row2 {
   display: grid; gap: 16px; margin-bottom: 16px;
@@ -5230,6 +5231,30 @@ body { background: var(--bg); color: var(--txt); }
         const labPctCur   = actCur   > 0 ? (labCur  / actCur)   * 100 : null;
         const labPctPrev  = actPrev  > 0 ? (labPrev / actPrev)  * 100 : null;
 
+        // นับวันที่มีข้อมูลจริง — ใช้กับ "เฉลี่ย/วัน"
+        const submittedDates = new Set();
+        eodCur.forEach(r => { if (r.submit_date) submittedDates.add(r.submit_date); });
+        const daysSub   = submittedDates.size;
+        const trnPerDay = daysSub > 0 ? Math.round(trnCur / daysSub) : null;
+
+        // คำอธิบายใต้แต่ละการ์ด — บอกว่าตัวเลขมาจากไหน
+        const hintActual = (actCur <= 0)
+          ? 'ยังไม่มีข้อมูลในช่วงนี้'
+          : (pctPlanCur !== null
+              ? `ทำได้ ${pctPlanCur.toFixed(0)}% ของเป้า ฿${fmt(Math.round(planCur))}`
+              : 'ยังไม่มีเป้าในช่วงนี้');
+        const hintTrans = (trnCur <= 0)
+          ? 'ยังไม่มีข้อมูลในช่วงนี้'
+          : (trnPerDay !== null
+              ? `เฉลี่ย ${fmt(trnPerDay)} บิล/วัน (${daysSub} วันที่มีข้อมูล)`
+              : `รวม ${fmt(trnCur)} บิล`);
+        const hintPctPlan = (planCur <= 0)
+          ? 'ยังไม่มีเป้าในช่วงนี้'
+          : `ยอดจริง ฿${fmt(Math.round(actCur))} / เป้า ฿${fmt(Math.round(planCur))}`;
+        const hintLabPct = (actCur <= 0)
+          ? 'ยังไม่มีข้อมูลในช่วงนี้'
+          : `ค่าแรง ฿${fmt(Math.round(labCur))} / ยอดขาย ฿${fmt(Math.round(actCur))}`;
+
         // คำกำกับว่าเทียบกับช่วงไหน — ตาม period ที่ผู้ใช้เลือก
         const vsLabel = (typeof _dashPeriod === 'number')
           ? `เทียบ ${_dashPeriod} วันก่อนหน้า`
@@ -5255,21 +5280,25 @@ body { background: var(--bg); color: var(--txt); }
           <div class="dash2-kpi">
             <div class="dash2-kpi-lbl">ยอดขายจริง</div>
             <div class="dash2-kpi-val">฿${fmt(actCur)}</div>
+            <div class="dash2-kpi-hint">${hintActual}</div>
             ${chgBadge(actCur, actPrev)}
           </div>
           <div class="dash2-kpi">
             <div class="dash2-kpi-lbl">จำนวนบิล</div>
             <div class="dash2-kpi-val">${fmt(trnCur)}</div>
+            <div class="dash2-kpi-hint">${hintTrans}</div>
             ${chgBadge(trnCur, trnPrev)}
           </div>
           <div class="dash2-kpi">
             <div class="dash2-kpi-lbl">% ของเป้า</div>
             <div class="dash2-kpi-val">${pctPlanCur !== null ? pctPlanCur.toFixed(1) + '%' : '-'}</div>
+            <div class="dash2-kpi-hint">${hintPctPlan}</div>
             ${chgBadge(pctPlanCur, pctPlanPrev)}
           </div>
           <div class="dash2-kpi">
             <div class="dash2-kpi-lbl">ค่าแรง (%)</div>
             <div class="dash2-kpi-val">${labPctCur !== null ? labPctCur.toFixed(1) + '%' : '-'}</div>
+            <div class="dash2-kpi-hint">${hintLabPct}</div>
             ${chgBadge(labPctCur, labPctPrev, { lowerIsBetter: true })}
           </div>`;
       }
