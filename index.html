@@ -2860,6 +2860,7 @@ body { background: var(--bg); color: var(--txt); }
 .dash2-kpi-chg.up   { color: var(--green); }
 .dash2-kpi-chg.down { color: var(--red); }
 .dash2-kpi-chg.neutral { color: var(--txt2); }
+.dash2-kpi-vs { color: var(--txt2); font-weight: 500; margin-left: 5px; font-size: 11.5px; }
 
 .dash2-row1, .dash2-row2 {
   display: grid; gap: 16px; margin-bottom: 16px;
@@ -5229,18 +5230,23 @@ body { background: var(--bg); color: var(--txt); }
         const labPctCur   = actCur   > 0 ? (labCur  / actCur)   * 100 : null;
         const labPctPrev  = actPrev  > 0 ? (labPrev / actPrev)  * 100 : null;
 
+        // คำกำกับว่าเทียบกับช่วงไหน — ตาม period ที่ผู้ใช้เลือก
+        const vsLabel = (typeof _dashPeriod === 'number')
+          ? `เทียบ ${_dashPeriod} วันก่อนหน้า`
+          : 'เทียบช่วงก่อนหน้า';
+
         function chgBadge(cur, prev, opts) {
           opts = opts || {};
           if (cur === null || prev === null || prev === 0) {
-            return '<div class="dash2-kpi-chg neutral">—</div>';
+            return `<div class="dash2-kpi-chg neutral">— <span class="dash2-kpi-vs">${vsLabel}</span></div>`;
           }
           const pct = ((cur - prev) / Math.abs(prev)) * 100;
           const arrow = pct >= 0 ? '↗' : '↘';
-          // For labour %, going DOWN is good → flip semantics
+          // ค่าแรง: ลดลง = ดี → กลับด้านสีเขียว/แดง
           const isGood = opts.lowerIsBetter ? (pct <= 0) : (pct >= 0);
           const cls = Math.abs(pct) < 0.05 ? 'neutral' : (isGood ? 'up' : 'down');
           const sign = pct >= 0 ? '+' : '';
-          return `<div class="dash2-kpi-chg ${cls}">${arrow} ${sign}${pct.toFixed(1)}%</div>`;
+          return `<div class="dash2-kpi-chg ${cls}">${arrow} ${sign}${pct.toFixed(1)}% <span class="dash2-kpi-vs">${vsLabel}</span></div>`;
         }
 
         const grid = document.getElementById('dashStatsGrid');
