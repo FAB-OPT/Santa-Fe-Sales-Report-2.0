@@ -4400,8 +4400,8 @@ body { background: var(--bg); color: var(--txt); }
           const mDrw = document.getElementById("mobDrawer"); if (mDrw) mDrw.classList.remove("open");
           const mDbg = document.getElementById("mobDrawerBg"); if (mDbg) mDbg.classList.remove("open");
           document.body.style.overflow = "";
-          // SSO: กลับไป Hub เพื่อ login ใหม่
-          ssoBackToHub();
+          // SSO logout: กลับ Hub menu โดยไม่ใส่ ?return= (ป้องกัน login แล้วเด่งกลับมา Sales Report)
+          window.location.href = HUB_URL + '?logout=1';
         } catch (e) {
           console.error("[doLogout error]", e);
           // กรณีฉุกเฉิน — กลับ Hub ตรงๆ
