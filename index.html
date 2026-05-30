@@ -3087,77 +3087,30 @@ body { background: var(--bg); color: var(--txt); }
     </aside>
 
     <!-- ════════════════════════════════════════
-     SCREEN: LOGIN
+     SCREEN: SSO BOOTSTRAP / DENIED
+     (หน้า login เดิมถูกถอดออก — auth มาจาก FAB Hub ผ่าน localStorage.fab_session)
 ════════════════════════════════════════ -->
     <div id="sLogin" class="screen active">
       <div class="login-bg">
-        <div class="login-card">
-
-          <!-- App-style header (centered) -->
-          <div class="login-app-hdr">
+        <div class="login-card" style="text-align:center;max-width:380px">
+          <div class="login-app-hdr" style="justify-content:center">
             <img src="536282464_1192954076197758_7560981869126705598_n.jpg" alt="Santa Fe" class="login-app-logo">
             <div>
               <div class="login-app-name">Santa Fe Sales Report</div>
               <div class="login-app-ver">ระบบส่งยอดขาย</div>
             </div>
           </div>
-
-          <!-- Tab switcher -->
-          <div class="login-tabs">
-            <button class="login-tab active" id="tabBranch" onclick="switchLoginTab('branch')">สาขา</button>
-            <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">Admin</button>
+          <div id="ssoStatus" style="margin-top:18px;padding:18px 8px">
+            <div class="spinner" style="margin:0 auto 14px"></div>
+            <div style="font-size:14px;color:#475569">กำลังตรวจสอบสิทธิ์...</div>
           </div>
-
-          <!-- Body -->
-          <div class="login-body">
-
-            <!-- Branch panel -->
-            <div class="login-branch-panel" id="branchPanel">
-              <div class="login-otp-label">กรอกรหัสสาขา 4 หลัก</div>
-              <div class="login-otp" id="loginOtp">
-                <input class="login-otp-box" id="lc0" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onOtpInput(0,this)" onkeydown="onOtpKey(0,this,event)" onpaste="onOtpPaste(event)">
-                <input class="login-otp-box" id="lc1" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onOtpInput(1,this)" onkeydown="onOtpKey(1,this,event)">
-                <input class="login-otp-box" id="lc2" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onOtpInput(2,this)" onkeydown="onOtpKey(2,this,event)">
-                <input class="login-otp-box" id="lc3" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onOtpInput(3,this)" onkeydown="onOtpKey(3,this,event)">
-              </div>
-
-            </div>
-
-            <!-- Admin panel (6-digit OTP) -->
-            <div class="login-admin-panel" id="adminPanel">
-              <div class="login-otp-label">กรอกรหัส Admin 6 หลัก</div>
-              <div class="login-otp" id="adminOtp">
-                <input class="login-otp-box" id="ac0" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(0,this)" onkeydown="onAdminOtpKey(0,this,event)"
-                  onpaste="onAdminOtpPaste(event)">
-                <input class="login-otp-box" id="ac1" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(1,this)" onkeydown="onAdminOtpKey(1,this,event)">
-                <input class="login-otp-box" id="ac2" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(2,this)" onkeydown="onAdminOtpKey(2,this,event)">
-                <input class="login-otp-box" id="ac3" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(3,this)" onkeydown="onAdminOtpKey(3,this,event)">
-                <input class="login-otp-box" id="ac4" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(4,this)" onkeydown="onAdminOtpKey(4,this,event)">
-                <input class="login-otp-box" id="ac5" type="tel" maxlength="1" inputmode="numeric" autocomplete="off"
-                  oninput="onAdminOtpInput(5,this)" onkeydown="onAdminOtpKey(5,this,event)">
-              </div>
-            </div>
-
-          </div><!-- /login-body -->
-
-          <!-- Submit button (always visible at bottom) -->
-          <div class="login-submit-wrap">
-            <button class="btn-login-submit" id="loginBtn" onclick="doLogin()" disabled>
-              เข้าสู่ระบบ
-            </button>
+          <div id="ssoDenied" style="display:none;margin-top:18px;padding:18px 8px">
+            <div style="font-size:40px;margin-bottom:8px">🚫</div>
+            <div style="font-size:15px;font-weight:700;color:#dc2626;margin-bottom:6px" id="ssoDeniedTitle">ไม่มีสิทธิ์เข้าใช้งาน</div>
+            <div style="font-size:13px;color:#64748b;line-height:1.55;margin-bottom:16px" id="ssoDeniedMsg">บัญชีนี้ไม่ได้อยู่ในกลุ่ม Santa Fe</div>
+            <button class="btn btn-brand" onclick="ssoBackToHub()" style="width:100%;padding:12px;font-size:14px">กลับไปหน้า Hub</button>
           </div>
-
           <div class="login-footer">© 2026 Santa Fe · Sales Report v2.0</div>
-
         </div>
       </div>
     </div>
@@ -3980,6 +3933,84 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       /* ════════════════════════════════════════════
+         FAB HUB SSO  —  shared session in localStorage
+         (ทั้ง Hub และ Santa Fe ต้องอยู่ same origin)
+      ════════════════════════════════════════════ */
+      const HUB_URL            = '/fab-operations-hub/';   // ↞ แก้ path/host ตาม deployment จริง
+      const FAB_SESSION_KEY    = 'fab_session';
+      const FAB_SESSION_TTL_MS = 8 * 60 * 60 * 1000;        // 8 ชั่วโมง — ตรงกับ Hub
+      const SANTA_FE_BRAND     = 'santafe';
+
+      function loadFabSession() {
+        try {
+          const raw = localStorage.getItem(FAB_SESSION_KEY);
+          if (!raw) return null;
+          const s = JSON.parse(raw);
+          if (!s || !s.loggedInAt) return null;
+          const age = Date.now() - new Date(s.loggedInAt).getTime();
+          if (isNaN(age) || age > FAB_SESSION_TTL_MS) {
+            localStorage.removeItem(FAB_SESSION_KEY);
+            return null;
+          }
+          return s;
+        } catch (e) { return null; }
+      }
+      function clearFabSession() {
+        try { localStorage.removeItem(FAB_SESSION_KEY); } catch (e) {}
+      }
+      function ssoBackToHub() {
+        const here = window.location.pathname + window.location.search + window.location.hash;
+        window.location.href = HUB_URL + '?return=' + encodeURIComponent(here);
+      }
+      // ตรวจสอบสิทธิ์ brand: santafe ทุก role + admin/coo ที่มี crossBrand=true เข้าได้
+      function _isBrandAllowed(s) {
+        if (!s) return false;
+        if (s.brand === SANTA_FE_BRAND) return true;
+        if (s.crossBrand && (s.role === 'admin' || s.role === 'coo')) return true;
+        return false;
+      }
+      // map Hub session → Santa Fe internal S object
+      function _stateFromFabSession(s) {
+        if (!s) return null;
+        const code  = String(s.code || '');
+        const role  = s.role;
+        const cross = !!s.crossBrand;
+
+        // admin / coo+cross  →  full admin (S.code='ADMIN')
+        if (role === 'admin' || (role === 'coo' && cross)) {
+          return { code: 'ADMIN', branch: s.name || 'ADMIN', dm: '', role: 'admin' };
+        }
+        // coo (ไม่ cross) → ดูทุกสาขาเหมือน VP
+        if (role === 'coo') {
+          return { code: '_COO_' + code, branch: s.name || '', dm: '', role: 'vp' };
+        }
+        if (role === 'vp') {
+          return { code: '_VP_' + code, branch: s.name || '', dm: '', role: 'vp' };
+        }
+        if (role === 'bzm') {
+          // Santa Fe ใช้ dm = "ชื่อเต็ม (ชื่อเล่น)" — Hub session แยก name/nick
+          const dm = s.nick ? `${s.name} (${s.nick})` : (s.name || '');
+          return { code: '_BZM_' + code, branch: s.name || '', dm: dm, role: 'bzm' };
+        }
+        if (role === 'franchise' || role === 'branch') {
+          const bcode = String(s.branchCode || code);
+          const bname = s.branchName || s.name || '';
+          const info  = (typeof BRANCH_DM_MAP !== 'undefined') ? BRANCH_DM_MAP[bcode] : null;
+          const dm    = (info && info.dm) || (s.bzm || '');
+          return { code: bcode, branch: bname || (info ? info.branch : ''), dm: dm, role: 'branch' };
+        }
+        return null;
+      }
+      function _showSsoDenied(title, msg) {
+        const ok = document.getElementById('ssoStatus');
+        const dn = document.getElementById('ssoDenied');
+        if (ok) ok.style.display = 'none';
+        if (dn) dn.style.display = '';
+        if (title) document.getElementById('ssoDeniedTitle').textContent = title;
+        if (msg)   document.getElementById('ssoDeniedMsg').textContent   = msg;
+      }
+
+      /* ════════════════════════════════════════════
          STATE
       ════════════════════════════════════════════ */
       let S = { code: "", branch: "", dm: "", role: "" };
@@ -3990,23 +4021,44 @@ body { background: var(--bg); color: var(--txt); }
       let _planFetchCbs  = {}; // callback queue: "branch|date" → [fn,...] (ป้องกัน fetch ซ้ำ)
 
       /* ════════════════════════════════════════════
-         INIT
+         INIT  —  SSO bootstrap (อ่าน session จาก Hub)
       ════════════════════════════════════════════ */
       (function init() {
-        const savedCode = localStorage.getItem(LS_CODE);
-        if (savedCode) {
-          if (SPECIAL_USERS[savedCode]) {
-            S = _stateFromSpecialUser(savedCode, SPECIAL_USERS[savedCode]);
-            enterApp();
-          } else if (BRANCH_DM_MAP[savedCode]) {
-            const info = BRANCH_DM_MAP[savedCode];
-            S = { code: savedCode, branch: info.branch, dm: info.dm, role: "branch" };
-            enterApp();
-          }
+        // default form values (ไม่เกี่ยว auth)
+        const submitDate = document.getElementById("submit_date");
+        if (submitDate) submitDate.value = todayStr();
+
+        const fab = loadFabSession();
+
+        // ไม่มี session → redirect ไป Hub พร้อม return URL
+        if (!fab) {
+          ssoBackToHub();
+          return;
         }
-        document.getElementById("submit_date").value = todayStr();
-        const savedName = localStorage.getItem(LS_NAME);
-        if (savedName) document.getElementById("submitter_name").value = savedName;
+
+        // มี session แต่ brand ไม่ใช่ santafe (และไม่ใช่ admin/coo cross-brand) → ปฏิเสธ
+        if (!_isBrandAllowed(fab)) {
+          const brandName = fab.brand === 'jaedaeng' ? 'เจ๊แดง' : (fab.brand || 'ไม่ระบุ');
+          _showSsoDenied('ไม่มีสิทธิ์เข้า Santa Fe',
+            `บัญชี ${fab.nick || fab.name || ''} อยู่ใน brand "${brandName}" — กรุณาเลือกระบบที่ตรงกับ brand`);
+          return;
+        }
+
+        // map → S และเข้าแอป
+        const newS = _stateFromFabSession(fab);
+        if (!newS) {
+          _showSsoDenied('Session ไม่ถูกต้อง', 'ไม่สามารถระบุสิทธิ์จาก session ได้ กรุณาล็อกอินใหม่');
+          return;
+        }
+        S = newS;
+
+        // pre-fill ชื่อผู้ส่งจาก Hub session (สำหรับ branch users)
+        const subInput = document.getElementById("submitter_name");
+        if (subInput && S.role === "branch" && !subInput.value) {
+          subInput.value = fab.nick || fab.name || '';
+        }
+
+        enterApp();
       })();
 
       /* ════════════════════════════════════════════
@@ -4138,13 +4190,10 @@ body { background: var(--bg); color: var(--txt); }
 
       function doLogout() {
         try {
-          localStorage.removeItem(LS_CODE);
+          // SSO: ล้าง shared session → Hub และแอปอื่นต้อง login ใหม่
+          clearFabSession();
+          try { localStorage.removeItem(LS_CODE); } catch (e) {}
           S = { code: "", branch: "", dm: "", role: "" };
-          if (_branchOtp && _branchOtp.fill) _branchOtp.fill("");
-          if (_adminOtp  && _adminOtp.fill)  _adminOtp.fill("");
-          [0, 1, 2, 3].forEach(i => { const e = document.getElementById("lc" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
-          [0, 1, 2, 3, 4, 5].forEach(i => { const e = document.getElementById("ac" + i); if (e) { e.value = ""; e.classList.remove("filled"); } });
-          const lb = document.getElementById("loginBtn"); if (lb) lb.disabled = true;
           const ah = document.getElementById("appHdr"); if (ah) ah.style.display = "none";
           const hl = document.getElementById("hdrLogoutBtn"); if (hl) hl.style.display = "none";
           const ds = document.getElementById("deskSidebar"); if (ds) ds.classList.add("hidden");
@@ -4163,11 +4212,12 @@ body { background: var(--bg); color: var(--txt); }
           const mDrw = document.getElementById("mobDrawer"); if (mDrw) mDrw.classList.remove("open");
           const mDbg = document.getElementById("mobDrawerBg"); if (mDbg) mDbg.classList.remove("open");
           document.body.style.overflow = "";
-          showScreen("sLogin");
+          // SSO: กลับไป Hub เพื่อ login ใหม่
+          ssoBackToHub();
         } catch (e) {
           console.error("[doLogout error]", e);
-          // กรณีฉุกเฉิน — reload หน้า
-          location.reload();
+          // กรณีฉุกเฉิน — กลับ Hub ตรงๆ
+          window.location.href = HUB_URL;
         }
       }
 
