@@ -16,39 +16,79 @@
     <!-- SheetJS — Excel export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-      /* ── TOKENS ─────────────────────────────── */
+      /* ── TOKENS — Dark Mode Premium ────────── */
       :root {
-        --brand: #f26c1c;
-        --brand-d: #d45a10;
-        --brand-l: #fff3eb;
-        --brand-grad: linear-gradient(135deg, #f26c1c 0%, #f88c3a 50%, #fab07a 100%);
-        --surface: #ffffff;
-        --surface-2: #fafbfc;
-        --bg: #f4f6f8;
-        --bg-2: #eef1f5;
-        --txt: #1c2232;
-        --txt2: #5a6478;
-        --txt3: #94a3b8;
-        --bd: rgba(28, 34, 50, .10);
-        --bd-2: rgba(28, 34, 50, .06);
-        --green: #15803d;
-        --green-l: #dcfce7;
-        --red: #dc2626;
-        --red-l: #fee2e2;
-        --blue: #1d4ed8;
-        --blue-l: #dbeafe;
-        --amber: #92400e;
-        --amber-l: #fef3c7;
-        --shadow-sm: 0 1px 2px rgba(15,23,42,.05);
-        --shadow: 0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.05);
-        --shadow-md: 0 4px 12px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.06);
-        --shadow-lg: 0 8px 24px rgba(15,23,42,.10), 0 16px 40px rgba(15,23,42,.08);
-        --shadow-brand: 0 6px 20px -6px rgba(242,108,28,.35);
+        --brand: #ff8c42;
+        --brand-d: #f26c1c;
+        --brand-l: rgba(255, 140, 66, 0.12);
+        --brand-glow: 0 0 32px rgba(255, 140, 66, .35);
+        --brand-grad: linear-gradient(135deg, #ff8c42 0%, #ff6b1a 100%);
+        --accent: #6dd5fa;
+        --accent-glow: 0 0 24px rgba(109, 213, 250, .25);
+        --bg: #0a0e1a;
+        --bg-2: #0f1424;
+        --bg-3: #161b2e;
+        --surface: rgba(255, 255, 255, 0.04);
+        --surface-2: rgba(255, 255, 255, 0.06);
+        --surface-elev: rgba(255, 255, 255, 0.08);
+        --txt: #f4f6fa;
+        --txt2: #a0a8b8;
+        --txt3: #6b7280;
+        --bd: rgba(255, 255, 255, 0.08);
+        --bd-2: rgba(255, 255, 255, 0.05);
+        --bd-strong: rgba(255, 255, 255, 0.14);
+        --green: #34d399;
+        --green-l: rgba(52, 211, 153, .12);
+        --red: #f87171;
+        --red-l: rgba(248, 113, 113, .12);
+        --blue: #60a5fa;
+        --blue-l: rgba(96, 165, 250, .12);
+        --amber: #fbbf24;
+        --amber-l: rgba(251, 191, 36, .12);
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+        --shadow: 0 4px 12px rgba(0, 0, 0, .35), 0 1px 3px rgba(0, 0, 0, .25);
+        --shadow-md: 0 8px 24px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+        --shadow-lg: 0 12px 40px rgba(0, 0, 0, .55), 0 4px 12px rgba(0, 0, 0, .35);
+        --shadow-brand: 0 8px 28px -6px rgba(255, 140, 66, .45);
         --radius-sm: 8px;
         --radius: 14px;
-        --radius-lg: 18px;
+        --radius-lg: 20px;
         --hdr-h: 56px;
         --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* ── DARK MODE OVERRIDES (hardcoded whites → glass) ── */
+      .dash-today-card,
+      .dash-stat,
+      .dash-card-wrap,
+      .hist-card,
+      .hist-table-wrap,
+      .plan-grid,
+      .plan-sum-card,
+      .dash2-quick-row,
+      .dash-date-nav,
+      .login-card {
+        background: var(--surface) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-color: var(--bd) !important;
+      }
+      /* Table rows on dark */
+      tbody tr:nth-child(even) { background: rgba(255,255,255,.025) !important; }
+      tbody tr:hover { background: var(--brand-l) !important; }
+      th { background: rgba(255,255,255,.04) !important; color: var(--txt2) !important; border-bottom-color: var(--bd) !important; }
+      td { color: var(--txt) !important; border-bottom-color: var(--bd-2) !important; }
+      /* Inputs and selects everywhere */
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="month"],
+      input[type="email"],
+      input[type="password"],
+      input[type="tel"],
+      select,
+      textarea {
+        color-scheme: dark;
       }
 
       /* ── RESET ───────────────────────────────── */
@@ -71,6 +111,11 @@
         color: var(--txt);
         min-height: 100vh;
         -webkit-font-smoothing: antialiased;
+        background-image:
+          radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255, 140, 66, 0.10) 0%, transparent 50%),
+          radial-gradient(ellipse 60% 50% at 80% 100%, rgba(109, 213, 250, 0.08) 0%, transparent 50%),
+          radial-gradient(ellipse 50% 30% at 100% 0%, rgba(255, 140, 66, 0.05) 0%, transparent 50%);
+        background-attachment: fixed;
       }
 
       /* ── SCREEN ROUTER ───────────────────────── */
@@ -89,16 +134,16 @@
         position: sticky;
         top: 0;
         z-index: 100;
-        background: rgba(255,255,255,.92);
-        backdrop-filter: saturate(180%) blur(14px);
-        -webkit-backdrop-filter: saturate(180%) blur(14px);
+        background: rgba(10, 14, 26, .72);
+        backdrop-filter: saturate(180%) blur(20px);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
         border-bottom: 1px solid var(--bd);
         height: var(--hdr-h);
         display: flex;
         align-items: center;
         padding: 0 16px;
         gap: 12px;
-        box-shadow: 0 1px 0 rgba(15,23,42,.04), 0 4px 12px -8px rgba(15,23,42,.08);
+        box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 8px 24px -12px rgba(0,0,0,.6);
       }
       /* ขีดเส้น accent สีแบรนด์บางๆใต้ header */
       .hdr::after {
@@ -613,14 +658,23 @@
         font-family: inherit;
         outline: none;
         color: var(--txt);
-        background: #fff;
+        background: var(--surface-2);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         transition: border-color .2s, box-shadow .2s, background .2s;
         min-height: 44px;
         width: 100%;
       }
       .field input:hover:not(:focus):not(:disabled),
       .field select:hover:not(:focus):not(:disabled) {
-        border-color: rgba(242,108,28,.35);
+        border-color: rgba(255,140,66,.5);
+        background: var(--surface-elev);
+      }
+      .field input::placeholder { color: var(--txt3); }
+      .field input:disabled, .field select:disabled {
+        background: rgba(255,255,255,.02) !important;
+        color: var(--txt3) !important;
+        opacity: 0.6 !important;
       }
 
       .field {
