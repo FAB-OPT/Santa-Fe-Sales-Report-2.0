@@ -928,6 +928,17 @@
       .dsum-wk-val i { font-style:normal; font-size:11px; font-weight:700; margin-left:6px; }
       @media (max-width:560px){ .dsum-wk { grid-template-columns:1fr 88px; } .dsum-wk-track { display:none; } }
 
+      /* หน้าสาขา — hero วันนี้ */
+      .bd-today { display:flex; gap:18px; align-items:flex-start; }
+      .bd-today-emoji { font-size:3rem; line-height:1; }
+      .bd-today-main { flex:1; min-width:0; }
+      .bd-today-big { font-size:2.4rem; font-weight:800; color:var(--brand); letter-spacing:-.03em; line-height:1.05; }
+      .bd-rounds { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+      .bd-round { background:var(--surface); border:1px solid var(--bd); border-radius:10px; padding:8px 12px; font-size:12.5px; color:var(--txt2); }
+      .bd-round b { color:var(--brand); font-weight:800; margin:0 4px; }
+      .bd-round-empty { color:var(--txt3); }
+      @media (max-width:560px){ .bd-today { flex-direction:column; align-items:center; text-align:center; } .bd-rounds { justify-content:center; } }
+
       /* branch hero */
       .dd-hero { display:flex; gap:18px; align-items:flex-start; }
       .dd-hero-emoji { font-size:3rem; line-height:1; }
@@ -4331,26 +4342,10 @@ body { background: var(--bg); color: var(--txt); }
           </div>
         </div>
 
-        <!-- ═══════════════ สรุปรายวัน + รายสัปดาห์ (เฉพาะหน้าสาขา) ═══════════════ -->
-        <div id="dashDaySumWrap" class="dash3-row dd-grid2" style="margin-bottom:18px;display:none">
-          <div class="dash2-card dash3-card">
-            <div class="dash2-cardhdr dsum-hdr">
-              <div><h3>🧾 สรุปรายวัน</h3><div class="dash2-cardsub">รอบ 16:00 และสิ้นวัน</div></div>
-              <div class="dash3-nav">
-                <button class="dash3-nav-btn" id="daySumPrev" onclick="daySumNav(-1)" title="วันก่อนหน้า">◀</button>
-                <span class="dash3-nav-lbl" id="daySumLabel">—</span>
-                <button class="dash3-nav-btn" id="daySumNext" onclick="daySumNav(1)" title="วันถัดไป">▶</button>
-              </div>
-            </div>
-            <div class="dsum-rounds" id="daySumBody"></div>
-          </div>
-          <div class="dash2-card dash3-card">
-            <div class="dash2-cardhdr"><h3>📅 สรุปรายสัปดาห์</h3><div class="dash2-cardsub" id="daySumWkSub">ทั้งเดือน</div></div>
-            <div id="daySumWkBody"></div>
-          </div>
-        </div>
+        <!-- ═══════════════ หน้าสาขา (วันนี้ + เดือนนี้) — JS เติมเนื้อหา ═══════════════ -->
+        <div id="dashDaySumWrap" style="display:none"></div>
 
-        <!-- ═══════════════ DRILL-DOWN: ทั้งบริษัท → BZM → สาขา ═══════════════ -->
+        <!-- ═══════════════ DRILL-DOWN: ทั้งบริษัท → BZM → สาขา (ทีม) ═══════════════ -->
         <div class="dd-crumb" id="dashCrumb"></div>
         <div class="dash3-kpis dd-kpis" id="dashDrillKpis"></div>
         <div id="dashDrillBody"></div>
@@ -5330,12 +5325,10 @@ body { background: var(--bg); color: var(--txt); }
         const tag = document.getElementById("dashRoleTag");
         const title = document.getElementById("dashTitle");
         const sub = document.getElementById("dashPageSub");
-        // ซ่อน KPI strip เฉพาะหน้าสาขา · ตัวเลือกช่วง (สัปดาห์/เดือน/ปี) โชว์ทุกบทบาท
-        var _kpiStrip = document.getElementById('dashDrillKpis');
-        if (_kpiStrip) _kpiStrip.style.display = isBranch ? "none" : "";
-        ['dashModeSeg','dashPeriodNav'].forEach(function(id){
+        // หน้าสาขาใช้เลย์เอาต์ของตัวเอง — ซ่อน drill-down + ตัวเลือกช่วง (ทีมโชว์)
+        ['dashModeSeg','dashPeriodNav','dashDrillKpis','dashCrumb','dashDrillBody'].forEach(function(id){
           var e = document.getElementById(id);
-          if (e) e.style.display = "";
+          if (e) e.style.display = isBranch ? "none" : "";
         });
         if (isBranch) {
           // หน้าสาขา: ซ่อน tag "MY STORE" และ subtitle (ช่วงวันที่อยู่ที่ปุ่มเลื่อนแล้ว)
@@ -7031,20 +7024,6 @@ body { background: var(--bg); color: var(--txt); }
           return;
         }
 
-        // หน้าสาขา (เรียบ): สรุปผลรวมช่วงที่เลือก + สัดส่วนช่องทาง — กล่องรายวัน/รายสัปดาห์อยู่ด้านบนแล้ว
-        if (role === "branch" || role === "franchise") {
-          if (crumbEl) crumbEl.innerHTML = "";
-          kpiEl.innerHTML = "";
-          var _plabel = (typeof _dashPeriodRange === "function") ? _dashPeriodRange().label : "";
-          var _bcodes = _ddCodes();
-          bodyEl.innerHTML = `<div class="dash3-row dd-grid2">
-            ${_ddPanel("📊 สรุปผลสาขา", "ผลรวม · " + escHtml(_plabel), _ddBranchHero(_dashRows, _bcodes))}
-            ${_ddPanel("🍽️ สัดส่วนช่องทางการขาย", "แยกตามช่องทาง · " + escHtml(_plabel), `<div style="position:relative;height:240px"><canvas id="ddDonut"></canvas></div><div id="ddDonutLegend" class="dash2-chan-legend"></div>`)}
-          </div>`;
-          _ddRenderDonut(_dashRows);
-          return;
-        }
-
         if (reset) {
           if (role === "branch") {
             const bc = _ddCodes()[0] || null;
@@ -7176,43 +7155,54 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       function renderBranchSummary() {
+        const wrap = document.getElementById('dashDaySumWrap');
+        if (!wrap) return;
+
         const dStr = _fmtDate(_daySumAnchor);
-        const lbl = document.getElementById('daySumLabel');
-        if (lbl) lbl.textContent = fmtThaiDate(dStr);
-        const nextBtn = document.getElementById('daySumNext');
-        if (nextBtn) {
-          const t = new Date(); t.setHours(0,0,0,0);
-          const a2 = new Date(_daySumAnchor); a2.setHours(0,0,0,0);
-          nextBtn.disabled = (a2 >= t);
-        }
-
-        // ── รายวัน: 2 รอบ (16:00 / สิ้นวัน) ──
-        const plan = _daySumPlanByDate[dStr] || 0;
-        function roundCard(slot, icon, name) {
-          const rs = _daySumRows.filter(function(r){ return r.submit_date === dStr && r.submit_time_slot === slot; });
-          if (!rs.length) {
-            return `<div class="dsum-round dsum-empty"><div class="dsum-round-hd">${icon} ${name}</div><div class="dsum-round-status">⏳ ยังไม่ส่ง</div></div>`;
-          }
-          const act = rs.reduce(function(s,r){ return s + (parseFloat(r.actual_sale) || 0); }, 0);
-          const bills = rs.reduce(function(s,r){ return s + (parseFloat(r.total_trans) || 0); }, 0);
-          const pct = plan > 0 ? act / plan : 0;
-          const col = _ddAchvColor(pct);
-          return `<div class="dsum-round">
-            <div class="dsum-round-hd">${icon} ${name}</div>
-            <div class="dsum-round-val">฿${fmt(Math.round(act))}</div>
-            <div class="dsum-round-meta"><span>ทำได้ <b style="color:${col}">${plan > 0 ? (pct*100).toFixed(1)+'%' : '-'}</b></span><span>${fmt(bills)} บิล</span></div>
-          </div>`;
-        }
-        const body = document.getElementById('daySumBody');
-        if (body) body.innerHTML = roundCard('16.00','🕓','รอบ 16:00') + roundCard('สิ้นวัน','🌙','รอบสิ้นวัน');
-
-        // ── รายสัปดาห์: ทั้งเดือนของวันที่เลือก ──
         const a = new Date(_daySumAnchor); const y = a.getFullYear(), m = a.getMonth();
+        const today = new Date(); today.setHours(0,0,0,0);
+        const a0 = new Date(_daySumAnchor); a0.setHours(0,0,0,0);
+        const isToday = (a0.getTime() === today.getTime());
+        const monName = _TH_MONTH_FULL[m] + ' ' + (y + 543);
+
+        // ── วันนี้ (รอบ 16:00 / สิ้นวัน) ──
+        const dayPlan = _daySumPlanByDate[dStr] || 0;
+        function roundData(slot) {
+          const rs = _daySumRows.filter(function(r){ return r.submit_date === dStr && r.submit_time_slot === slot; });
+          if (!rs.length) return null;
+          return {
+            act: rs.reduce(function(s,r){ return s + (parseFloat(r.actual_sale) || 0); }, 0),
+            bills: rs.reduce(function(s,r){ return s + (parseFloat(r.total_trans) || 0); }, 0)
+          };
+        }
+        const r16 = roundData('16.00'), reod = roundData('สิ้นวัน');
+        const dayAct = reod ? reod.act : (r16 ? r16.act : 0);
+        const dayPct = dayPlan > 0 ? dayAct / dayPlan : 0;
+        const dayCol = _ddAchvColor(dayPct);
+        const dayEmoji = dayAct <= 0 ? '🕓' : dayPct >= 1 ? '🎉' : dayPct >= 0.85 ? '💪' : '⚠️';
+        const dayW = Math.min(dayPct * 100, 100).toFixed(1);
+        function roundChip(d, icon, name) {
+          if (!d) return `<div class="bd-round bd-round-empty">${icon} ${name} · ยังไม่ส่ง</div>`;
+          return `<div class="bd-round">${icon} ${name} ·<b>฿${fmt(Math.round(d.act))}</b>${fmt(d.bills)} บิล</div>`;
+        }
+
+        // ── เดือนนี้ (MTD) ──
+        const mStart = _fmtDate(new Date(y, m, 1)), mEnd = _fmtDate(new Date(y, m + 1, 0));
+        const monEod = _daySumRows.filter(function(r){ return r.submit_time_slot === 'สิ้นวัน' && r.submit_date >= mStart && r.submit_date <= mEnd; });
+        const monAct = monEod.reduce(function(s,r){ return s + (parseFloat(r.actual_sale) || 0); }, 0);
+        const monBills = monEod.reduce(function(s,r){ return s + (parseFloat(r.total_trans) || 0); }, 0);
+        const monLab = monEod.reduce(function(s,r){ return s + (parseFloat(r.labour_baht) || 0); }, 0);
+        const dataDates = {}; monEod.forEach(function(r){ dataDates[r.submit_date] = 1; });
+        let monPlan = 0; Object.keys(_daySumPlanByDate).forEach(function(d){ if (dataDates[d]) monPlan += _daySumPlanByDate[d]; });
+        const monPct = monPlan > 0 ? monAct / monPlan : 0;
+        const monAvg = monBills > 0 ? monAct / monBills : 0;
+        const monLabPct = monAct > 0 ? monLab / monAct * 100 : 0;
+
+        // ── รายสัปดาห์ของเดือน ──
         const lastDay = new Date(y, m + 1, 0).getDate();
         const weeks = {};
         for (let dn = 1; dn <= lastDay; dn++) {
-          const day = new Date(y, m, dn);
-          const dow = day.getDay();
+          const day = new Date(y, m, dn); const dow = day.getDay();
           const mon = new Date(day); mon.setDate(day.getDate() + (dow === 0 ? -6 : 1 - dow));
           const key = _fmtDate(mon);
           if (!weeks[key]) weeks[key] = { start: dn, end: dn, act: 0, plan: 0 };
@@ -7221,29 +7211,55 @@ body { background: var(--bg); color: var(--txt); }
           _daySumRows.forEach(function(r){ if (r.submit_date === ds && r.submit_time_slot === 'สิ้นวัน') weeks[key].act += parseFloat(r.actual_sale) || 0; });
           weeks[key].plan += _daySumPlanByDate[ds] || 0;
         }
-        const keys = Object.keys(weeks).sort();
-        const maxAct = Math.max.apply(null, keys.map(function(k){ return weeks[k].act; }).concat([1]));
-        const wkHtml = keys.map(function(k, i){
-          const w = weeks[k];
-          const pct = w.plan > 0 ? w.act / w.plan : 0;
-          const col = _ddAchvColor(pct);
-          const bw = (w.act / maxAct * 100).toFixed(1);
-          return `<div class="dsum-wk">
-            <div class="dsum-wk-name">สัปดาห์ ${i+1} <b>${w.start}–${w.end} ${_TH_MONTH_SHORT[m]}</b></div>
-            <div class="dsum-wk-track"><div class="dsum-wk-fill" style="width:${bw}%"></div></div>
-            <div class="dsum-wk-val">฿${fmt(Math.round(w.act))}<i style="color:${col}">${w.plan > 0 ? (pct*100).toFixed(0)+'%' : '-'}</i></div>
-          </div>`;
+        const wkeys = Object.keys(weeks).sort();
+        const maxW = Math.max.apply(null, wkeys.map(function(k){ return weeks[k].act; }).concat([1]));
+        const wkHtml = wkeys.map(function(k, i){
+          const w = weeks[k]; const p = w.plan > 0 ? w.act / w.plan : 0; const c = _ddAchvColor(p);
+          const bw = (w.act / maxW * 100).toFixed(1);
+          return `<div class="dsum-wk"><div class="dsum-wk-name">สัปดาห์ ${i+1} <b>${w.start}–${w.end} ${_TH_MONTH_SHORT[m]}</b></div><div class="dsum-wk-track"><div class="dsum-wk-fill" style="width:${bw}%"></div></div><div class="dsum-wk-val">฿${fmt(Math.round(w.act))}<i style="color:${c}">${w.plan > 0 ? (p*100).toFixed(0)+'%' : '-'}</i></div></div>`;
         }).join('');
-        const wkBody = document.getElementById('daySumWkBody');
-        if (wkBody) wkBody.innerHTML = wkHtml || '<div class="dd-empty">ไม่มีข้อมูล</div>';
-        const wkSub = document.getElementById('daySumWkSub');
-        if (wkSub) wkSub.textContent = _TH_MONTH_FULL[m] + ' ' + (y + 543);
+
+        // ── ประกอบหน้า ──
+        wrap.innerHTML = `
+          <div class="dash3-row" style="margin-bottom:18px">
+            <div class="dash2-card dash3-card">
+              <div class="dash2-cardhdr dsum-hdr">
+                <div><h3>📅 ${isToday ? 'วันนี้' : 'รายวัน'}</h3><div class="dash2-cardsub">รอบ 16:00 และสิ้นวัน</div></div>
+                <div class="dash3-nav">
+                  <button class="dash3-nav-btn" onclick="daySumNav(-1)" title="วันก่อนหน้า">◀</button>
+                  <span class="dash3-nav-lbl">${escHtml(fmtThaiDate(dStr))}</span>
+                  <button class="dash3-nav-btn" onclick="daySumNav(1)" title="วันถัดไป"${isToday ? ' disabled' : ''}>▶</button>
+                </div>
+              </div>
+              <div class="bd-today">
+                <div class="bd-today-emoji">${dayEmoji}</div>
+                <div class="bd-today-main">
+                  <div class="bd-today-big">฿${fmt(Math.round(dayAct))}</div>
+                  <div class="dd-hero-prog"><div class="dd-hero-prog-fill" style="width:${dayW}%;background:${dayCol}"></div></div>
+                  <div class="dd-hero-meta"><span>ทำได้ <b style="color:${dayCol}">${dayPlan > 0 ? (dayPct*100).toFixed(1)+'%' : '-'}</b></span><span>เป้า <b>฿${fmt(Math.round(dayPlan))}</b></span></div>
+                  <div class="bd-rounds">${roundChip(r16,'🕓','16:00')}${roundChip(reod,'🌙','สิ้นวัน')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="dash3-kpis" style="margin-bottom:18px">
+            <div class="dash3-kpi dash3-kpi-hero"><div class="dash3-kpi-lbl">💰 ยอดเดือนนี้</div><div class="dash3-kpi-val">฿${fmt(Math.round(monAct))}</div><div class="dd-kpi-sub">${escHtml(monName)}</div></div>
+            <div class="dash3-kpi"><div class="dash3-kpi-lbl">🎯 % ของเป้า</div><div class="dash3-kpi-val">${monPlan > 0 ? (monPct*100).toFixed(1)+'%' : '-'}</div><div class="dd-kpi-sub" style="color:${_ddAchvColor(monPct)}">เป้า ฿${fmt(Math.round(monPlan))}</div></div>
+            <div class="dash3-kpi"><div class="dash3-kpi-lbl">🧾 จำนวนบิล</div><div class="dash3-kpi-val">${fmt(monBills)}</div><div class="dd-kpi-sub">บิลเฉลี่ย ฿${fmt(Math.round(monAvg))}</div></div>
+            <div class="dash3-kpi"><div class="dash3-kpi-lbl">👥 ค่าแรง %</div><div class="dash3-kpi-val">${monAct > 0 ? monLabPct.toFixed(1)+'%' : '-'}</div><div class="dd-kpi-sub">ของยอดขาย</div></div>
+          </div>
+          <div class="dash3-row dd-grid2">
+            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>📅 รายสัปดาห์</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div>${wkHtml || '<div class="dd-empty">ไม่มีข้อมูล</div>'}</div>
+            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>🍽️ สัดส่วนช่องทาง</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div><div style="position:relative;height:220px"><canvas id="ddDonut"></canvas></div><div id="ddDonutLegend" class="dash2-chan-legend"></div></div>
+          </div>`;
+
+        _ddRenderDonut(_daySumRows);
       }
 
       async function loadDash() {
-        // Admin/VP/BZM: populate branch filter + resolve scope
         populateBranchFilter("dashBranchFilter");
-        loadBranchSummary();   // กล่องรายวัน/รายสัปดาห์ (เฉพาะหน้าสาขา · self-guard)
+        // หน้าสาขาใช้เลย์เอาต์ของตัวเอง (วันนี้ + เดือนนี้) — ไม่ใช้ drill-down
+        if (S.role === "branch" || S.role === "franchise") { loadBranchSummary(); return; }
         const queryCodes = getQueryBranchCodes("dashBranchFilter"); // array | null
 
         // Compute date range from mode + anchor (สัปดาห์ จ–อา / เดือน / ปี)
