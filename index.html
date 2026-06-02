@@ -6753,8 +6753,6 @@ body { background: var(--bg); color: var(--txt); }
         const a = _ddAgg(rows);
         const plan = _ddPlan(codes);
         const pct = plan > 0 ? a.actual / plan : 0;
-        const ticket = a.bills > 0 ? a.actual / a.bills : 0;
-        const labPct = a.actual > 0 ? a.labBaht / a.actual : 0;
         const emoji = pct >= 1 ? "🎉" : pct >= 0.85 ? "💪" : "⚠️";
         const msg = plan <= 0 ? "ยังไม่มีเป้าในช่วงนี้" : pct >= 1 ? "เกินเป้าแล้ว!" : pct >= 0.85 ? "ใกล้ถึงเป้า ดันอีกนิด" : "ต่ำกว่าเป้า ต้องเร่งมือ";
         const col = _ddAchvColor(pct);
@@ -6766,11 +6764,6 @@ body { background: var(--bg); color: var(--txt); }
             <div class="dd-hero-big">฿${fmt(Math.round(a.actual))}</div>
             <div class="dd-hero-prog"><div class="dd-hero-prog-fill" style="width:${w}%;background:${col}"></div></div>
             <div class="dd-hero-meta"><span>ทำได้ <b style="color:${col}">${plan > 0 ? (pct * 100).toFixed(1) + "%" : "-"}</b></span><span>เป้า <b>฿${fmt(Math.round(plan))}</b></span></div>
-            <div class="dd-hero-tiles">
-              <div class="dd-tile"><div class="dd-tile-lbl">🧾 บิล</div><div class="dd-tile-val">${fmt(a.bills)}</div></div>
-              <div class="dd-tile"><div class="dd-tile-lbl">💵 เฉลี่ย/บิล</div><div class="dd-tile-val">${a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-"}</div></div>
-              <div class="dd-tile"><div class="dd-tile-lbl">👥 ค่าแรง %</div><div class="dd-tile-val">${a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-"}</div></div>
-            </div>
           </div>
         </div>`;
       }
