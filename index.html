@@ -7242,15 +7242,15 @@ body { background: var(--bg); color: var(--txt); }
               </div>
             </div>
           </div>
-          <div class="dash3-kpis" style="margin-bottom:18px">
+          <div class="dash3-row dd-grid2" style="margin-bottom:18px">
+            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>📅 รายสัปดาห์</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div>${wkHtml || '<div class="dd-empty">ไม่มีข้อมูล</div>'}</div>
+            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>🍽️ สัดส่วนช่องทาง</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div><div style="position:relative;height:220px"><canvas id="ddDonut"></canvas></div><div id="ddDonutLegend" class="dash2-chan-legend"></div></div>
+          </div>
+          <div class="dash3-kpis">
             <div class="dash3-kpi dash3-kpi-hero"><div class="dash3-kpi-lbl">💰 ยอดเดือนนี้</div><div class="dash3-kpi-val">฿${fmt(Math.round(monAct))}</div><div class="dd-kpi-sub">${escHtml(monName)}</div></div>
             <div class="dash3-kpi"><div class="dash3-kpi-lbl">🎯 % ของเป้า</div><div class="dash3-kpi-val">${monPlan > 0 ? (monPct*100).toFixed(1)+'%' : '-'}</div><div class="dd-kpi-sub" style="color:${_ddAchvColor(monPct)}">เป้า ฿${fmt(Math.round(monPlan))}</div></div>
             <div class="dash3-kpi"><div class="dash3-kpi-lbl">🧾 จำนวนบิล</div><div class="dash3-kpi-val">${fmt(monBills)}</div><div class="dd-kpi-sub">บิลเฉลี่ย ฿${fmt(Math.round(monAvg))}</div></div>
             <div class="dash3-kpi"><div class="dash3-kpi-lbl">👥 ค่าแรง %</div><div class="dash3-kpi-val">${monAct > 0 ? monLabPct.toFixed(1)+'%' : '-'}</div><div class="dd-kpi-sub">ของยอดขาย</div></div>
-          </div>
-          <div class="dash3-row dd-grid2">
-            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>📅 รายสัปดาห์</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div>${wkHtml || '<div class="dd-empty">ไม่มีข้อมูล</div>'}</div>
-            <div class="dash2-card dash3-card"><div class="dash2-cardhdr"><h3>🍽️ สัดส่วนช่องทาง</h3><div class="dash2-cardsub">${escHtml(monName)}</div></div><div style="position:relative;height:220px"><canvas id="ddDonut"></canvas></div><div id="ddDonutLegend" class="dash2-chan-legend"></div></div>
           </div>`;
 
         _ddRenderDonut(_daySumRows);
