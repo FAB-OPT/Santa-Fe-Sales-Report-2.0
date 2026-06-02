@@ -635,6 +635,54 @@
         transform: scale(0.97);
       }
 
+      /* ─── LOGOUT BUTTONS — mirror Hub button style but RED ─── */
+      .desk-logout-btn-pretty {
+        display: flex; align-items: center; gap: 12px;
+        margin: 0 10px 8px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border: none;
+        color: #fff;
+        font-family: inherit; font-size: 15px; font-weight: 800;
+        cursor: pointer;
+        transition: all .25s var(--ease);
+        text-align: left; width: calc(100% - 20px);
+        box-shadow: 0 4px 12px -2px rgba(220,38,38,.4);
+        justify-content: center;
+      }
+      .desk-logout-btn-pretty .hub-ico {
+        font-size: 18px;
+        font-weight: 900;
+      }
+      .desk-logout-btn-pretty:hover {
+        background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px -2px rgba(220,38,38,.55);
+      }
+
+      .md-logout-pretty {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border: none;
+        color: #fff;
+        font-family: inherit; font-size: 15px; font-weight: 800;
+        cursor: pointer;
+        transition: all .25s var(--ease);
+        box-shadow: 0 4px 12px -2px rgba(220,38,38,.4);
+      }
+      .md-logout-pretty .hub-ico {
+        font-size: 18px;
+        font-weight: 900;
+      }
+      .md-logout-pretty:active {
+        background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+        transform: scale(0.97);
+      }
+
       /* ─────────────────────────────────────────
    LOGIN  (redesigned v3)
 ───────────────────────────────────────── */
@@ -3554,7 +3602,10 @@ body { background: var(--bg); color: var(--txt); }
         <span class="hub-ico">←</span>
         <span>กลับเมนูหลัก</span>
       </button>
-      <button class="desk-logout-btn" onclick="doLogout()" style="justify-content:center;margin-left:auto;margin-right:auto">ออกจากระบบ</button>
+      <button class="desk-logout-btn-pretty" onclick="doLogout()">
+        <span class="hub-ico">⎋</span>
+        <span>ออกจากระบบ</span>
+      </button>
     </aside>
 
     <!-- ════════════════════════════════════════
@@ -3624,7 +3675,10 @@ body { background: var(--bg); color: var(--txt); }
           <span class="hub-ico">←</span>
           <span>กลับเมนูหลัก</span>
         </button>
-        <button class="md-logout" onclick="doLogout()">ออกจากระบบ</button>
+        <button class="md-logout-pretty" onclick="doLogout()">
+          <span class="hub-ico">⎋</span>
+          <span>ออกจากระบบ</span>
+        </button>
       </div>
     </aside>
 
