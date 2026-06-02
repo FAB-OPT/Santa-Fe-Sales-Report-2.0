@@ -298,6 +298,275 @@
       }
 
       /* ─────────────────────────────────────────
+   DASHBOARD v3 — refresh layout
+───────────────────────────────────────── */
+      .dash3-hdr {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; flex-wrap: wrap;
+        margin-bottom: 22px;
+      }
+      .dash3-eyebrow {
+        font-size: 11px; font-weight: 700;
+        color: var(--brand);
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        opacity: 0.85;
+      }
+      .dash3-title {
+        font-size: 2rem; font-weight: 800;
+        letter-spacing: -0.025em;
+        color: var(--txt);
+        line-height: 1.1;
+      }
+      .dash3-controls {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      }
+      .dash3-seg {
+        display: inline-flex;
+        background: var(--surface);
+        border: 1px solid var(--bd);
+        border-radius: 999px;
+        padding: 3px;
+        gap: 0;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .dash3-seg-btn {
+        padding: 7px 16px;
+        background: transparent;
+        border: none;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 12.5px; font-weight: 700;
+        color: var(--txt2);
+        cursor: pointer;
+        transition: all .25s var(--ease);
+        white-space: nowrap;
+      }
+      .dash3-seg-btn:hover { color: var(--txt); }
+      .dash3-seg-btn.active {
+        background: var(--brand-grad);
+        color: #fff;
+        box-shadow: 0 2px 8px -2px rgba(255,140,66,0.5);
+      }
+      .dash3-branch {
+        background: var(--surface);
+        border: 1px solid var(--bd);
+        border-radius: 999px;
+        padding: 7px 14px;
+        font-family: inherit;
+        font-size: 12.5px;
+        color: var(--txt);
+        min-width: 180px;
+      }
+      .dash3-icon-btn {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--bd);
+        background: var(--surface);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all .25s var(--ease);
+        backdrop-filter: blur(12px);
+      }
+      .dash3-icon-btn:hover {
+        border-color: var(--brand);
+        transform: rotate(180deg);
+        color: var(--brand);
+      }
+      .dash3-custom {
+        background: var(--surface-2);
+        border: 1px solid var(--bd);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 18px;
+      }
+
+      /* Hero block — wraps the 4 KPI cards with subtle bg */
+      .dash3-hero-row { margin-bottom: 18px; }
+      .dash3-hero {
+        position: relative;
+        background: linear-gradient(135deg, rgba(255,140,66,0.06) 0%, rgba(109,213,250,0.03) 50%, transparent 100%);
+        border: 1px solid var(--bd);
+        border-radius: 20px;
+        padding: 18px;
+        overflow: hidden;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .dash3-hero-bg {
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(255,140,66,0.10) 0%, transparent 60%);
+        pointer-events: none;
+      }
+      .dash3-kpis {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr 1fr;
+        gap: 14px;
+        position: relative;
+        z-index: 1;
+      }
+      .dash3-kpi {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--bd);
+        border-radius: 14px;
+        padding: 16px 18px;
+        transition: all .25s var(--ease);
+        backdrop-filter: blur(12px);
+      }
+      .dash3-kpi:hover {
+        border-color: rgba(255,140,66,0.4);
+        background: rgba(255,255,255,0.06);
+        transform: translateY(-2px);
+      }
+      .dash3-kpi-lbl {
+        font-size: 12px; font-weight: 700;
+        color: var(--txt2);
+        margin-bottom: 8px;
+        display: flex; align-items: center; gap: 5px;
+      }
+      .dash3-kpi-val {
+        font-size: 1.7rem; font-weight: 800;
+        color: var(--txt);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .dash3-kpi-hero {
+        background: linear-gradient(135deg, rgba(255,140,66,0.14), rgba(255,107,26,0.08));
+        border-color: rgba(255,140,66,0.35);
+        position: relative;
+        overflow: hidden;
+      }
+      .dash3-kpi-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 4px;
+        background: var(--brand-grad);
+      }
+      .dash3-kpi-hero .dash3-kpi-val {
+        font-size: 2.1rem;
+        color: var(--brand);
+        text-shadow: 0 0 24px rgba(255,140,66,0.4);
+      }
+
+      /* Row + cards */
+      .dash3-row { gap: 18px; margin-bottom: 18px; }
+      .dash3-card {
+        background: var(--surface) !important;
+        border: 1px solid var(--bd) !important;
+        border-radius: 16px !important;
+        padding: 22px !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        transition: border-color .25s var(--ease);
+      }
+      .dash3-card:hover {
+        border-color: rgba(255,140,66,0.3) !important;
+      }
+      .dash3-card .dash2-cardhdr h3 {
+        font-size: 15.5px;
+        font-weight: 800;
+        color: var(--txt);
+        letter-spacing: -0.01em;
+      }
+      .dash3-card .dash2-cardsub {
+        color: var(--txt2);
+        font-size: 12.5px;
+        margin-top: 2px;
+      }
+
+      @media (max-width: 900px) {
+        .dash3-kpis { grid-template-columns: 1fr 1fr; }
+        .dash3-kpi-hero { grid-column: 1 / -1; }
+        .dash3-title { font-size: 1.5rem; }
+        .dash3-controls { width: 100%; }
+        .dash3-seg { flex: 1; justify-content: space-between; }
+        .dash3-seg-btn { flex: 1; padding: 7px 8px; font-size: 11.5px; }
+      }
+      @media (max-width: 560px) {
+        .dash3-hero { padding: 14px; }
+        .dash3-kpis { gap: 10px; }
+        .dash3-kpi { padding: 14px; }
+        .dash3-kpi-val { font-size: 1.4rem; }
+        .dash3-kpi-hero .dash3-kpi-val { font-size: 1.6rem; }
+        .dash3-card { padding: 16px !important; }
+      }
+
+      /* ─────────────────────────────────────────
+   EDIT MODAL — grouped sections + chips banner
+───────────────────────────────────────── */
+      .edt-banner-card {
+        background: linear-gradient(135deg, rgba(255,140,66,0.10), rgba(255,140,66,0.04));
+        border: 1px solid rgba(255,140,66,0.32);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+      }
+      .edt-banner-row {
+        display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+      }
+      .edt-banner-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 12px; font-weight: 700;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: var(--txt);
+      }
+      .edt-chip-date { color: #fde68a; border-color: rgba(251,191,36,0.4); }
+      .edt-chip-slot { color: #93c5fd; border-color: rgba(96,165,250,0.4); }
+      .edt-chip-edits { color: #fca5a5; border-color: rgba(248,113,113,0.4); }
+      .edt-banner-submitter { font-size: 13px; color: var(--txt2); margin-bottom: 6px; }
+      .edt-banner-submitter b { color: var(--txt); font-weight: 700; }
+      .edt-banner-hint {
+        font-size: 11.5px;
+        color: var(--brand);
+        font-weight: 600;
+        padding-top: 8px;
+        border-top: 1px dashed rgba(255,255,255,0.08);
+      }
+      .edt-section {
+        background: var(--surface);
+        border: 1px solid var(--bd);
+        border-radius: 12px;
+        margin-bottom: 14px;
+        overflow: hidden;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .edt-section-hdr {
+        background: var(--brand-grad);
+        color: #fff;
+        padding: 10px 16px;
+        font-size: 13.5px; font-weight: 800;
+        letter-spacing: 0.2px;
+        display: flex; align-items: center; gap: 8px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+      }
+      .edt-section-body {
+        padding: 14px;
+      }
+      .edt-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .edt-field-full { width: 100%; }
+      .edt-section input:disabled { opacity: 0.45; cursor: not-allowed; }
+
+      @media (max-width: 600px) {
+        .edt-grid-3 { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .edt-banner-card { padding: 12px 14px; }
+        .edt-section-body { padding: 12px; }
+      }
+
+      /* ─────────────────────────────────────────
    HUB BUTTON (กลับเมนูหลัก) — solid green + arrow icon
 ───────────────────────────────────────── */
       .btn-hub {
@@ -3518,13 +3787,6 @@ body { background: var(--bg); color: var(--txt); }
           </div>
         </div>
 
-        <!-- Hint: ที่นี่แก้ได้เฉพาะ "วันนี้+อนาคต" — อดีตต้องไปประวัติ -->
-        <div style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;line-height:1.55">
-          <strong>📌 วิธีแก้ Plan Sale</strong><br>
-          • <strong>วันนี้ + วันในอนาคต</strong> → แก้ที่นี่ได้เลย<br>
-          • <strong>วันที่ผ่านมาแล้ว 🔒</strong> → ไปที่หน้า <strong>"ประวัติ"</strong> → กดแก้ไขรอบ <strong>16.00</strong> ของวันนั้น
-        </div>
-
         <!-- Summary cards -->
         <div class="plan-summary">
           <div class="plan-sum-card">
@@ -3591,54 +3853,74 @@ body { background: var(--bg); color: var(--txt); }
      SCREEN: DASHBOARD
 ════════════════════════════════════════ -->
     <div id="sDash" class="screen">
-      <div class="dash-wrap">
-        <!-- ───────── HEADER ───────── -->
-        <div class="dash2-hdr">
-          <div>
-            <h1 class="dash2-title">📊 แดชบอร์ด</h1>
-            <div class="dash2-sub" id="dashPageSub">ภาพรวมผลการขาย</div>
+      <div class="dash-wrap dash3">
+        <!-- ───────── HEADER bar — minimal ───────── -->
+        <div class="dash3-hdr">
+          <div class="dash3-hdr-titles">
+            <div class="dash3-eyebrow" id="dashPageSub">ภาพรวมผลการขาย</div>
+            <h1 class="dash3-title">📊 แดชบอร์ด</h1>
           </div>
-          <div class="dash2-period">
-            <button id="dash2P7"      class="dash2-pbtn" onclick="setDashPeriod(7)">7 วันล่าสุด</button>
-            <button id="dash2P30"     class="dash2-pbtn active" onclick="setDashPeriod(30)">30 วันล่าสุด</button>
-            <button id="dash2P90"     class="dash2-pbtn" onclick="setDashPeriod(90)">90 วันล่าสุด</button>
-            <button id="dash2PCustom" class="dash2-pbtn" onclick="toggleDashCustom()">📅 เลือกช่วงเอง</button>
-            <select id="dashBranchFilter" class="dash2-branch" onchange="loadDash()" style="display:none"></select>
-            <button class="dash2-pbtn" onclick="loadDash()" title="รีเฟรช">🔄</button>
+          <div class="dash3-controls">
+            <div class="dash3-seg">
+              <button id="dash2P7"      class="dash3-seg-btn" onclick="setDashPeriod(7)">7 วัน</button>
+              <button id="dash2P30"     class="dash3-seg-btn active" onclick="setDashPeriod(30)">30 วัน</button>
+              <button id="dash2P90"     class="dash3-seg-btn" onclick="setDashPeriod(90)">90 วัน</button>
+              <button id="dash2PCustom" class="dash3-seg-btn" onclick="toggleDashCustom()">📅 เลือกช่วง</button>
+            </div>
+            <select id="dashBranchFilter" class="dash3-branch" onchange="loadDash()" style="display:none"></select>
+            <button class="dash3-icon-btn" onclick="loadDash()" title="รีเฟรช">🔄</button>
           </div>
         </div>
 
         <!-- เลือกช่วงวันที่เอง (ซ่อนไว้) -->
-        <div id="dash2Custom" class="dash2-custom-row">
+        <div id="dash2Custom" class="dash2-custom-row dash3-custom">
           <label>ตั้งแต่</label>
           <input type="date" id="dash2CustomFrom">
           <label>ถึง</label>
           <input type="date" id="dash2CustomTo">
-          <button class="dash2-pbtn active" onclick="applyDashCustom()">ดูข้อมูล</button>
+          <button class="dash3-seg-btn active" onclick="applyDashCustom()">ดูข้อมูล</button>
         </div>
 
-        <!-- ───────── การ์ดตัวเลขหลัก ───────── -->
-        <div class="dash2-kpis" id="dashStatsGrid">
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">ยอดขายจริง</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">จำนวนบิล</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">% ของเป้า</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">ค่าแรง (%)</div><div class="dash2-kpi-val">-</div></div>
+        <!-- ───────── HERO + KPI strip ───────── -->
+        <div class="dash3-hero-row">
+          <!-- Hero: ยอดขายจริง (เด่นใหญ่) + Mini KPIs ใต้ -->
+          <div class="dash3-hero">
+            <div class="dash3-hero-bg"></div>
+            <div class="dash3-kpis" id="dashStatsGrid">
+              <div class="dash3-kpi dash3-kpi-hero">
+                <div class="dash3-kpi-lbl">💰 ยอดขายจริง</div>
+                <div class="dash3-kpi-val">-</div>
+              </div>
+              <div class="dash3-kpi">
+                <div class="dash3-kpi-lbl">🧾 จำนวนบิล</div>
+                <div class="dash3-kpi-val">-</div>
+              </div>
+              <div class="dash3-kpi">
+                <div class="dash3-kpi-lbl">🎯 % ของเป้า</div>
+                <div class="dash3-kpi-val">-</div>
+              </div>
+              <div class="dash3-kpi">
+                <div class="dash3-kpi-lbl">👥 ค่าแรง (%)</div>
+                <div class="dash3-kpi-val">-</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- ───────── แถว 1: แนวโน้มยอดขาย + ช่องทางการขาย ───────── -->
-        <div class="dash2-row1">
-          <div class="dash2-card">
+        <div class="dash2-row1 dash3-row">
+          <div class="dash2-card dash3-card">
             <div class="dash2-cardhdr">
-              <h3>แนวโน้มยอดขาย</h3>
+              <h3>📈 แนวโน้มยอดขาย</h3>
               <div class="dash2-cardsub">ยอดขายจริงรายวันในช่วงที่เลือก</div>
             </div>
             <div style="position:relative;height:300px">
               <canvas id="dashChart"></canvas>
             </div>
           </div>
-          <div class="dash2-card">
+          <div class="dash2-card dash3-card">
             <div class="dash2-cardhdr">
-              <h3>ยอดขายแยกตามช่องทาง</h3>
+              <h3>🍰 ยอดขายแยกตามช่องทาง</h3>
               <div class="dash2-cardsub">สัดส่วนยอดขายแต่ละช่องทาง</div>
             </div>
             <div style="position:relative;height:220px">
@@ -3649,19 +3931,19 @@ body { background: var(--bg); color: var(--txt); }
         </div>
 
         <!-- ───────── แถว 2: สาขายอดเยี่ยม + สรุปตัวเลข ───────── -->
-        <div class="dash2-row2">
-          <div class="dash2-card">
+        <div class="dash2-row2 dash3-row">
+          <div class="dash2-card dash3-card">
             <div class="dash2-cardhdr">
-              <h3>สาขายอดเยี่ยม</h3>
+              <h3>🏆 สาขายอดเยี่ยม</h3>
               <div class="dash2-cardsub">% ของเป้า — 8 สาขาที่ทำได้สูงสุด</div>
             </div>
             <div style="position:relative;height:300px">
               <canvas id="dashBranchBars"></canvas>
             </div>
           </div>
-          <div class="dash2-card">
+          <div class="dash2-card dash3-card">
             <div class="dash2-cardhdr">
-              <h3>สรุปตัวเลขสำคัญ</h3>
+              <h3>📋 สรุปตัวเลขสำคัญ</h3>
               <div class="dash2-cardsub">ค่าเฉลี่ยในช่วงที่เลือก</div>
             </div>
             <div class="dash2-quick-list" id="dashQuickStats">
@@ -7683,7 +7965,6 @@ body { background: var(--bg); color: var(--txt); }
       function openEdit(row) {
         const editCnt = parseInt(row.edit_count) || 0;
         const isAdmin = (S.role === "admin" || S.code === "ADMIN");
-        // branch (ไม่ใช่ admin) แก้ได้ครั้งเดียว
         if (!isAdmin && editCnt >= 1) {
           showAlert("🔒", "แก้ไขได้ครั้งเดียว",
             "รายการนี้ถูกแก้ไขไปแล้ว ไม่สามารถแก้ซ้ำได้\nหากจำเป็นต้องแก้ไขเพิ่ม กรุณาติดต่อแอดมิน");
@@ -7691,45 +7972,71 @@ body { background: var(--bg); color: var(--txt); }
         }
         _editRow = row;
         const isEod = row.submit_time_slot === "สิ้นวัน";
+        const slotLabel = row.submit_time_slot === "สิ้นวัน" ? "สิ้นวัน" : "16.00";
 
+        // ─ Banner (header info) ─
         const planHint = isEod
-          ? `* แก้ไข Plan Sale ได้เฉพาะรอบ 16.00 เท่านั้น`
-          : `* การแก้ Plan Sale ที่นี่จะอัปเดต Plan Sale ในหน้าปฏิทินด้วย (เป็นค่าเดียวกัน)`;
-        document.getElementById("editBanner").innerHTML =
-          `<strong>📅 ${row.submit_date}  รอบ ${row.submit_time_slot}</strong><br>` +
-          `ส่งครั้งแรกโดย: <strong>${row.submitter_name || "-"}</strong>` +
-          (editCnt > 0 ? `&ensp;|&ensp;แก้ไขแล้ว <strong>${editCnt} ครั้ง</strong>` : "") +
-          `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">${planHint}</div>`;
+          ? '⚠️ Plan Sale ของรอบสิ้นวัน — แก้ได้เฉพาะรอบ 16.00 เท่านั้น'
+          : 'การแก้ Plan Sale ที่นี่จะอัปเดต Plan Sale ในหน้าปฏิทินด้วย';
+        document.getElementById("editBanner").innerHTML = `
+          <div class="edt-banner-card">
+            <div class="edt-banner-row">
+              <div class="edt-banner-chip edt-chip-date">📅 ${row.submit_date}</div>
+              <div class="edt-banner-chip edt-chip-slot">⏱ รอบ ${slotLabel}</div>
+              ${editCnt > 0 ? `<div class="edt-banner-chip edt-chip-edits">✏️ แก้แล้ว ${editCnt} ครั้ง</div>` : ''}
+            </div>
+            <div class="edt-banner-submitter">ส่งครั้งแรกโดย: <b>${escHtml(row.submitter_name || "-")}</b></div>
+            <div class="edt-banner-hint">${planHint}</div>
+          </div>`;
 
-        const fields = [
-          { id: "e_submitter", label: "ชื่อผู้ส่ง *", val: row.submitter_name || "", num: false, full: true },
-          { id: "e_plan",   label: "Plan Sale",   val: row.plan_sale   || 0, num: true, dis: isEod },
-          { id: "e_actual", label: "Actual Sale", val: row.actual_sale || 0, num: true },
-          { id: "e_din_s",  label: "Sale Dine In",    val: row.sale_dine_in    || 0, num: true, dis: !isEod },
-          { id: "e_ta_s",   label: "Sale Take Away",  val: row.sale_take_away  || 0, num: true, dis: !isEod },
-          { id: "e_grab_s", label: "Sale Grab",       val: row.sale_grab       || 0, num: true, dis: !isEod },
-          { id: "e_line_s", label: "Sale Lineman",    val: row.sale_lineman    || 0, num: true, dis: !isEod },
-          { id: "e_shp_s",  label: "Sale Shopee",     val: row.sale_shopeefood || 0, num: true, dis: !isEod },
-          { id: "e_trans",  label: "Total Trans",     val: row.total_trans     || 0, num: true, dis: !isEod },
-          { id: "e_din_t",  label: "Trans Dine In",   val: row.trans_dine_in   || 0, num: true, dis: !isEod },
-          { id: "e_ta_t",   label: "Trans Take Away", val: row.trans_take_away || 0, num: true, dis: !isEod },
-          { id: "e_grab_t", label: "Trans Grab",      val: row.trans_grab      || 0, num: true, dis: !isEod },
-          { id: "e_line_t", label: "Trans Lineman",   val: row.trans_lineman   || 0, num: true, dis: !isEod },
-          { id: "e_shp_t",  label: "Trans Shopee",    val: row.trans_shopeefood|| 0, num: true, dis: !isEod },
-          { id: "e_cust",   label: "Customer",        val: row.customer        || 0, num: true, dis: !isEod },
-          { id: "e_lhour",  label: "Labour Hour",     val: row.labour_hour     || 0, num: true, dis: !isEod },
-          { id: "e_lbaht",  label: "Labour Baht",     val: row.labour_baht     || 0, num: true, dis: !isEod }
-        ];
+        // ─ Field groups ─
+        const numInp = (id, val, dis) => {
+          const disAttr = dis ? "disabled" : "";
+          return `<input id="${id}" type="text" inputmode="decimal" value="${val}" ${disAttr}>`;
+        };
+        const textInp = (id, val) => `<input id="${id}" type="text" value="${escHtml(String(val))}">`;
 
-        let gridHtml = "";
-        fields.forEach(f => {
-          const col = f.full ? "grid-column:1/-1" : "";
-          const dis = f.dis ? "disabled style='opacity:.45'" : "";
-          const inp = f.num
-            ? `<input id="${f.id}" type="text" inputmode="decimal" value="${f.val}" ${dis}>`
-            : `<input id="${f.id}" type="text" value="${escHtml(String(f.val))}">`;
-          gridHtml += `<div class="field" style="${col}"><label>${f.label}</label>${inp}</div>`;
-        });
+        const gridHtml = `
+          <div class="edt-section">
+            <div class="edt-section-hdr">👤 ข้อมูลผู้ส่ง</div>
+            <div class="edt-section-body">
+              <div class="field edt-field-full"><label>ชื่อผู้ส่ง *</label>${textInp("e_submitter", row.submitter_name || "")}</div>
+            </div>
+          </div>
+
+          <div class="edt-section">
+            <div class="edt-section-hdr">💰 ยอดขาย (Sale)</div>
+            <div class="edt-section-body edt-grid-3">
+              <div class="field"><label>Plan Sale</label>${numInp("e_plan",   row.plan_sale   || 0, isEod)}</div>
+              <div class="field"><label>Actual Sale *</label>${numInp("e_actual", row.actual_sale || 0, false)}</div>
+              <div class="field"><label>Dine In</label>${numInp("e_din_s",  row.sale_dine_in    || 0, !isEod)}</div>
+              <div class="field"><label>Take Away</label>${numInp("e_ta_s",   row.sale_take_away  || 0, !isEod)}</div>
+              <div class="field"><label>Grab</label>${numInp("e_grab_s", row.sale_grab       || 0, !isEod)}</div>
+              <div class="field"><label>Lineman</label>${numInp("e_line_s", row.sale_lineman    || 0, !isEod)}</div>
+              <div class="field"><label>Shopee Food</label>${numInp("e_shp_s",  row.sale_shopeefood || 0, !isEod)}</div>
+            </div>
+          </div>
+
+          <div class="edt-section">
+            <div class="edt-section-hdr">🧾 จำนวน Trans</div>
+            <div class="edt-section-body edt-grid-3">
+              <div class="field"><label>Total Trans</label>${numInp("e_trans",  row.total_trans     || 0, !isEod)}</div>
+              <div class="field"><label>Dine In</label>${numInp("e_din_t",  row.trans_dine_in   || 0, !isEod)}</div>
+              <div class="field"><label>Take Away</label>${numInp("e_ta_t",   row.trans_take_away || 0, !isEod)}</div>
+              <div class="field"><label>Grab</label>${numInp("e_grab_t", row.trans_grab      || 0, !isEod)}</div>
+              <div class="field"><label>Lineman</label>${numInp("e_line_t", row.trans_lineman   || 0, !isEod)}</div>
+              <div class="field"><label>Shopee Food</label>${numInp("e_shp_t",  row.trans_shopeefood|| 0, !isEod)}</div>
+            </div>
+          </div>
+
+          <div class="edt-section">
+            <div class="edt-section-hdr">👥 Customer & Labour</div>
+            <div class="edt-section-body edt-grid-3">
+              <div class="field"><label>Customer</label>${numInp("e_cust",   row.customer        || 0, !isEod)}</div>
+              <div class="field"><label>Labour Hour</label>${numInp("e_lhour",  row.labour_hour     || 0, !isEod)}</div>
+              <div class="field"><label>Labour Baht</label>${numInp("e_lbaht",  row.labour_baht     || 0, !isEod)}</div>
+            </div>
+          </div>`;
 
         document.getElementById("editGrid").innerHTML = gridHtml;
         openM("mEdit");
