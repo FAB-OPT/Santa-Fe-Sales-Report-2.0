@@ -5320,7 +5320,6 @@ body { background: var(--bg); color: var(--txt); }
         _daySumAnchor = new Date(); // กล่องสรุปรายวัน = วันนี้เสมอ
         _applyDashRoleView();
         loadDash();
-        loadBranchSummary();
       }
 
       // เลือก view ตาม role: branch ดูเฉพาะสาขาตัวเอง · team (admin/vp/bzm) ดูภาพรวม
@@ -5331,6 +5330,11 @@ body { background: var(--bg); color: var(--txt); }
         const tag = document.getElementById("dashRoleTag");
         const title = document.getElementById("dashTitle");
         const sub = document.getElementById("dashPageSub");
+        // ซ่อน/โชว์ ตัวเลือกช่วง (สัปดาห์/เดือน/ปี) + KPI strip — หน้าสาขาเอาออกให้เรียบ
+        ['dashModeSeg','dashPeriodNav','dashDrillKpis'].forEach(function(id){
+          var e = document.getElementById(id);
+          if (e) e.style.display = isBranch ? "none" : "";
+        });
         if (isBranch) {
           // หน้าสาขา: ซ่อน tag "MY STORE" และ subtitle (ช่วงวันที่อยู่ที่ปุ่มเลื่อนแล้ว)
           if (tag) tag.style.display = "none";
@@ -7025,6 +7029,19 @@ body { background: var(--bg); color: var(--txt); }
           return;
         }
 
+        // หน้าสาขา (เรียบ): โชว์แค่สัดส่วนช่องทาง — กล่องรายวัน/รายสัปดาห์อยู่ด้านบนแล้ว
+        if (role === "branch" || role === "franchise") {
+          if (crumbEl) crumbEl.innerHTML = "";
+          kpiEl.innerHTML = "";
+          bodyEl.innerHTML = `<div class="dash3-row"><div class="dash2-card dash3-card">
+            <div class="dash2-cardhdr"><h3>🍽️ สัดส่วนช่องทางการขาย</h3><div class="dash2-cardsub">มูลค่ายอดขายแยกตามช่องทาง · เดือนนี้</div></div>
+            <div style="position:relative;height:240px"><canvas id="ddDonut"></canvas></div>
+            <div id="ddDonutLegend" class="dash2-chan-legend"></div>
+          </div></div>`;
+          _ddRenderDonut(_dashRows);
+          return;
+        }
+
         if (reset) {
           if (role === "branch") {
             const bc = _ddCodes()[0] || null;
@@ -7223,6 +7240,7 @@ body { background: var(--bg); color: var(--txt); }
       async function loadDash() {
         // Admin/VP/BZM: populate branch filter + resolve scope
         populateBranchFilter("dashBranchFilter");
+        loadBranchSummary();   // กล่องรายวัน/รายสัปดาห์ (เฉพาะหน้าสาขา · self-guard)
         const queryCodes = getQueryBranchCodes("dashBranchFilter"); // array | null
 
         // Compute date range from mode + anchor (สัปดาห์ จ–อา / เดือน / ปี)
