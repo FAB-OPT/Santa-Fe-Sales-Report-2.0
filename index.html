@@ -861,6 +861,70 @@
       }
 
       /* ─────────────────────────────────────────
+   DASHBOARD DRILL-DOWN (ทั้งบริษัท → BZM → สาขา)
+───────────────────────────────────────── */
+      .dd-crumb { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 0 16px; font-size:13.5px; }
+      .dd-crumb button { font-family:inherit; font-size:13.5px; background:none; border:1px solid transparent; color:var(--txt2); cursor:pointer; padding:6px 12px; border-radius:9px; transition:all .18s var(--ease); }
+      .dd-crumb button:hover { color:var(--txt); background:var(--surface); border-color:var(--bd); }
+      .dd-crumb button.here { color:var(--brand); font-weight:700; background:rgba(242,108,28,.09); border-color:rgba(242,108,28,.32); cursor:default; }
+      .dd-crumb .dd-sep { color:var(--txt2); opacity:.55; }
+
+      .dd-kpis { grid-template-columns:repeat(6,1fr); margin-bottom:18px; }
+      .dd-kpis .dash3-kpi-hero { grid-column:auto; }
+      .dd-kpi-sub { font-size:11.5px; color:var(--txt2); margin-top:6px; font-weight:600; }
+
+      .dd-grid2 { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; }
+
+      .dd-bar-head { display:grid; grid-template-columns:150px 1fr 116px; gap:12px; padding:2px 10px 8px; font-size:11px; color:var(--txt2); border-bottom:1px solid var(--bd); margin-bottom:4px; }
+      .dd-bar-head span:last-child { text-align:right; }
+      .dd-bar-scroll { max-height:430px; overflow-y:auto; margin:0 -6px; padding:0 6px; }
+      .dd-bar { display:grid; grid-template-columns:150px 1fr 116px; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-radius:10px; padding:9px 10px; cursor:pointer; transition:background .15s var(--ease); font-family:inherit; }
+      .dd-bar:hover { background:rgba(242,108,28,.07); }
+      .dd-bar-name { font-size:13px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .dd-bar-name b { color:var(--txt2); font-size:11px; margin-right:5px; font-weight:700; }
+      .dd-bar-track { height:13px; background:var(--bd); border-radius:7px; overflow:hidden; }
+      .dd-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#f59e0b,var(--brand)); transition:width .6s var(--ease); }
+      .dd-bar-val { text-align:right; font-size:12.5px; font-weight:700; color:var(--txt); font-variant-numeric:tabular-nums; }
+      .dd-bar-val i { font-style:normal; font-size:11px; font-weight:700; margin-left:7px; }
+
+      .dd-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+      .dd-table th, .dd-table td { padding:9px 8px; text-align:right; font-variant-numeric:tabular-nums; }
+      .dd-table th { color:var(--txt2); font-weight:600; font-size:11px; border-bottom:1px solid var(--bd); }
+      .dd-table th:first-child, .dd-table td:first-child { text-align:left; }
+      .dd-table tbody tr { border-bottom:1px solid var(--bd); }
+      .dd-table tbody tr:last-child { border-bottom:none; }
+      .dd-ch { display:flex; align-items:center; gap:7px; color:var(--txt); font-weight:600; }
+
+      .dd-loading { padding:40px; text-align:center; color:var(--txt2); }
+      .dd-empty { padding:48px 20px; text-align:center; color:var(--txt2); font-size:14px; }
+
+      /* branch hero */
+      .dd-hero { display:flex; gap:18px; align-items:flex-start; }
+      .dd-hero-emoji { font-size:3rem; line-height:1; }
+      .dd-hero-main { flex:1; min-width:0; }
+      .dd-hero-msg { font-size:14px; font-weight:700; color:var(--txt); margin-bottom:4px; }
+      .dd-hero-big { font-size:2.2rem; font-weight:800; color:var(--brand); letter-spacing:-.03em; line-height:1.1; }
+      .dd-hero-prog { height:10px; background:var(--bd); border-radius:6px; overflow:hidden; margin:12px 0 8px; }
+      .dd-hero-prog-fill { height:100%; border-radius:6px; transition:width .6s var(--ease); }
+      .dd-hero-meta { display:flex; justify-content:space-between; font-size:12.5px; color:var(--txt2); }
+      .dd-hero-meta b { color:var(--txt); }
+      .dd-hero-tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+      .dd-tile { background:var(--surface); border:1px solid var(--bd); border-radius:12px; padding:12px; }
+      .dd-tile-lbl { font-size:11.5px; color:var(--txt2); font-weight:600; margin-bottom:5px; }
+      .dd-tile-val { font-size:1.15rem; font-weight:800; color:var(--txt); }
+
+      @media (max-width: 900px) {
+        .dd-kpis { grid-template-columns:repeat(3,1fr); }
+        .dd-grid2 { grid-template-columns:1fr; }
+      }
+      @media (max-width: 560px) {
+        .dd-kpis { grid-template-columns:1fr 1fr; }
+        .dd-bar-head, .dd-bar { grid-template-columns:1fr 96px; }
+        .dd-bar-track { display:none; }
+        .dd-hero { flex-direction:column; align-items:center; text-align:center; }
+      }
+
+      /* ─────────────────────────────────────────
    HUB BUTTON (กลับเมนูหลัก) — solid green + arrow icon
 ───────────────────────────────────────── */
       .btn-hub {
@@ -3770,9 +3834,21 @@ body { background: var(--bg); color: var(--txt); }
 }
 .dash2-custom-row.show { display: inline-flex; }
 .dash2-custom-row input[type="date"] {
-  background: #fff; border: 1px solid var(--bd); border-radius: 6px;
-  padding: 5px 8px; font-family: inherit; font-size: 13px;
+  background: var(--surface); color: var(--txt);
+  border: 1.5px solid var(--txt3); border-radius: 8px;
+  padding: 7px 10px; font-family: inherit; font-size: 13px; font-weight: 600;
+  min-width: 150px; transition: border-color .18s, box-shadow .18s;
 }
+.dash2-custom-row input[type="date"]:hover { border-color: var(--txt2); }
+.dash2-custom-row input[type="date"]:focus {
+  outline: none; border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(242,108,28,.15);
+}
+/* ไอคอนปฏิทินให้เห็นชัดทั้งโหมดสว่าง/มืด */
+.dash2-custom-row input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer; opacity: .7; filter: invert(var(--cal-invert, 0));
+}
+.dash2-custom-row input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 .dash2-custom-row label { font-size: 12px; color: var(--txt2); font-weight: 600; }
 
 @media (max-width: 900px) {
@@ -4230,180 +4306,12 @@ body { background: var(--bg); color: var(--txt); }
           <button class="dash3-seg-btn active" onclick="applyDashCustom()">ดูข้อมูล</button>
         </div>
 
-        <!-- ═══════════════ 3 FRAMED CARDS: วันนี้ / เดือนนี้ / ปีนี้ ═══════════════ -->
-        <div class="dash3-frame-row">
-          <!-- 📅 วันนี้ -->
-          <div class="dash3-frame frame-today">
-            <div class="dash3-frame-hdr">
-              <div class="dash3-frame-eyebrow">📅 วันนี้</div>
-              <div class="dash3-frame-date" id="dashFrameTodayDate">—</div>
-            </div>
-            <div class="dash3-frame-big" id="dashFrameTodayVal">฿0</div>
-            <div class="dash3-frame-progress">
-              <div class="dash3-frame-pblock">
-                <span class="dash3-frame-plbl">ทำได้</span>
-                <span class="dash3-frame-pval" id="dashFrameTodayPct">—</span>
-              </div>
-              <div class="dash3-frame-pbar"><div class="dash3-frame-pfill" id="dashFrameTodayBar" style="width:0%"></div></div>
-              <div class="dash3-frame-pmeta">
-                <span>เป้า <b id="dashFrameTodayPlan">฿0</b></span>
-                <span><b id="dashFrameTodayBills">0</b> บิล</span>
-              </div>
-            </div>
-            <div class="dash3-frame-status" id="dashFrameTodayStatus">⏳ ยังไม่ส่ง</div>
-          </div>
+        <!-- ═══════════════ DRILL-DOWN: ทั้งบริษัท → BZM → สาขา ═══════════════ -->
+        <div class="dd-crumb" id="dashCrumb"></div>
+        <div class="dash3-kpis dd-kpis" id="dashDrillKpis"></div>
+        <div id="dashDrillBody"></div>
 
-          <!-- 🗓️ เดือนนี้ -->
-          <div class="dash3-frame frame-month">
-            <div class="dash3-frame-hdr">
-              <div class="dash3-frame-eyebrow">🗓️ เดือนนี้</div>
-              <div class="dash3-frame-date" id="dashFrameMonthName">—</div>
-            </div>
-            <div class="dash3-frame-big" id="dashFrameMonthVal">฿0</div>
-            <div class="dash3-frame-progress">
-              <div class="dash3-frame-pblock">
-                <span class="dash3-frame-plbl">ทำได้</span>
-                <span class="dash3-frame-pval" id="dashFrameMonthPct">—</span>
-              </div>
-              <div class="dash3-frame-pbar"><div class="dash3-frame-pfill" id="dashFrameMonthBar" style="width:0%"></div></div>
-              <div class="dash3-frame-pmeta">
-                <span>เป้า <b id="dashFrameMonthPlan">฿0</b></span>
-                <span>ส่ง <b id="dashFrameMonthDays">0/0</b> วัน</span>
-              </div>
-            </div>
-            <div class="dash3-frame-status frame-status-proj" id="dashFrameMonthProj">📈 คาดการณ์: —</div>
-          </div>
-
-          <!-- 📆 ปีนี้ -->
-          <div class="dash3-frame frame-year">
-            <div class="dash3-frame-hdr">
-              <div class="dash3-frame-eyebrow">📆 ปีนี้</div>
-              <div class="dash3-frame-date" id="dashFrameYearName">—</div>
-            </div>
-            <div class="dash3-frame-big" id="dashFrameYearVal">฿0</div>
-            <div class="dash3-frame-progress">
-              <div class="dash3-frame-pblock">
-                <span class="dash3-frame-plbl">ทำได้</span>
-                <span class="dash3-frame-pval" id="dashFrameYearPct">—</span>
-              </div>
-              <div class="dash3-frame-pbar"><div class="dash3-frame-pfill" id="dashFrameYearBar" style="width:0%"></div></div>
-              <div class="dash3-frame-pmeta">
-                <span>เป้า <b id="dashFrameYearPlan">฿0</b></span>
-                <span>ส่ง <b id="dashFrameYearMonths">0/12</b> เดือน</span>
-              </div>
-            </div>
-            <div class="dash3-frame-status frame-status-proj" id="dashFrameYearProj">📈 คาดการณ์: —</div>
-          </div>
-        </div>
-
-
-        <!-- ═══════════════ BRANCH VIEW (สาขา) ═══════════════ -->
-        <div class="dash3-branch-view">
-          <!-- Branch hero: store name + period sales -->
-          <div class="dash3-branch-hero">
-            <div class="dash3-bh-left">
-              <div class="dash3-bh-eyebrow" id="dashBranchName">— สาขา —</div>
-              <div class="dash3-bh-bigval" id="dashBranchSales">฿—</div>
-              <div class="dash3-bh-sub" id="dashBranchSub">ยอดขายในช่วงที่เลือก</div>
-            </div>
-            <div class="dash3-bh-right">
-              <div class="dash3-bh-progress-lbl">
-                <span>ทำได้ <b id="dashBranchPctVal">—</b></span>
-                <span>เป้า <b id="dashBranchPlanVal">฿—</b></span>
-              </div>
-              <div class="dash3-bh-progress-track">
-                <div class="dash3-bh-progress-fill" id="dashBranchPctBar" style="width:0%"></div>
-              </div>
-              <div class="dash3-bh-tiles">
-                <div class="dash3-bh-tile">
-                  <div class="dash3-bh-tile-lbl">🧾 บิล</div>
-                  <div class="dash3-bh-tile-val" id="dashBranchBills">—</div>
-                </div>
-                <div class="dash3-bh-tile">
-                  <div class="dash3-bh-tile-lbl">💵 เฉลี่ย/บิล</div>
-                  <div class="dash3-bh-tile-val" id="dashBranchAvg">฿—</div>
-                </div>
-                <div class="dash3-bh-tile">
-                  <div class="dash3-bh-tile-lbl">👥 ค่าแรง %</div>
-                  <div class="dash3-bh-tile-val" id="dashBranchLabour">—</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══════════════ TEAM VIEW (Admin/VP/BZM) ═══════════════ -->
-        <div class="dash3-team-view">
-          <div class="dash3-hero">
-            <div class="dash3-hero-bg"></div>
-            <div class="dash3-kpis" id="dashStatsGrid">
-              <div class="dash3-kpi dash3-kpi-hero">
-                <div class="dash3-kpi-lbl">💰 ยอดขายจริง</div>
-                <div class="dash3-kpi-val">-</div>
-              </div>
-              <div class="dash3-kpi">
-                <div class="dash3-kpi-lbl">🧾 จำนวนบิล</div>
-                <div class="dash3-kpi-val">-</div>
-              </div>
-              <div class="dash3-kpi">
-                <div class="dash3-kpi-lbl">🎯 % ของเป้า</div>
-                <div class="dash3-kpi-val">-</div>
-              </div>
-              <div class="dash3-kpi">
-                <div class="dash3-kpi-lbl">👥 ค่าแรง (%)</div>
-                <div class="dash3-kpi-val">-</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ───────── แถว 1: แนวโน้มยอดขาย + ช่องทางการขาย ───────── -->
-        <div class="dash2-row1 dash3-row">
-          <div class="dash2-card dash3-card">
-            <div class="dash2-cardhdr">
-              <h3>📈 แนวโน้มยอดขาย</h3>
-              <div class="dash2-cardsub">ยอดขายจริงรายวันในช่วงที่เลือก</div>
-            </div>
-            <div style="position:relative;height:300px">
-              <canvas id="dashChart"></canvas>
-            </div>
-          </div>
-          <div class="dash2-card dash3-card">
-            <div class="dash2-cardhdr">
-              <h3>🍰 ยอดขายแยกตามช่องทาง</h3>
-              <div class="dash2-cardsub">สัดส่วนยอดขายแต่ละช่องทาง</div>
-            </div>
-            <div style="position:relative;height:220px">
-              <canvas id="dashChannelChart"></canvas>
-            </div>
-            <div id="dashChannelLegend" class="dash2-chan-legend"></div>
-          </div>
-        </div>
-
-        <!-- ───────── แถว 2: สาขายอดเยี่ยม + สรุปตัวเลข ───────── -->
-        <div class="dash2-row2 dash3-row">
-          <div class="dash2-card dash3-card dash3-team-view">
-            <div class="dash2-cardhdr">
-              <h3>🏆 สาขายอดเยี่ยม</h3>
-              <div class="dash2-cardsub">% ของเป้า — 8 สาขาที่ทำได้สูงสุด</div>
-            </div>
-            <div style="position:relative;height:300px">
-              <canvas id="dashBranchBars"></canvas>
-            </div>
-          </div>
-          <div class="dash2-card dash3-card">
-            <div class="dash2-cardhdr">
-              <h3>📋 สรุปตัวเลขสำคัญ</h3>
-              <div class="dash2-cardsub">ค่าเฉลี่ยในช่วงที่เลือก</div>
-            </div>
-            <div class="dash2-quick-list" id="dashQuickStats">
-              <div class="dash2-quick-row"><span class="dash2-quick-lbl">ยอดเฉลี่ย/บิล</span><span class="dash2-quick-val">-</span></div>
-              <div class="dash2-quick-row"><span class="dash2-quick-lbl">จำนวนบิล/วัน</span><span class="dash2-quick-val">-</span></div>
-              <div class="dash2-quick-row"><span class="dash2-quick-lbl">ยอดขาย/วัน</span><span class="dash2-quick-val">-</span></div>
-              <div class="dash2-quick-row"><span class="dash2-quick-lbl">จำนวนวันที่ส่งข้อมูล</span><span class="dash2-quick-val">-</span></div>
-            </div>
-          </div>
-        </div>
+        <!-- (โครงเดิม: 3 framed cards / branch view / team view / chart rows — แทนด้วย drill-down ด้านบนแล้ว) -->
       </div>
     </div>
 
@@ -6735,6 +6643,408 @@ body { background: var(--bg); color: var(--txt); }
           <div class="dash2-quick-row"><span class="dash2-quick-lbl">จำนวนวันที่ส่งข้อมูล</span><span class="dash2-quick-val">${daysSub} / ${days} วัน</span></div>`;
       }
 
+      /* ════════════════════════════════════════════
+         DASHBOARD — Drill-down (ทั้งบริษัท → BZM → สาขา)
+         อ่านจาก _dashRows (EOD) + _dashPlanByBranch + BRANCH_DM_MAP
+      ════════════════════════════════════════════ */
+      let _ddView = { level: "company", zone: null, branch: null };
+      let _ddRange = { startDate: null, endDate: null, periodDays: 30 };
+      let _ddTrendChart = null, _ddDonutChart = null;
+      let _ddZoneItems = [], _ddBranchItems = [];
+
+      const _DD_TRANS_KEY = {
+        sale_dine_in: "trans_dine_in", sale_take_away: "trans_take_away",
+        sale_grab: "trans_grab", sale_lineman: "trans_lineman", sale_shopeefood: "trans_shopeefood"
+      };
+      function _ddAchvColor(p) { return p >= 1 ? "#16a34a" : p >= 0.85 ? "#f59e0b" : "#ef4444"; }
+      function _ddZoneOf(bc) { return (BRANCH_DM_MAP[bc] || {}).dm || "ไม่ระบุโซน"; }
+      function _ddCodes() { return [...new Set((_dashRows || []).map(r => r.branch_code).filter(Boolean))]; }
+      function _ddZones() {
+        const m = {};
+        _ddCodes().forEach(bc => { const z = _ddZoneOf(bc); (m[z] = m[z] || []).push(bc); });
+        return m;
+      }
+      function _ddPlan(codes) {
+        return (codes || []).reduce((s, bc) => s + (parseFloat(_dashPlanByBranch[bc]) || 0), 0);
+      }
+      function _ddAgg(rows) {
+        const eod = (rows || []).filter(r => r.submit_time_slot === "สิ้นวัน");
+        const a = { actual: 0, bills: 0, cust: 0, labHr: 0, labBaht: 0, sale: {}, trans: {} };
+        CHANNEL_DEFS.forEach(c => { a.sale[c.key] = 0; a.trans[c.key] = 0; });
+        eod.forEach(r => {
+          a.actual  += parseFloat(r.actual_sale) || 0;
+          a.bills   += parseFloat(r.total_trans) || 0;
+          a.cust    += parseFloat(r.customer) || 0;
+          a.labHr   += parseFloat(r.labour_hour) || 0;
+          a.labBaht += parseFloat(r.labour_baht) || 0;
+          CHANNEL_DEFS.forEach(c => {
+            a.sale[c.key]  += parseFloat(r[c.key]) || 0;
+            a.trans[c.key] += parseFloat(r[_DD_TRANS_KEY[c.key]]) || 0;
+          });
+        });
+        return a;
+      }
+
+      function _ddKpiCards(a, codes) {
+        const plan = _ddPlan(codes);
+        const pct    = plan > 0 ? a.actual / plan : 0;
+        const ticket = a.bills > 0 ? a.actual / a.bills : 0;
+        const labPct = a.actual > 0 ? a.labBaht / a.actual : 0;
+        const prod   = a.labHr > 0 ? a.actual / a.labHr : 0;
+        const dp = a.actual - plan;
+        const cards = [
+          { hero: true, lbl: "💰 ยอดขายจริง", val: "฿" + fmt(Math.round(a.actual)), sub: "เป้า ฿" + fmt(Math.round(plan)) },
+          { lbl: "🎯 % ของเป้า", val: plan > 0 ? (pct * 100).toFixed(1) + "%" : "-",
+            sub: (plan > 0 ? (dp >= 0 ? "▲ +" : "▼ ") + "฿" + fmt(Math.round(Math.abs(dp))) : "ยังไม่มีเป้า"),
+            subColor: plan > 0 ? _ddAchvColor(pct) : null },
+          { lbl: "🧾 จำนวนบิล", val: fmt(a.bills), sub: "ลูกค้า " + fmt(a.cust) + " คน" },
+          { lbl: "💵 บิลเฉลี่ย", val: a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-", sub: "ต่อบิล" },
+          { lbl: "👥 ค่าแรง %", val: a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-", sub: fmt(Math.round(a.labHr)) + " ชม." },
+          { lbl: "⚡ Productivity", val: a.labHr > 0 ? "฿" + fmt(Math.round(prod)) : "-", sub: "ต่อ ชม." }
+        ];
+        return cards.map(k => `
+          <div class="dash3-kpi${k.hero ? " dash3-kpi-hero" : ""}">
+            <div class="dash3-kpi-lbl">${k.lbl}</div>
+            <div class="dash3-kpi-val">${k.val}</div>
+            <div class="dd-kpi-sub"${k.subColor ? ` style="color:${k.subColor}"` : ""}>${k.sub}</div>
+          </div>`).join("");
+      }
+
+      function _ddBarList(items, onClick) {
+        if (!items.length) return `<div class="dd-empty">ไม่มีข้อมูลในช่วงนี้</div>`;
+        const max = Math.max(...items.map(i => i.actual), 1);
+        const rows = items.map((i, idx) => {
+          const w = (i.actual / max * 100).toFixed(1);
+          const col = _ddAchvColor(i.pct);
+          return `<button class="dd-bar" onclick="${onClick}(${idx})">
+            <span class="dd-bar-name">${i.code ? `<b>${escHtml(i.code)}</b>` : ""}${escHtml(i.label)}${i.n ? ` <b>· ${i.n} สาขา</b>` : ""}</span>
+            <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%"></span></span>
+            <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${col}">${i.pct ? (i.pct * 100).toFixed(0) + "%" : "-"}</i></span>
+          </button>`;
+        }).join("");
+        return `<div class="dd-bar-head"><span>สาขา / โซน</span><span>ยอดขายจริง</span><span>จริง · %เป้า</span></div><div class="dd-bar-scroll">${rows}</div>`;
+      }
+
+      function _ddBranchHero(rows, codes) {
+        const a = _ddAgg(rows);
+        const plan = _ddPlan(codes);
+        const pct = plan > 0 ? a.actual / plan : 0;
+        const ticket = a.bills > 0 ? a.actual / a.bills : 0;
+        const labPct = a.actual > 0 ? a.labBaht / a.actual : 0;
+        const emoji = pct >= 1 ? "🎉" : pct >= 0.85 ? "💪" : "⚠️";
+        const msg = plan <= 0 ? "ยังไม่มีเป้าในช่วงนี้" : pct >= 1 ? "เกินเป้าแล้ว!" : pct >= 0.85 ? "ใกล้ถึงเป้า ดันอีกนิด" : "ต่ำกว่าเป้า ต้องเร่งมือ";
+        const col = _ddAchvColor(pct);
+        const w = Math.min(pct * 100, 100).toFixed(1);
+        return `<div class="dd-hero">
+          <div class="dd-hero-emoji">${emoji}</div>
+          <div class="dd-hero-main">
+            <div class="dd-hero-msg">${msg}</div>
+            <div class="dd-hero-big">฿${fmt(Math.round(a.actual))}</div>
+            <div class="dd-hero-prog"><div class="dd-hero-prog-fill" style="width:${w}%;background:${col}"></div></div>
+            <div class="dd-hero-meta"><span>ทำได้ <b style="color:${col}">${plan > 0 ? (pct * 100).toFixed(1) + "%" : "-"}</b></span><span>เป้า <b>฿${fmt(Math.round(plan))}</b></span></div>
+            <div class="dd-hero-tiles">
+              <div class="dd-tile"><div class="dd-tile-lbl">🧾 บิล</div><div class="dd-tile-val">${fmt(a.bills)}</div></div>
+              <div class="dd-tile"><div class="dd-tile-lbl">💵 เฉลี่ย/บิล</div><div class="dd-tile-val">${a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-"}</div></div>
+              <div class="dd-tile"><div class="dd-tile-lbl">👥 ค่าแรง %</div><div class="dd-tile-val">${a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-"}</div></div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function _ddChannelTable(rows) {
+        const a = _ddAgg(rows);
+        const grand = CHANNEL_DEFS.reduce((s, c) => s + a.sale[c.key], 0);
+        const body = CHANNEL_DEFS.slice().map(c => ({ c, s: a.sale[c.key], t: a.trans[c.key] }))
+          .sort((x, y) => y.s - x.s)
+          .map(({ c, s, t }) => {
+            const pc = grand > 0 ? (s / grand * 100).toFixed(1) + "%" : "-";
+            return `<tr><td class="dd-ch"><span class="lg-dot" style="background:${c.color}"></span>${escHtml(c.label)}</td>
+              <td>${fmt(Math.round(s))}</td><td>${pc}</td><td>${t ? fmt(Math.round(s / t)) : 0}</td></tr>`;
+          }).join("");
+        return `<table class="dd-table"><thead><tr><th>ช่องทาง</th><th>ยอดขาย (฿)</th><th>สัดส่วน</th><th>บิลเฉลี่ย</th></tr></thead><tbody>${body}</tbody></table>`;
+      }
+
+      function _ddRenderDonut(rows) {
+        const a = _ddAgg(rows);
+        const totals = CHANNEL_DEFS.map(c => ({ ...c, value: a.sale[c.key] }));
+        const grand = totals.reduce((s, t) => s + t.value, 0);
+        const legEl = document.getElementById("ddDonutLegend");
+        if (legEl) {
+          legEl.innerHTML = grand <= 0
+            ? '<span style="color:var(--txt2);font-size:12px">ไม่มีข้อมูล</span>'
+            : totals.slice().sort((x, y) => y.value - x.value).map(t => {
+                const pc = (t.value / grand * 100).toFixed(1) + "%";
+                return `<span class="lg-item"><span class="lg-dot" style="background:${t.color}"></span>${escHtml(t.label)} <span style="color:var(--txt);font-weight:600;margin-left:2px">${pc}</span></span>`;
+              }).join("");
+        }
+        const cv = document.getElementById("ddDonut");
+        if (!cv) return;
+        if (_ddDonutChart) { _ddDonutChart.destroy(); _ddDonutChart = null; }
+        _ddDonutChart = new Chart(cv, {
+          type: "doughnut",
+          data: {
+            labels: CHANNEL_DEFS.map(c => c.label),
+            datasets: [{ data: CHANNEL_DEFS.map(c => a.sale[c.key]), backgroundColor: CHANNEL_DEFS.map(c => c.color), borderWidth: 2, borderColor: "#fff" }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, cutout: "62%",
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => {
+              const v = ctx.parsed || 0; const pc = grand > 0 ? (v / grand * 100).toFixed(1) + "%" : "-";
+              return `${ctx.label}: ${v.toLocaleString()} (${pc})`;
+            } } } }
+          }
+        });
+      }
+
+      // เก็บ label/byDate/มี-ข้อมูล จากช่วงที่เลือก (ใช้ร่วมกันทั้งเส้นและแท่ง)
+      function _ddTrendSeries(rows) {
+        const eod = (rows || []).filter(r => r.submit_time_slot === "สิ้นวัน");
+        const byDate = {};
+        eod.forEach(r => { byDate[r.submit_date] = (byDate[r.submit_date] || 0) + (parseFloat(r.actual_sale) || 0); });
+        const TH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        const labels = [], data = [];
+        const sD = new Date(_ddRange.startDate + "T00:00:00");
+        const eD = new Date(_ddRange.endDate + "T00:00:00");
+        for (let d = new Date(sD); d <= eD; d.setDate(d.getDate() + 1)) {
+          const k = _fmtDate(d);
+          labels.push(d.getDate() + " " + TH[d.getMonth()]);
+          data.push(byDate[k] || 0);
+        }
+        // นับเฉพาะวัน "ในช่วงที่เลือก" ที่มียอด — ถ้าสาขามีข้อมูลแต่อยู่นอกช่วง = ถือว่าว่าง
+        const dataDays = data.filter(v => v > 0).length;
+        return { labels, data, dataDays };
+      }
+
+      // company / zone — กราฟเส้นรวม
+      function _ddRenderTrend(rows) {
+        const box = document.getElementById("ddTrendBox");
+        if (!box) return;
+        if (_ddTrendChart) { _ddTrendChart.destroy(); _ddTrendChart = null; }
+        const s = _ddTrendSeries(rows);
+        if (!s.dataDays) {
+          box.innerHTML = `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
+          return;
+        }
+        box.innerHTML = `<div style="position:relative;height:280px"><canvas id="ddTrend"></canvas></div>`;
+        _ddTrendChart = new Chart(document.getElementById("ddTrend"), {
+          type: "line",
+          data: { labels: s.labels, datasets: [{ label: "ยอดขาย", data: s.data, borderColor: "rgba(242,108,28,1)", backgroundColor: "rgba(242,108,28,0.12)", borderWidth: 2.5, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => "ยอดขาย: ฿" + c.parsed.y.toLocaleString() } } },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#94a3b8", maxRotation: 0, autoSkipPadding: 12 } },
+              y: { beginAtZero: true, ticks: { font: { size: 10 }, color: "#94a3b8", callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v }, grid: { color: "rgba(0,0,0,.05)", drawBorder: false } }
+            }
+          }
+        });
+      }
+
+      // สาขา — แท่งรายวัน เทียบเป้า (เขียว=ถึงเป้า · ส้ม=ต่ำกว่า) + เส้นเป้า/วัน
+      function _ddRenderBranchTrend(rows, codes) {
+        const box = document.getElementById("ddTrendBox");
+        if (!box) return;
+        if (_ddTrendChart) { _ddTrendChart.destroy(); _ddTrendChart = null; }
+        const s = _ddTrendSeries(rows);
+        if (!s.dataDays) {
+          box.innerHTML = `<div class="dd-empty">📭 สาขานี้ยังไม่มียอดขายในช่วงที่เลือก</div>`;
+          return;
+        }
+        const periodPlan = _ddPlan(codes);
+        const dailyTarget = _ddRange.periodDays > 0 ? periodPlan / _ddRange.periodDays : 0;
+        const colors = s.data.map(v => dailyTarget > 0 ? (v >= dailyTarget ? "rgba(34,197,94,0.85)" : "rgba(242,108,28,0.85)") : "rgba(148,163,184,0.65)");
+        const datasets = [{ type: "bar", label: "ยอดขายจริง", data: s.data, backgroundColor: colors, borderRadius: 4, borderSkipped: false, order: 2 }];
+        if (dailyTarget > 0) {
+          datasets.unshift({ type: "line", label: "เป้า/วัน", data: s.labels.map(() => dailyTarget), borderColor: "#94a3b8", borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, order: 1 });
+        }
+        box.innerHTML = `<div style="position:relative;height:280px"><canvas id="ddTrend"></canvas></div>`;
+        _ddTrendChart = new Chart(document.getElementById("ddTrend"), {
+          data: { labels: s.labels, datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: dailyTarget > 0, position: "bottom", labels: { boxWidth: 12, font: { size: 11 }, color: "#475569" } },
+              tooltip: { callbacks: { label: (c) => {
+                if (c.dataset.type === "line") return "เป้า/วัน: ฿" + Math.round(c.parsed.y).toLocaleString();
+                const v = c.parsed.y; const hit = dailyTarget > 0 && v >= dailyTarget;
+                return "ยอดขาย: ฿" + v.toLocaleString() + (dailyTarget > 0 ? (hit ? " ✓ ถึงเป้า" : " · ต่ำกว่าเป้า") : "");
+              } } }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#94a3b8", maxRotation: 0, autoSkipPadding: 12 } },
+              y: { beginAtZero: true, ticks: { font: { size: 10 }, color: "#94a3b8", callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v }, grid: { color: "rgba(0,0,0,.05)", drawBorder: false } }
+            }
+          }
+        });
+      }
+
+      // เลือกวันเดียว — แสดงช่องทางการขายของวันนั้นเป็นแท่งแนวนอน (฿) แทนกราฟแนวโน้ม
+      function _ddRenderDayChannels(rows) {
+        const box = document.getElementById("ddTrendBox");
+        if (!box) return;
+        if (_ddTrendChart) { _ddTrendChart.destroy(); _ddTrendChart = null; }
+        const a = _ddAgg(rows);
+        const items = CHANNEL_DEFS.map(c => ({ label: c.label, color: c.color, value: a.sale[c.key] }))
+          .sort((x, y) => y.value - x.value);
+        const total = items.reduce((s, t) => s + t.value, 0);
+        if (total <= 0) {
+          box.innerHTML = `<div class="dd-empty">📭 วันนี้ยังไม่มียอดขาย</div>`;
+          return;
+        }
+        box.innerHTML = `<div style="position:relative;height:280px"><canvas id="ddTrend"></canvas></div>`;
+        _ddTrendChart = new Chart(document.getElementById("ddTrend"), {
+          type: "bar",
+          data: { labels: items.map(t => t.label), datasets: [{ data: items.map(t => t.value), backgroundColor: items.map(t => t.color), borderRadius: 4, borderSkipped: false }] },
+          options: {
+            indexAxis: "y", responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: (c) => {
+                const v = c.parsed.x; const pc = total > 0 ? (v / total * 100).toFixed(1) + "%" : "-";
+                return "฿" + v.toLocaleString() + " (" + pc + ")";
+              } } }
+            },
+            scales: {
+              x: { beginAtZero: true, ticks: { font: { size: 10 }, color: "#94a3b8", callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v }, grid: { color: "rgba(0,0,0,.05)", drawBorder: false } },
+              y: { ticks: { font: { size: 11 }, color: "#475569" }, grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      function _ddPanel(title, sub, inner, extraClass) {
+        return `<div class="dash2-card dash3-card ${extraClass || ""}">
+          <div class="dash2-cardhdr"><h3>${title}</h3><div class="dash2-cardsub">${sub}</div></div>
+          ${inner}</div>`;
+      }
+
+      // navigation
+      function _ddDrillZone(i) { const z = _ddZoneItems[i]; if (!z) return; _ddView = { level: "zone", zone: z.id, branch: null }; renderDashDrill(); }
+      function _ddDrillBranch(i) { const b = _ddBranchItems[i]; if (!b) return; _ddView = { level: "branch", zone: _ddView.zone, branch: b.id }; renderDashDrill(); }
+      function _ddGoCompany() { _ddView = { level: "company", zone: null, branch: null }; renderDashDrill(); }
+      function _ddGoZone() { _ddView = { level: "zone", zone: _ddView.zone, branch: null }; renderDashDrill(); }
+
+      function _ddCrumb() {
+        const role = (typeof S !== "undefined" && S && S.role) || "";
+        if (role === "branch") {
+          const nm = (BRANCH_DM_MAP[_ddView.branch] || {}).branch || _ddView.branch || "สาขา";
+          return `<button class="here">🏬 ${escHtml(nm)}</button>`;
+        }
+        let h = "";
+        const canCompany = (role === "admin" || role === "vp");
+        if (canCompany) {
+          h += `<button class="${_ddView.level === "company" ? "here" : ""}" onclick="_ddGoCompany()">🏢 ทั้งบริษัท</button>`;
+        }
+        if (_ddView.zone) {
+          if (h) h += `<span class="dd-sep">›</span>`;
+          h += `<button class="${_ddView.level === "zone" ? "here" : ""}" onclick="_ddGoZone()">👥 ${escHtml(_ddView.zone)}</button>`;
+        }
+        if (_ddView.branch) {
+          h += `<span class="dd-sep">›</span>`;
+          const nm = (BRANCH_DM_MAP[_ddView.branch] || {}).branch || _ddView.branch;
+          h += `<button class="here">🏬 ${escHtml(nm)}</button>`;
+        }
+        return h;
+      }
+
+      function renderDashDrill(reset) {
+        const bodyEl = document.getElementById("dashDrillBody");
+        const kpiEl  = document.getElementById("dashDrillKpis");
+        const crumbEl = document.getElementById("dashCrumb");
+        if (!bodyEl || !kpiEl) return;
+        if (_ddTrendChart) { _ddTrendChart.destroy(); _ddTrendChart = null; }
+        if (_ddDonutChart) { _ddDonutChart.destroy(); _ddDonutChart = null; }
+
+        const role = (typeof S !== "undefined" && S && S.role) || "";
+        const zones = _ddZones();
+        const zoneNames = Object.keys(zones);
+
+        // empty data
+        if (!_ddCodes().length) {
+          if (crumbEl) crumbEl.innerHTML = "";
+          kpiEl.innerHTML = "";
+          bodyEl.innerHTML = `<div class="dash2-card dash3-card"><div class="dd-empty">📭 ยังไม่มีข้อมูลยอดขายในช่วงที่เลือก</div></div>`;
+          return;
+        }
+
+        if (reset) {
+          if (role === "branch") {
+            const bc = _ddCodes()[0] || null;
+            _ddView = { level: "branch", zone: bc ? _ddZoneOf(bc) : null, branch: bc };
+          } else if (role === "bzm") {
+            _ddView = { level: "zone", zone: zoneNames[0] || null, branch: null };
+          } else {
+            _ddView = { level: "company", zone: null, branch: null };
+          }
+        }
+        // guard: drilled target no longer present in data
+        if (_ddView.level === "zone" && !zones[_ddView.zone]) {
+          _ddView = { level: (role === "admin" || role === "vp") ? "company" : "zone", zone: zoneNames[0] || null, branch: null };
+        }
+        if (_ddView.level === "branch" && !_ddCodes().includes(_ddView.branch)) {
+          _ddView = { level: (role === "admin" || role === "vp") ? "company" : "zone", zone: zoneNames[0] || null, branch: null };
+        }
+
+        if (crumbEl) crumbEl.innerHTML = _ddCrumb();
+
+        let topPanel, rows, codes;
+        if (_ddView.level === "company") {
+          codes = _ddCodes();
+          rows = _dashRows;
+          _ddZoneItems = zoneNames.map(z => {
+            const zr = _dashRows.filter(r => _ddZoneOf(r.branch_code) === z);
+            const a = _ddAgg(zr);
+            const pl = _ddPlan(zones[z]);
+            return { id: z, label: z, code: null, n: zones[z].length, actual: a.actual, pct: pl > 0 ? a.actual / pl : 0 };
+          }).sort((x, y) => y.actual - x.actual);
+          topPanel = _ddPanel("🏆 เปรียบเทียบยอดขายรายโซน (BZM)", "คลิกที่โซนเพื่อเจาะดูสาขาภายใน", _ddBarList(_ddZoneItems, "_ddDrillZone"));
+        } else if (_ddView.level === "zone") {
+          codes = zones[_ddView.zone] || [];
+          rows = _dashRows.filter(r => codes.includes(r.branch_code));
+          _ddBranchItems = codes.map(bc => {
+            const br = rows.filter(r => r.branch_code === bc);
+            const a = _ddAgg(br);
+            const pl = _ddPlan([bc]);
+            const nm = (BRANCH_DM_MAP[bc] || {}).branch || bc;
+            return { id: bc, label: nm.replace(/^\d+\s*/, ""), code: bc, actual: a.actual, pct: pl > 0 ? a.actual / pl : 0 };
+          }).sort((x, y) => y.actual - x.actual);
+          topPanel = _ddPanel("🏬 สาขาในโซน " + escHtml(_ddView.zone), codes.length + " สาขา · คลิกที่สาขาเพื่อดูรายละเอียด", _ddBarList(_ddBranchItems, "_ddDrillBranch"));
+        } else {
+          codes = [_ddView.branch];
+          rows = _dashRows.filter(r => r.branch_code === _ddView.branch);
+          topPanel = _ddPanel("📊 สรุปผลสาขา", "สถานะเทียบเป้าในช่วงที่เลือก", _ddBranchHero(rows, codes));
+        }
+
+        const isBranch = (_ddView.level === "branch");
+        const isSingleDay = !!(_ddRange.startDate && _ddRange.startDate === _ddRange.endDate);
+        let trendTitle, trendSub;
+        if (isSingleDay) {
+          trendTitle = "🍽️ ช่องทางการขายวันนั้น";
+          trendSub = "ยอดขายแยกช่องทาง · " + fmtThaiDate(_ddRange.startDate);
+        } else if (isBranch) {
+          trendTitle = "📊 ยอดขายรายวัน เทียบเป้า";
+          trendSub = "🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า (เทียบเป้าเฉลี่ย/วัน)";
+        } else {
+          trendTitle = "📈 แนวโน้มยอดขายรายวัน";
+          trendSub = "ยอดขายจริงรายวันในช่วงที่เลือก";
+        }
+
+        kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes);
+        bodyEl.innerHTML = `
+          <div class="dash3-row dd-grid2">
+            ${topPanel}
+            ${_ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่ายอดขายแยกตามช่องทาง", `<div style="position:relative;height:220px"><canvas id="ddDonut"></canvas></div><div id="ddDonutLegend" class="dash2-chan-legend"></div>`)}
+          </div>
+          <div class="dash3-row dd-grid2">
+            ${_ddPanel(trendTitle, trendSub, `<div id="ddTrendBox" style="position:relative;min-height:280px"></div>`)}
+            ${_ddPanel("📋 รายละเอียดช่องทาง", "ยอดขาย · สัดส่วน · บิลเฉลี่ย", _ddChannelTable(rows))}
+          </div>`;
+        _ddRenderDonut(rows);
+        if (isSingleDay) _ddRenderDayChannels(rows);
+        else if (isBranch) _ddRenderBranchTrend(rows, codes);
+        else _ddRenderTrend(rows);
+      }
+
       async function loadDash() {
         // Admin/VP/BZM: populate branch filter + resolve scope
         populateBranchFilter("dashBranchFilter");
@@ -6775,11 +7085,8 @@ body { background: var(--bg); color: var(--txt); }
         }
 
         // Loading state
-        document.getElementById("dashStatsGrid").innerHTML = `
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">ยอดขายจริง</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">จำนวนบิล</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">% ของเป้า</div><div class="dash2-kpi-val">-</div></div>
-          <div class="dash2-kpi"><div class="dash2-kpi-lbl">ค่าแรง (%)</div><div class="dash2-kpi-val">-</div></div>`;
+        const _ddLoad = document.getElementById("dashDrillBody");
+        if (_ddLoad) _ddLoad.innerHTML = `<div class="dash2-card dash3-card"><div class="dd-loading">⏳ กำลังโหลดข้อมูล...</div></div>`;
 
         // Fetch parallel: history + plans for current + prev
         let _hist = null, _plan = null, _prevHist = null, _prevPlan = null, _done = 0;
@@ -6815,23 +7122,9 @@ body { background: var(--bg); color: var(--txt); }
           }));
           const prevRows = (_prevHist && _prevHist.ok && _prevHist.rows) ? _prevHist.rows : [];
 
-          renderDashKpis(_dashRows, prevRows, cur.planByDate, prev.planByDate);
-          renderDashRevenueChart(_dashRows, startDate, endDate);
-          renderDashChannel(_dashRows);
-          renderDashBranchBars(_dashRows, cur.planByBranch);
-          renderDashQuickStats(_dashRows, periodDays);
-          // Branch view hero (เฉพาะ role=branch)
-          try {
-            var eod = _dashRows.filter(function(r){ return r.submit_time_slot === "สิ้นวัน"; });
-            var totalActual = eod.reduce(function(s,r){ return s + (parseFloat(r.actual_sale)||0); }, 0);
-            var totalPlan = Object.values(cur.planByDate).reduce(function(s,v){ return s + (parseFloat(v)||0); }, 0);
-            var totalBills = eod.reduce(function(s,r){ return s + (parseFloat(r.total_trans)||0); }, 0);
-            var totalLabour = eod.reduce(function(s,r){ return s + (parseFloat(r.labour_baht)||0); }, 0);
-            var labourPct = totalActual > 0 ? (totalLabour / totalActual * 100) : 0;
-            _updateBranchHero({ totalActual: totalActual, totalPlan: totalPlan, totalBills: totalBills, labourPct: labourPct });
-          } catch (e) { console.warn('branch hero update failed', e); }
-          // โหลด framed cards (วันนี้ / เดือนนี้ / ปีนี้)
-          _loadDashFrames(queryCodes);
+          // Drill-down dashboard (ทั้งบริษัท → BZM → สาขา) — รีเซ็ตไปที่ root ตามบทบาท
+          _ddRange = { startDate: startDate, endDate: endDate, periodDays: periodDays };
+          renderDashDrill(true);
         }
 
         apiCall({ mode:"history", branch_codes:queryCodes, start_date:startDate, end_date:endDate },
