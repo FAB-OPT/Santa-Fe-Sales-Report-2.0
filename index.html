@@ -7308,16 +7308,26 @@ body { background: var(--bg); color: var(--txt); }
           // หน้าสาขา + พาร์ทรายวัน → เพิ่มชิป รอบ 16:00 / สิ้นวัน
           if (sec === 'day' && (role === 'branch' || role === 'franchise')) {
             const dStr = d.range.startDate;
+            const planForDay = (d.planByDate && d.planByDate[dStr]) || 0;
             const rd = (slot) => {
               const rs = d.rows.filter(r => r.submit_date === dStr && r.submit_time_slot === slot);
               if (!rs.length) return null;
               return { act: rs.reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0), bills: rs.reduce((s, r) => s + (parseFloat(r.total_trans) || 0), 0) };
             };
-            const chip = (x, icon, name) => x
-              ? `<div class="bd-round">${icon} ${name} ·<b>฿${fmt(Math.round(x.act))}</b>${fmt(x.bills)} บิล</div>`
-              : `<div class="bd-round bd-round-empty">${icon} ${name} · ยังไม่ส่ง</div>`;
+            const pctColor = (p) => p >= 100 ? '#16a34a' : p >= 80 ? '#f59e0b' : '#dc2626';
+            const chip = (x, icon, name) => {
+              if (!x) return `<div class="bd-round bd-round-empty">${icon} ${name} · ยังไม่ส่ง</div>`;
+              const pct = planForDay > 0 ? (x.act / planForDay) * 100 : null;
+              const pctTxt = pct !== null
+                ? ` <span style="color:${pctColor(pct)};font-weight:700">(${pct.toFixed(1)}%)</span>`
+                : '';
+              return `<div class="bd-round">${icon} ${name} ·<b>฿${fmt(Math.round(x.act))}</b>${pctTxt} · ${fmt(x.bills)} บิล</div>`;
+            };
             const chips = `<div class="bd-rounds" style="margin-top:12px">${chip(rd('16.00'), '🕓', '16:00')}${chip(rd('สิ้นวัน'), '🌙', 'สิ้นวัน')}</div>`;
-            topPanel = _ddPanel("📊 สรุปผลสาขา", "รอบ 16:00 และสิ้นวัน", _ddBranchHero(rows, codes, map) + chips);
+            const sub = planForDay > 0
+              ? `รอบ 16:00 และสิ้นวัน · เทียบเป้า ฿${fmt(Math.round(planForDay))}`
+              : "รอบ 16:00 และสิ้นวัน";
+            topPanel = _ddPanel("📊 สรุปผลสาขา", sub, _ddBranchHero(rows, codes, map) + chips);
           }
         }
 
