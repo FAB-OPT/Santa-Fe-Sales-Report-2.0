@@ -3043,21 +3043,23 @@ body { background: var(--bg); color: var(--txt); }
   text-align: center !important;
 }
 .login-app-name  {
-  font-size: 22px !important; font-weight: 800 !important; color: var(--txt) !important;
-  letter-spacing: -.015em; line-height: 1.25;
+  font-size: 28px !important; font-weight: 800 !important; color: var(--txt) !important;
+  letter-spacing: -.02em; line-height: 1.2;
 }
 .login-app-ver   {
-  font-size: 13px !important; color: var(--txt2) !important; font-weight: 400 !important;
-  margin-top: 4px;
+  font-size: 15px !important; color: var(--txt2) !important; font-weight: 500 !important;
+  margin-top: 6px;
 }
 .login-app-logo  {
   display: block !important;
-  border-radius: 14px !important;
-  box-shadow: 0 6px 18px -6px rgba(242,108,28,.30) !important;
-  width: 78px !important; height: 78px !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 10px 28px -10px rgba(242,108,28,.45),
+    0 4px 10px -2px rgba(242,108,28,.20) !important;
+  width: 112px !important; height: 112px !important;
   object-fit: cover !important;
   flex-shrink: 0 !important;
-  margin: 0 auto !important;
+  margin: 0 auto 4px !important;
 }
 /* Tabs: pill */
 .login-tabs {
@@ -3099,8 +3101,9 @@ body { background: var(--bg); color: var(--txt); }
   .login-card { padding: 28px 18px 20px !important; max-width: 100% !important; }
   .login-otp  { gap: 8px !important; }
   .login-otp-box { width: 44px !important; height: 54px !important; font-size: 19px !important; border-radius: 11px !important; }
-  .login-app-logo { width: 64px !important; height: 64px !important; }
-  .login-app-name { font-size: 19px !important; }
+  .login-app-logo { width: 92px !important; height: 92px !important; border-radius: 20px !important; }
+  .login-app-name { font-size: 24px !important; }
+  .login-app-ver  { font-size: 14px !important; }
 }
 @media (max-width: 360px) {
   .login-otp  { gap: 6px !important; }
