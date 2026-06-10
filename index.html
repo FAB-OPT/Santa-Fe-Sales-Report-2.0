@@ -4202,21 +4202,13 @@ body { background: var(--bg); color: var(--txt); }
   .dd-channel-combined { grid-template-columns: 1fr; gap: 14px; }
 }
 
-/* Day mode — donut + bars + table รวมเป็นการ์ดเดียว */
+/* Day mode — donut + table รวมเป็นการ์ดเดียว (เหลือกราฟเดียว = donut) */
 .dd-channel-mega {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  grid-template-rows: auto auto;
-  gap: 20px 22px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
-.dd-channel-mega .dd-cc-donut  { min-width: 0; }
-.dd-channel-mega .dd-cc-bars   { min-width: 0; }
-.dd-channel-mega .dd-cc-table  { grid-column: 1 / -1; min-width: 0; }
-@media (max-width: 900px) {
-  .dd-channel-mega { grid-template-columns: 1fr; gap: 14px; }
-  .dd-channel-mega .dd-cc-table { grid-column: 1 / -1; }
-}
+.dd-channel-mega .dd-cc-donut, .dd-channel-mega .dd-cc-table { min-width: 0; }
     </style>
   </head>
 
@@ -7177,20 +7169,19 @@ body { background: var(--bg); color: var(--txt); }
           const rowBar = (icon, name, val, pct, color, bills, isLive) => {
             const liveDot = isLive ? `<span class="dd-rb-live" title="กำลังเก็บยอด"></span>` : '';
             const sent = (val > 0 || bills > 0);
-            const billTxt = sent ? `${fmt(bills)} บิล` : `<span style="color:var(--txt3)">ยังไม่ส่ง</span>`;
-            // ถ้าทะลุเป้า (>100%) → ใช้สีเขียว + ขยับบาร์ให้เต็ม + tag inline ในข้อความ val (กันทับ)
+            // ถ้าทะลุเป้า (>100%) → ใช้สีเขียว + ขยับบาร์ให้เต็ม
             const overshoot = pct > 100;
             const fillColor = overshoot ? '#16a34a' : color;
             const fillW = Math.min(pct, 100);
-            const overTag = overshoot
-              ? ` <span class="dd-rb-over-tag">+${(pct - 100).toFixed(1)}%</span>`
-              : '';
+            const valTxt = sent
+              ? `<b style="color:${fillColor}">฿${fmt(Math.round(val))}</b>`
+              : `<span style="color:var(--txt3)">ยังไม่ส่ง</span>`;
             return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}${overshoot ? ' dd-rb-over' : ''}">
               <span class="dd-rb-label">${icon} ${name}${liveDot}</span>
               <div class="dd-rb-track">
                 <div class="dd-rb-fill" style="width:${fillW.toFixed(2)}%;background:${fillColor}"></div>
               </div>
-              <span class="dd-rb-val"><b style="color:${fillColor}">฿${fmt(Math.round(val))}</b> · ${pct.toFixed(1)}% · ${billTxt}${overTag}</span>
+              <span class="dd-rb-val">${valTxt}</span>
             </div>`;
           };
           // เหลือเฉพาะกราฟแท่ง 2 รอบ (16:00 / สิ้นวัน) — เต็มความกว้างการ์ด
@@ -7515,7 +7506,7 @@ body { background: var(--bg); color: var(--txt); }
         } else {
           codes = [_ddView.branch];
           rows = d.rows.filter(r => r.branch_code === _ddView.branch);
-          topPanel = _ddPanel("📊 สรุปผลสาขา", "สถานะเทียบเป้าในช่วงนี้", _ddBranchHero(rows, codes, map));
+          topPanel = _ddPanel("📊 สรุปยอดขาย", "สถานะเทียบเป้าในช่วงนี้", _ddBranchHero(rows, codes, map));
           // หน้าสาขา + พาร์ทรายวัน → เพิ่มชิป รอบ 16:00 / สิ้นวัน
           if (sec === 'day' && (role === 'branch' || role === 'franchise')) {
             const dStr = d.range.startDate;
@@ -7544,7 +7535,7 @@ body { background: var(--bg); color: var(--txt); }
               : null;
             // ถ้ามี slots (เห็นรอบใน hero แล้ว) → ไม่ต้องเพิ่มชิปด้านล่างซ้ำ
             const extras = slots ? "" : `<div class="bd-rounds" style="margin-top:12px">${chip(r16, '🕓', '16:00')}${chip(rEod, '🌙', 'สิ้นวัน')}</div>`;
-            topPanel = _ddPanel("📊 สรุปผลสาขา", sub, _ddBranchHero(rows, codes, map, slots) + extras);
+            topPanel = _ddPanel("📊 สรุปยอดขาย", sub, _ddBranchHero(rows, codes, map, slots) + extras);
           }
         }
 
@@ -7571,8 +7562,8 @@ body { background: var(--bg); color: var(--txt); }
         const isDayMode = (sec === 'day');
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
         if (isDayMode) {
-          // 1) สรุปผลสาขา = เต็มความกว้าง
-          // 2) ช่องทางการขายวันนั้น = donut + bars + table รวมกัน
+          // 1) สรุปยอดขาย = เต็มความกว้าง
+          // 2) ช่องทางการขาย = donut + ตาราง (เอากราฟแท่งช่องทางออก เหลือกราฟเดียว)
           const channelMega = _ddPanel(trendTitle, trendSub,
             `<div class="dd-channel-mega">
               <div class="dd-cc-donut">
@@ -7581,7 +7572,6 @@ body { background: var(--bg); color: var(--txt); }
                   <div id="sec${C}DonutLeg" class="dash2-chan-legend dd-donut-legend"></div>
                 </div>
               </div>
-              <div class="dd-cc-bars"><div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div></div>
               <div class="dd-cc-table">${_ddChannelTable(rows)}</div>
             </div>`);
           bodyEl.innerHTML = `
