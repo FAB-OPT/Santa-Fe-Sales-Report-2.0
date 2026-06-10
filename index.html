@@ -7224,23 +7224,31 @@ body { background: var(--bg); color: var(--txt); }
           return;
         }
 
-        if (reset) {
-          if (role === "branch" || role === "franchise") {
+        // ── helper: คืนค่า default _ddView ตาม role ──
+        const _ddDefaultView = (r) => {
+          if (r === "branch" || r === "franchise") {
             const bc = _ddCodes()[0] || null;
-            _ddView = { level: "branch", zone: bc ? _ddZoneOf(bc) : null, branch: bc };
-          } else if (role === "bzm") {
-            _ddView = { level: "zone", zone: zoneNames[0] || null, branch: null };
-          } else {
-            _ddView = { level: "company", zone: null, branch: null };
+            return { level: "branch", zone: bc ? _ddZoneOf(bc) : null, branch: bc };
           }
-        }
+          if (r === "bzm") return { level: "zone", zone: zoneNames[0] || null, branch: null };
+          return { level: "company", zone: null, branch: null };
+        };
+        // ── role-level guard: branch/franchise เห็นได้แค่ "branch" · bzm เห็น "zone"/"branch" ──
+        const _ALLOWED = {
+          branch:    ["branch"],
+          franchise: ["branch"],
+          bzm:       ["zone", "branch"],
+          admin:     ["company", "zone", "branch"],
+          vp:        ["company", "zone", "branch"]
+        };
+        const _allowedLv = _ALLOWED[role] || ["company"];
+        if (!_allowedLv.includes(_ddView.level)) _ddView = _ddDefaultView(role);
+
+        if (reset) _ddView = _ddDefaultView(role);
+
         // guard: เป้าหมายที่เจาะอยู่หายไปจากข้อมูลของช่วงนี้
-        if (_ddView.level === "zone" && !zones[_ddView.zone]) {
-          _ddView = { level: (role === "admin" || role === "vp") ? "company" : "zone", zone: zoneNames[0] || null, branch: null };
-        }
-        if (_ddView.level === "branch" && !_ddCodes().includes(_ddView.branch)) {
-          _ddView = { level: (role === "admin" || role === "vp") ? "company" : "zone", zone: zoneNames[0] || null, branch: null };
-        }
+        if (_ddView.level === "zone" && !zones[_ddView.zone]) _ddView = _ddDefaultView(role);
+        if (_ddView.level === "branch" && !_ddCodes().includes(_ddView.branch)) _ddView = _ddDefaultView(role);
 
         if (crumbEl) crumbEl.innerHTML = _ddCrumb();
         renderSection(sec);
