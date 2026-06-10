@@ -4071,9 +4071,26 @@ body { background: var(--bg); color: var(--txt); }
 .dd-rounds-bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 14px 0 10px;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
 }
+/* hero ใหม่ — จัดให้บาร์อยู่กึ่งกลางแนวตั้งกับสรุปฝั่งซ้าย */
+.dd-hero { align-items: center !important; }
+.dd-hero-main { display: flex; flex-direction: column; justify-content: center; }
+/* live indicator dot (กำลังเก็บยอด) */
+.dd-rb-live {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: #16a34a; margin-left: 6px;
+  box-shadow: 0 0 0 0 rgba(22,163,74,.5);
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,.5); }
+  50%      { box-shadow: 0 0 0 5px rgba(22,163,74,0); }
+}
+.dd-rb-row.dd-rb-empty .dd-rb-fill { background: #e5e7eb !important; }
+.dd-rb-row.dd-rb-empty .dd-rb-val   { opacity: .65; }
 .dd-rb-row {
   display: grid;
   grid-template-columns: 80px 1fr auto;
@@ -7079,12 +7096,18 @@ body { background: var(--bg); color: var(--txt); }
           } else {
             msg = pctDone >= 100 ? "ทำเกินเป้าวันนี้ 🎉" : "ปิดวันแล้ว";
           }
-          const rowBar = (icon, name, val, pct, color) => `
-            <div class="dd-rb-row">
-              <span class="dd-rb-label">${icon} ${name}</span>
+          const bills16  = (slots.bills16  || 0);
+          const billsEod = (slots.billsEod || 0);
+          const rowBar = (icon, name, val, pct, color, bills, isLive) => {
+            const liveDot = isLive ? `<span class="dd-rb-live" title="กำลังเก็บยอด"></span>` : '';
+            const sent = (val > 0 || bills > 0);
+            const billTxt = sent ? `${fmt(bills)} บิล` : `<span style="color:var(--txt3)">ยังไม่ส่ง</span>`;
+            return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}">
+              <span class="dd-rb-label">${icon} ${name}${liveDot}</span>
               <div class="dd-rb-track"><div class="dd-rb-fill" style="width:${Math.min(pct, 100).toFixed(2)}%;background:${color}"></div></div>
-              <span class="dd-rb-val">฿${fmt(Math.round(val))} · <b>${pct.toFixed(1)}%</b></span>
+              <span class="dd-rb-val"><b style="color:${color}">฿${fmt(Math.round(val))}</b> · ${pct.toFixed(1)}% · ${billTxt}</span>
             </div>`;
+          };
           return `<div class="dd-hero">
             <div class="dd-hero-summary">
               <div class="dd-hero-pct" style="color:${colDone}">${pctDone.toFixed(1)}%</div>
@@ -7094,8 +7117,8 @@ body { background: var(--bg); color: var(--txt); }
             </div>
             <div class="dd-hero-main">
               <div class="dd-rounds-bars">
-                ${rowBar('🕓', '16:00',  a16,  pct16,  '#fbbf24')}
-                ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c')}
+                ${rowBar('🕓', '16:00',   a16,  pct16,  '#fbbf24', bills16,  false)}
+                ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c', billsEod, false)}
               </div>
             </div>
           </div>`;
@@ -7435,14 +7458,17 @@ body { background: var(--bg); color: var(--txt); }
             };
             const r16  = rd('16.00');
             const rEod = rd('สิ้นวัน');
-            const chips = `<div class="bd-rounds" style="margin-top:12px">${chip(r16, '🕓', '16:00')}${chip(rEod, '🌙', 'สิ้นวัน')}</div>`;
             const sub = planForDay > 0
               ? `รอบ 16:00 และสิ้นวัน · เทียบเป้า ฿${fmt(Math.round(planForDay))}`
               : "รอบ 16:00 และสิ้นวัน";
             const slots = planForDay > 0
-              ? { act16: r16 ? r16.act : 0, actEod: rEod ? rEod.act : 0, plan: planForDay }
+              ? { act16:  r16  ? r16.act  : 0, actEod:  rEod ? rEod.act  : 0,
+                  bills16: r16 ? r16.bills : 0, billsEod: rEod ? rEod.bills : 0,
+                  plan: planForDay }
               : null;
-            topPanel = _ddPanel("📊 สรุปผลสาขา", sub, _ddBranchHero(rows, codes, map, slots) + chips);
+            // ถ้ามี slots (เห็นรอบใน hero แล้ว) → ไม่ต้องเพิ่มชิปด้านล่างซ้ำ
+            const extras = slots ? "" : `<div class="bd-rounds" style="margin-top:12px">${chip(r16, '🕓', '16:00')}${chip(rEod, '🌙', 'สิ้นวัน')}</div>`;
+            topPanel = _ddPanel("📊 สรุปผลสาขา", sub, _ddBranchHero(rows, codes, map, slots) + extras);
           }
         }
 
