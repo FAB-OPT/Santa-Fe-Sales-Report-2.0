@@ -4120,7 +4120,7 @@ body { background: var(--bg); color: var(--txt); }
           <!-- Tab switcher -->
           <div class="login-tabs">
             <button class="login-tab active" id="tabBranch" onclick="switchLoginTab('branch')">สาขา</button>
-            <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">Admin</button>
+            <button class="login-tab" id="tabAdmin" onclick="switchLoginTab('admin')">Team Management</button>
           </div>
           <!-- Body -->
           <div class="login-body">
@@ -4134,9 +4134,9 @@ body { background: var(--bg); color: var(--txt); }
                 <input class="login-otp-box" id="lc3" type="tel" maxlength="1" inputmode="numeric" autocomplete="off" oninput="onOtpInput(3,this)" onkeydown="onOtpKey(3,this,event)">
               </div>
             </div>
-            <!-- Admin panel (6-digit) -->
+            <!-- Team Management panel (6-digit) -->
             <div class="login-admin-panel" id="adminPanel">
-              <div class="login-otp-label">กรอกรหัส Admin 6 หลัก</div>
+              <div class="login-otp-label">กรอกรหัส Team Management 6 หลัก</div>
               <div class="login-otp" id="adminOtp">
                 <input class="login-otp-box" id="ac0" type="tel" maxlength="1" inputmode="numeric" autocomplete="off" oninput="onAdminOtpInput(0,this)" onkeydown="onAdminOtpKey(0,this,event)" onpaste="onAdminOtpPaste(event)">
                 <input class="login-otp-box" id="ac1" type="tel" maxlength="1" inputmode="numeric" autocomplete="off" oninput="onAdminOtpInput(1,this)" onkeydown="onAdminOtpKey(1,this,event)">
@@ -4146,9 +4146,6 @@ body { background: var(--bg); color: var(--txt); }
                 <input class="login-otp-box" id="ac5" type="tel" maxlength="1" inputmode="numeric" autocomplete="off" oninput="onAdminOtpInput(5,this)" onkeydown="onAdminOtpKey(5,this,event)" onkeyup="onAdminPassKey(event)">
               </div>
             </div>
-          </div>
-          <div class="login-submit-wrap">
-            <button class="btn-login-submit" id="loginBtn" onclick="doLogin()" disabled>เข้าสู่ระบบ</button>
           </div>
           <div class="login-footer">© 2026 Santa Fe · Sales Report v2.0</div>
         </div>
@@ -5078,7 +5075,10 @@ body { background: var(--bg); color: var(--txt); }
 
         // 3) ไม่งั้น → แสดงหน้า login ของแอปเอง
         showScreen('sLogin');
-        switchLoginTab('branch');
+        // โฟกัสช่องแรกของ branch tab (default active อยู่แล้วใน markup)
+        // *ไม่เรียก switchLoginTab() ที่นี่* เพราะ let _loginMode ยังอยู่ TDZ ก่อนหน้านี้
+        const _lc0 = document.getElementById('lc0');
+        if (_lc0) setTimeout(() => _lc0.focus(), 50);
       })();
 
       // กู้ล็อกอินที่จำไว้ (LS_CODE) ของแอปนี้เอง — ไม่พึ่ง Hub
@@ -5139,7 +5139,8 @@ body { background: var(--bg); color: var(--txt); }
         checkOtpCode();
       }
       function checkOtpCode() {
-        document.getElementById("loginBtn").disabled = getLoginCode().length < 4;
+        // auto-submit เมื่อกรอกครบ 4 หลัก — ไม่มีปุ่มตกลงแล้ว
+        if (getLoginCode().length === 4) doLogin();
       }
 
       function onAdminOtpInput(idx, el) {
@@ -5177,7 +5178,8 @@ body { background: var(--bg); color: var(--txt); }
         checkAdminCode();
       }
       function checkAdminCode() {
-        document.getElementById("loginBtn").disabled = getAdminCode().length < 6;
+        // auto-submit เมื่อกรอกครบ 6 หลัก
+        if (getAdminCode().length === 6) doLogin();
       }
 
       let _loginMode = 'branch'; // 'branch' | 'admin'
@@ -5188,13 +5190,9 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById('tabAdmin').classList.toggle('active', mode === 'admin');
         document.getElementById('branchPanel').classList.toggle('hidden', mode !== 'branch');
         document.getElementById('adminPanel').classList.toggle('visible', mode === 'admin');
-        const btn = document.getElementById('loginBtn');
-        btn.textContent = 'เข้าสู่ระบบ';
-        if (mode === 'branch') {
-          checkOtpCode();
-        } else {
-          checkAdminCode();
-        }
+        // focus ช่องแรกของ tab ใหม่ — เพิ่ม UX
+        const first = document.getElementById(mode === 'branch' ? 'lc0' : 'ac0');
+        if (first) first.focus();
       }
 
       function onAdminPassKey(e) {
