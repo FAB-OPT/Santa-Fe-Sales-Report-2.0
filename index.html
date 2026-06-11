@@ -4127,18 +4127,83 @@ body { background: var(--bg); color: var(--txt); }
   vertical-align: 1px;
   box-shadow: 0 1px 3px rgba(22,163,74,.25);
 }
-/* "↑ +X% จาก 16:00" — โต tag เบาๆ ต่อท้ายแถวสิ้นวัน */
+/* "↑ +X% จาก 16:00" — โต tag เด่น (เขียวเข้ม + เงา + pulse) */
 .dd-rb-growth {
   display: inline-block;
-  margin-left: 8px;
-  padding: 2px 9px;
-  background: rgba(22,163,74,.10);
-  color: #15803d;
-  font-size: 11px;
-  font-weight: 700;
+  margin-left: 10px;
+  padding: 4px 11px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
   border-radius: 999px;
   white-space: nowrap;
   vertical-align: 2px;
+  letter-spacing: .005em;
+  box-shadow: 0 2px 6px rgba(22,163,74,.35), 0 0 0 2px rgba(22,163,74,.10);
+  animation: growthPulse 2.4s ease-in-out infinite;
+}
+@keyframes growthPulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(22,163,74,.35), 0 0 0 2px rgba(22,163,74,.10); }
+  50%      { box-shadow: 0 2px 10px rgba(22,163,74,.55), 0 0 0 6px rgba(22,163,74,.06); }
+}
+
+/* Channel sales bars — custom HTML version */
+.dd-chan-bars { display: flex; flex-direction: column; gap: 10px; }
+.dd-chan-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) minmax(0, 2.4fr) minmax(160px, auto);
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+}
+.dd-chan-head {
+  display: inline-flex; align-items: center; gap: 8px;
+  white-space: nowrap; min-width: 0;
+}
+.dd-chan-bill {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  padding: 2px 9px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--txt2);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.dd-chan-bill b { color: var(--txt); font-weight: 800; }
+.dd-chan-name { font-weight: 600; color: var(--txt); overflow: hidden; text-overflow: ellipsis; }
+.dd-chan-track {
+  height: 14px;
+  background: #f1f5f9;
+  border-radius: 7px;
+  overflow: hidden;
+  min-width: 0;
+}
+.dd-chan-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width .6s var(--ease, ease);
+  min-width: 4px;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.06);
+}
+.dd-chan-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--txt2);
+  text-align: right;
+  white-space: nowrap;
+}
+.dd-chan-val b {
+  color: var(--txt);
+  font-weight: 800;
+  font-size: 15.5px;
+  margin-right: 4px;
+}
+@media (max-width: 700px) {
+  .dd-chan-row { grid-template-columns: 1fr; gap: 4px; }
+  .dd-chan-val { text-align: left; }
 }
 .dd-rb-row.dd-rb-over .dd-rb-fill {
   box-shadow: 0 0 0 1.5px rgba(22,163,74,.35), inset 0 -1px 0 rgba(0,0,0,.06);
@@ -7372,41 +7437,38 @@ body { background: var(--bg); color: var(--txt); }
         });
       }
 
-      // เลือกวันเดียว — แสดงช่องทางการขายของวันนั้นเป็นแท่งแนวนอน (฿) แทนกราฟแนวโน้ม
+      // เลือกวันเดียว — แสดงช่องทางการขายเป็นแท่งแนวนอน (HTML, ไม่ใช้ Chart.js)
+      //   แต่ละแถว: ชื่อช่องทาง + บิลเฉลี่ย · แท่งสัดส่วน · ฿ + %
       function _ddRenderDayChannels(rows, sec) {
         sec = sec || 'day';
         const C = _cap(sec);
         const box = document.getElementById("sec" + C + "TrendBox");
         if (!box) return;
         const _st = _secCharts[sec];
-        if (_st.trend) { _st.trend.destroy(); _st.trend = null; }
+        if (_st && _st.trend) { _st.trend.destroy(); _st.trend = null; }
         const a = _ddAgg(rows);
-        const items = CHANNEL_DEFS.map(c => ({ label: c.label, color: c.color, value: a.sale[c.key] }))
-          .sort((x, y) => y.value - x.value);
+        const items = CHANNEL_DEFS.map(c => ({
+          label: c.label, color: c.color,
+          value: a.sale[c.key], trans: a.trans[c.key]
+        })).sort((x, y) => y.value - x.value);
         const total = items.reduce((s, t) => s + t.value, 0);
         if (total <= 0) {
           box.innerHTML = `<div class="dd-empty">📭 วันนี้ยังไม่มียอดขาย</div>`;
           return;
         }
-        box.innerHTML = `<div style="position:relative;height:280px"><canvas id="sec${C}Trend"></canvas></div>`;
-        _st.trend = new Chart(document.getElementById("sec" + C + "Trend"), {
-          type: "bar",
-          data: { labels: items.map(t => t.label), datasets: [{ data: items.map(t => t.value), backgroundColor: items.map(t => t.color), borderRadius: 4, borderSkipped: false }] },
-          options: {
-            indexAxis: "y", responsive: true, maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: { callbacks: { label: (c) => {
-                const v = c.parsed.x; const pc = total > 0 ? (v / total * 100).toFixed(1) + "%" : "-";
-                return "฿" + v.toLocaleString() + " (" + pc + ")";
-              } } }
-            },
-            scales: {
-              x: { beginAtZero: true, ticks: { font: { size: 10 }, color: "#94a3b8", callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v }, grid: { color: "rgba(0,0,0,.05)", drawBorder: false } },
-              y: { ticks: { font: { size: 11 }, color: "#475569" }, grid: { display: false } }
-            }
-          }
-        });
+        const rowsHtml = items.map(t => {
+          const pct = t.value > 0 ? (t.value / total) * 100 : 0;
+          const avgBill = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
+          const billBadge = (t.trans > 0)
+            ? `<span class="dd-chan-bill"><b>฿${fmt(avgBill)}</b>/บิล</span>`
+            : `<span class="dd-chan-bill" style="opacity:.55"><b>-</b>/บิล</span>`;
+          return `<div class="dd-chan-row">
+            <div class="dd-chan-head">${billBadge}<span class="dd-chan-name">${escHtml(t.label)}</span></div>
+            <div class="dd-chan-track"><div class="dd-chan-fill" style="width:${pct.toFixed(2)}%;background:${t.color}"></div></div>
+            <div class="dd-chan-val"><b>฿${fmt(Math.round(t.value))}</b>· ${pct.toFixed(1)}%</div>
+          </div>`;
+        }).join("");
+        box.innerHTML = `<div class="dd-chan-bars">${rowsHtml}</div>`;
       }
 
       function _ddPanel(title, sub, inner, extraClass) {
@@ -7588,12 +7650,9 @@ body { background: var(--bg); color: var(--txt); }
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
         if (isDayMode) {
           // 1) สรุปยอดขาย = เต็มความกว้าง
-          // 2) ช่องทางการขาย = กราฟแท่งช่องทาง + ตาราง (ถอด donut ออก)
+          // 2) ช่องทางการขาย = แท่งช่องทาง (ในแท่งมียอด/สัดส่วน · บิลเฉลี่ยอยู่หน้าชื่อช่องทาง) — ไม่มีตาราง
           const channelMega = _ddPanel(trendTitle, trendSub,
-            `<div class="dd-channel-mega">
-              <div class="dd-cc-bars"><div id="sec${C}TrendBox" style="position:relative;min-height:300px"></div></div>
-              <div class="dd-cc-table">${_ddChannelTable(rows)}</div>
-            </div>`);
+            `<div id="sec${C}TrendBox"></div>`);
           bodyEl.innerHTML = `
             <div class="dash3-row">${topPanel}</div>
             <div class="dash3-row">${channelMega}</div>`;
