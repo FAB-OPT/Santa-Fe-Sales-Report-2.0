@@ -4127,6 +4127,19 @@ body { background: var(--bg); color: var(--txt); }
   vertical-align: 1px;
   box-shadow: 0 1px 3px rgba(22,163,74,.25);
 }
+/* "↑ +X% จาก 16:00" — โต tag เบาๆ ต่อท้ายแถวสิ้นวัน */
+.dd-rb-growth {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  background: rgba(22,163,74,.10);
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+  vertical-align: 2px;
+}
 .dd-rb-row.dd-rb-over .dd-rb-fill {
   box-shadow: 0 0 0 1.5px rgba(22,163,74,.35), inset 0 -1px 0 rgba(0,0,0,.06);
 }
@@ -7172,7 +7185,7 @@ body { background: var(--bg); color: var(--txt); }
           }
           const bills16  = (slots.bills16  || 0);
           const billsEod = (slots.billsEod || 0);
-          const rowBar = (icon, name, val, pct, color, bills, isLive) => {
+          const rowBar = (icon, name, val, pct, color, bills, isLive, extraTag) => {
             const liveDot = isLive ? `<span class="dd-rb-live" title="กำลังเก็บยอด"></span>` : '';
             const sent = (val > 0 || bills > 0);
             // ถ้าทะลุเป้า (>100%) → ใช้สีเขียว + ขยับบาร์ให้เต็ม
@@ -7182,19 +7195,25 @@ body { background: var(--bg); color: var(--txt); }
             const valTxt = sent
               ? `<b style="color:${fillColor}">฿${fmt(Math.round(val))}</b>`
               : `<span style="color:var(--txt3)">ยังไม่ส่ง</span>`;
+            const tag = (sent && extraTag) ? extraTag : '';
             return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}${overshoot ? ' dd-rb-over' : ''}">
               <span class="dd-rb-label">${icon} ${name}${liveDot}</span>
               <div class="dd-rb-track">
                 <div class="dd-rb-fill" style="width:${fillW.toFixed(2)}%;background:${fillColor}"></div>
               </div>
-              <span class="dd-rb-val">${valTxt}</span>
+              <span class="dd-rb-val">${valTxt}${tag}</span>
             </div>`;
           };
+          // % โตจาก 16:00 → สิ้นวัน — โชว์เป็น tag ต่อท้ายแถวสิ้นวัน
+          const growthPct = (a16 > 0 && aEod > 0) ? ((aEod - a16) / a16) * 100 : null;
+          const growthTag = growthPct !== null
+            ? ` <span class="dd-rb-growth" title="เติบโตเทียบรอบ 16:00">↑ +${growthPct.toFixed(1)}% จาก 16:00</span>`
+            : '';
           // เหลือเฉพาะกราฟแท่ง 2 รอบ (16:00 / สิ้นวัน) — เต็มความกว้างการ์ด
           return `<div class="dd-hero dd-hero-day">
             <div class="dd-rounds-bars">
               ${rowBar('🕓', '16:00',   a16,  pct16,  '#fbbf24', bills16,  false)}
-              ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c', billsEod, false)}
+              ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c', billsEod, false, growthTag)}
             </div>
           </div>`;
         }
