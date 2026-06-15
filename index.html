@@ -4463,6 +4463,14 @@ body { background: var(--bg); color: var(--txt); }
   .dd-channel-combined { grid-template-columns: 1fr; gap: 14px; }
 }
 
+/* ตารางรายละเอียดช่องทาง ภายในการ์ด donut (โหมดสัปดาห์/เดือน/ปี) */
+.dd-donut-table-wrap {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bd);
+}
+.dd-donut-table-wrap .dd-table { margin-top: 0; }
+
 /* Day mode — donut + table รวมเป็นการ์ดเดียว (เหลือกราฟเดียว = donut) */
 .dd-channel-mega {
   display: flex;
@@ -8057,16 +8065,21 @@ body { background: var(--bg); color: var(--txt); }
             <div class="dash3-row">${topPanel}</div>
             <div class="dash3-row">${channelMega}</div>`;
         } else {
-          const row2 = `<div class="dash3-row dd-grid2">
-              ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
-              ${_ddPanel("📋 รายละเอียดช่องทาง", "ยอดขาย · สัดส่วน · บิลเฉลี่ย", _ddChannelTable(rows))}
-            </div>`;
+          // รวม donut + legend + ตารางรายละเอียดช่องทาง ในการ์ดเดียว (กันการ์ดขวาว่าง)
+          const channelCombined = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่ายอดขายแยกตามช่องทาง",
+            `<div class="dd-donut-row">
+              <div class="dd-donut-canvas"><canvas id="sec${C}Donut"></canvas></div>
+              <div id="sec${C}DonutLeg" class="dash2-chan-legend dd-donut-legend"></div>
+            </div>
+            <div class="dd-donut-table-wrap">${_ddChannelTable(rows)}</div>`);
           bodyEl.innerHTML = `
             <div class="dash3-row dd-grid2">
               ${topPanel}
-              ${_ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่ายอดขายแยกตามช่องทาง", `<div class="dd-donut-row"><div class="dd-donut-canvas"><canvas id="sec${C}Donut"></canvas></div><div id="sec${C}DonutLeg" class="dash2-chan-legend dd-donut-legend"></div></div>`)}
+              ${channelCombined}
             </div>
-            ${row2}`;
+            <div class="dash3-row">
+              ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
+            </div>`;
         }
         _ddRenderDonut(rows, sec);
         if (sec === 'day') _ddRenderDayChannels(rows, sec);
