@@ -7635,6 +7635,53 @@ body { background: var(--bg); color: var(--txt); }
         if (!box) return;
         const _st = _secCharts[sec];
         if (_st.trend) { _st.trend.destroy(); _st.trend = null; }
+
+        // ── โหมดรายปี → รวมเป็นรายเดือน (12 แท่ง) ──
+        if (sec === 'year' && d && d.range) {
+          const _Y = new Date(d.range.startDate + 'T00:00:00').getFullYear();
+          const TH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+          const monthVals = new Array(12).fill(0);
+          (rows || []).forEach(r => {
+            if (r.submit_time_slot !== "สิ้นวัน") return;
+            const d0 = new Date(r.submit_date + "T00:00:00");
+            if (isNaN(d0.getTime()) || d0.getFullYear() !== _Y) return;
+            monthVals[d0.getMonth()] += parseFloat(r.actual_sale) || 0;
+          });
+          const hasData = monthVals.some(v => v > 0);
+          if (!hasData) {
+            box.innerHTML = `<div class="dd-empty">📭 ยังไม่มียอดขายในปีที่เลือก</div>`;
+            return;
+          }
+          box.innerHTML = `<div style="position:relative;height:280px"><canvas id="sec${C}Trend"></canvas></div>`;
+          _st.trend = new Chart(document.getElementById("sec" + C + "Trend"), {
+            type: "bar",
+            data: {
+              labels: TH_SHORT,
+              datasets: [{
+                label: "ยอดขายรายเดือน",
+                data: monthVals,
+                backgroundColor: "rgba(242,108,28,0.85)",
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 38
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (c) => "ยอดขาย: ฿" + Math.round(c.parsed.y).toLocaleString() } }
+              },
+              scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 }, color: "#475569" } },
+                y: { beginAtZero: true, ticks: { font: { size: 10 }, color: "#94a3b8", callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v }, grid: { color: "rgba(0,0,0,.05)", drawBorder: false } }
+              }
+            }
+          });
+          return;
+        }
+
+        // ── โหมดอื่น → เส้น/แนวโน้มรายวัน ──
         const s = _ddTrendSeries(rows, d && d.range);
         if (!s.dataDays) {
           box.innerHTML = `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
@@ -8059,7 +8106,7 @@ body { background: var(--bg); color: var(--txt); }
           trendSub = "🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า (เทียบเป้าเฉลี่ย/วัน)";
         } else if (sec === 'year') {
           trendTitle = "📈 แนวโน้มยอดขายตลอดปี";
-          trendSub = "ยอดขายจริงรายวันในปีที่เลือก";
+          trendSub = "ยอดขายจริงรายเดือนในปีที่เลือก";
         } else if (isBranch) {
           trendTitle = "📊 ยอดขายรายวัน เทียบเป้า";
           trendSub = "🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า (เทียบเป้าเฉลี่ย/วัน)";
@@ -8088,7 +8135,7 @@ body { background: var(--bg); color: var(--txt); }
             </div>
             <div class="dd-donut-table-wrap">${_ddChannelTable(rows)}</div>`);
           // โหมดสัปดาห์ของสาขา trend chart ถูกฝังในการ์ดสรุปยอดขายแล้ว → ไม่ต้องโชว์ row 2
-          const _weekBranchSkipTrend = (sec === 'week' && _isBranchUser);
+          const _weekBranchSkipTrend = (sec === 'week' && (role === 'branch' || role === 'franchise'));
           bodyEl.innerHTML = `
             <div class="dash3-row dd-grid2">
               ${topPanel}
