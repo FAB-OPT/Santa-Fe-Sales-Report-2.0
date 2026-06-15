@@ -4148,6 +4148,78 @@ body { background: var(--bg); color: var(--txt); }
   50%      { box-shadow: 0 2px 10px rgba(22,163,74,.55), 0 0 0 6px rgba(22,163,74,.06); }
 }
 
+/* Channel sales donut + stats list */
+.dd-chan-donut-wrap {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  align-items: start;
+}
+.dd-chan-donut-side {
+  display: flex; flex-direction: column; gap: 12px; align-items: stretch;
+}
+.dd-chan-donut-canvas {
+  position: relative;
+  height: 230px;
+}
+.dd-chan-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.dd-chan-summary > div { display: flex; flex-direction: column; gap: 2px; }
+.dd-chan-summary b { font-size: 14px; color: var(--txt); font-weight: 800; letter-spacing: -.01em; }
+
+.dd-chan-stats { display: flex; flex-direction: column; gap: 10px; }
+.dd-chan-stat {
+  padding: 10px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color .15s, transform .15s;
+}
+.dd-chan-stat:hover { border-color: var(--txt3); transform: translateY(-1px); }
+.dd-chan-stat.is-empty { opacity: .5; }
+.dd-chan-stat-name {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--txt); margin-bottom: 8px;
+}
+.dd-chan-stat-name b { font-weight: 700; }
+.dd-chan-stat-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.dd-chan-stat-pct {
+  margin-left: auto;
+  font-size: 12px; font-weight: 700; color: var(--txt2);
+  font-variant-numeric: tabular-nums;
+}
+.dd-chan-stat-cells {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.dd-chan-stat-cell {
+  display: flex; flex-direction: column; gap: 2px;
+  text-align: left;
+}
+.dd-chan-stat-lbl {
+  font-size: 10.5px; color: var(--txt2); font-weight: 500; letter-spacing: .01em;
+}
+.dd-chan-stat-val {
+  font-size: 14px; color: var(--txt); font-weight: 800;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+}
+@media (max-width: 760px) {
+  .dd-chan-donut-wrap { grid-template-columns: 1fr; gap: 16px; }
+  .dd-chan-donut-canvas { height: 200px; }
+}
+
 /* Channel sales bars — custom HTML version (refined) */
 .dd-chan-bars { display: flex; flex-direction: column; gap: 6px; }
 .dd-chan-row {
@@ -7484,83 +7556,72 @@ body { background: var(--bg); color: var(--txt); }
           value: a.sale[c.key], trans: a.trans[c.key]
         })).sort((x, y) => y.value - x.value);
         const total = items.reduce((s, t) => s + t.value, 0);
+        const totalTrans = items.reduce((s, t) => s + (t.trans || 0), 0);
         if (total <= 0) {
           box.innerHTML = `<div class="dd-empty">📭 วันนี้ยังไม่มียอดขาย</div>`;
           return;
         }
-        // กราฟแท่งแนวนอนของจริง (Chart.js) — แสดงยอดของแต่ละช่องทาง พร้อมแกน ฿
-        const chartH = Math.max(220, items.length * 38 + 40);
-        box.innerHTML = `<div style="position:relative;height:${chartH}px"><canvas id="sec${C}Trend"></canvas></div>`;
+        // กราฟวงกลม (donut) ฝั่งซ้าย · ตารางสถิติฝั่งขวา (บิล · ยอด · ค่าเฉลี่ย/บิล)
+        const legendRows = items.map(t => {
+          const pct = total > 0 ? (t.value / total) * 100 : 0;
+          const avg = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
+          const isEmpty = t.value <= 0 && (!t.trans || t.trans <= 0);
+          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}">
+            <div class="dd-chan-stat-name"><span class="dd-chan-stat-dot" style="background:${t.color}"></span><b>${escHtml(t.label)}</b><span class="dd-chan-stat-pct">${pct.toFixed(1)}%</span></div>
+            <div class="dd-chan-stat-cells">
+              <div class="dd-chan-stat-cell"><span class="dd-chan-stat-lbl">บิล</span><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span></div>
+              <div class="dd-chan-stat-cell"><span class="dd-chan-stat-lbl">ยอดขาย</span><span class="dd-chan-stat-val">฿${fmt(Math.round(t.value))}</span></div>
+              <div class="dd-chan-stat-cell"><span class="dd-chan-stat-lbl">เฉลี่ย/บิล</span><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span></div>
+            </div>
+          </div>`;
+        }).join("");
+        const summaryRow = `<div class="dd-chan-summary">
+          <div><span class="dd-chan-stat-lbl">รวมทั้งหมด</span><b>฿${fmt(Math.round(total))}</b></div>
+          <div><span class="dd-chan-stat-lbl">บิลทั้งหมด</span><b>${fmt(totalTrans)}</b></div>
+          <div><span class="dd-chan-stat-lbl">เฉลี่ย/บิล</span><b>${totalTrans > 0 ? '฿' + fmt(Math.round(total / totalTrans)) : '-'}</b></div>
+        </div>`;
+        box.innerHTML = `
+          <div class="dd-chan-donut-wrap">
+            <div class="dd-chan-donut-side">
+              <div class="dd-chan-donut-canvas"><canvas id="sec${C}Trend"></canvas></div>
+              ${summaryRow}
+            </div>
+            <div class="dd-chan-stats">${legendRows}</div>
+          </div>`;
         _st.trend = new Chart(document.getElementById("sec" + C + "Trend"), {
-          type: "bar",
+          type: "doughnut",
           data: {
             labels: items.map(t => t.label),
             datasets: [{
               data: items.map(t => t.value),
               backgroundColor: items.map(t => t.color),
-              borderRadius: 6,
-              borderSkipped: false,
-              maxBarThickness: 28
+              borderWidth: 2,
+              borderColor: "#fff",
+              hoverOffset: 6
             }]
           },
           options: {
-            indexAxis: "y",
-            responsive: true, maintainAspectRatio: false,
-            layout: { padding: { right: 60 } },
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "62%",
             plugins: {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  label: (c) => {
-                    const v = c.parsed.x;
+                  label: (ctx) => {
+                    const v = ctx.parsed || 0;
                     const pc = total > 0 ? (v / total * 100).toFixed(1) + "%" : "-";
-                    const it = items[c.dataIndex];
+                    const it = items[ctx.dataIndex];
                     const avg = it.trans > 0 ? Math.round(v / it.trans) : 0;
                     return [
-                      "ยอดขาย: ฿" + v.toLocaleString() + " (" + pc + ")",
-                      it.trans > 0 ? "บิลเฉลี่ย: ฿" + avg.toLocaleString() + " · " + fmt(it.trans) + " บิล" : "บิล: 0"
+                      `${ctx.label}: ฿${v.toLocaleString()} (${pc})`,
+                      it.trans > 0 ? `บิล: ${fmt(it.trans)} · เฉลี่ย ฿${fmt(avg)}/บิล` : 'บิล: 0'
                     ];
                   }
                 }
-              },
-              // วาดยอด ฿ ต่อท้ายแท่งแต่ละแถว
-              dataValueLabels: true
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                ticks: {
-                  font: { size: 10 }, color: "#94a3b8",
-                  callback: (v) => v >= 1000 ? "฿" + (v / 1000).toFixed(0) + "k" : "฿" + v
-                },
-                grid: { color: "rgba(0,0,0,.05)", drawBorder: false }
-              },
-              y: {
-                ticks: { font: { size: 12, weight: 600 }, color: "#334155" },
-                grid: { display: false }
               }
             }
-          },
-          plugins: [{
-            id: "channelValueLabels",
-            afterDatasetsDraw(chart) {
-              const { ctx, scales: { x, y } } = chart;
-              const meta = chart.getDatasetMeta(0);
-              ctx.save();
-              ctx.font = "700 12px Sarabun, sans-serif";
-              ctx.textAlign = "left";
-              ctx.textBaseline = "middle";
-              meta.data.forEach((bar, i) => {
-                const v = items[i].value;
-                if (v <= 0) return;
-                const pc = total > 0 ? (v / total * 100).toFixed(1) + "%" : "";
-                const txt = "฿" + Math.round(v).toLocaleString() + "  " + pc;
-                ctx.fillStyle = "#0f172a";
-                ctx.fillText(txt, bar.x + 8, bar.y);
-              });
-              ctx.restore();
-            }
-          }]
+          }
         });
       }
 
