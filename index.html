@@ -4079,6 +4079,10 @@ body { background: var(--bg); color: var(--txt); }
   background: linear-gradient(90deg, transparent, rgba(15,23,42,.10), transparent);
   margin: 16px 0 12px;
 }
+/* trend chart header เมื่อฝังในการ์ดสรุปยอดขาย (โหมดสัปดาห์) */
+.dd-hero-trend-hdr { margin-bottom: 10px; }
+.dd-hero-trend-title { font-size: 14px; font-weight: 700; color: var(--txt); letter-spacing: -.005em; }
+.dd-hero-trend-sub   { font-size: 11.5px; color: var(--txt2); margin-top: 2px; }
 /* breakdown compact (มากกว่า 2 แท่ง — เดือน=5 อาทิตย์, ปี=12 เดือน) */
 .dd-rounds-bars.dd-rounds-bars-compact {
   gap: 6px;
@@ -8001,7 +8005,18 @@ body { background: var(--bg); color: var(--txt); }
             }
             _heroSubBars = _bars;
           }
-          topPanel = _ddPanel("📊 สรุปยอดขาย", "สถานะเทียบเป้าในช่วงนี้", _ddBranchHero(rows, codes, map, _heroSlots, _heroSubBars));
+          // โหมดสัปดาห์ของสาขา → ฝัง trend chart "รายวัน (จ–อา) เทียบเป้า" ใต้แท่ง 16:00/สิ้นวัน เลย (กันการ์ดว่าง)
+          let _heroContent = _ddBranchHero(rows, codes, map, _heroSlots, _heroSubBars);
+          if (sec === 'week' && _isBranchUser) {
+            _heroContent += `
+              <div class="dd-hero-slot-divider"></div>
+              <div class="dd-hero-trend-hdr">
+                <div class="dd-hero-trend-title">📊 ยอดขายรายวัน (จ–อา) เทียบเป้า</div>
+                <div class="dd-hero-trend-sub">🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า</div>
+              </div>
+              <div id="sec${C}TrendBox" style="position:relative;min-height:260px"></div>`;
+          }
+          topPanel = _ddPanel("📊 สรุปยอดขาย", "สถานะเทียบเป้าในช่วงนี้", _heroContent);
           // หน้าสาขา + พาร์ทรายวัน → เพิ่มชิป รอบ 16:00 / สิ้นวัน
           if (sec === 'day' && (role === 'branch' || role === 'franchise')) {
             const dStr = d.range.startDate;
@@ -8072,14 +8087,16 @@ body { background: var(--bg); color: var(--txt); }
               <div id="sec${C}DonutLeg" class="dash2-chan-legend dd-donut-legend"></div>
             </div>
             <div class="dd-donut-table-wrap">${_ddChannelTable(rows)}</div>`);
+          // โหมดสัปดาห์ของสาขา trend chart ถูกฝังในการ์ดสรุปยอดขายแล้ว → ไม่ต้องโชว์ row 2
+          const _weekBranchSkipTrend = (sec === 'week' && _isBranchUser);
           bodyEl.innerHTML = `
             <div class="dash3-row dd-grid2">
               ${topPanel}
               ${channelCombined}
-            </div>
+            </div>` + (_weekBranchSkipTrend ? '' : `
             <div class="dash3-row">
               ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
-            </div>`;
+            </div>`);
         }
         _ddRenderDonut(rows, sec);
         if (sec === 'day') _ddRenderDayChannels(rows, sec);
