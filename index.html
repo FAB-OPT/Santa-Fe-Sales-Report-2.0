@@ -4079,10 +4079,14 @@ body { background: var(--bg); color: var(--txt); }
   background: linear-gradient(90deg, transparent, rgba(15,23,42,.10), transparent);
   margin: 16px 0 12px;
 }
+/* เพิ่มระยะห่างก่อน trend chart (โหมดสัปดาห์ของสาขา) — เลื่อนกราฟลงมาอีกนิด */
+.dd-rounds-bars + .dd-hero-slot-divider { margin-top: 28px; }
 /* trend chart header เมื่อฝังในการ์ดสรุปยอดขาย (โหมดสัปดาห์) */
-.dd-hero-trend-hdr { margin-bottom: 10px; }
+.dd-hero-trend-hdr { margin: 14px 0 12px; }
 .dd-hero-trend-title { font-size: 14px; font-weight: 700; color: var(--txt); letter-spacing: -.005em; }
 .dd-hero-trend-sub   { font-size: 11.5px; color: var(--txt2); margin-top: 2px; }
+/* เพิ่มที่ว่างก่อนเส้นแบ่งของ trend (ห่างจากแท่งสิ้นวัน) */
+.dd-hero-slot-divider + .dd-hero-trend-hdr { margin-top: 8px; }
 /* breakdown compact (มากกว่า 2 แท่ง — เดือน=5 อาทิตย์, ปี=12 เดือน) */
 .dd-rounds-bars.dd-rounds-bars-compact {
   gap: 6px;
