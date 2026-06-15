@@ -900,8 +900,8 @@
       .dd-bar:hover { background:rgba(242,108,28,.07); }
       .dd-bar-name { font-size:13px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .dd-bar-name b { color:var(--txt2); font-size:11px; margin-right:5px; font-weight:700; }
-      .dd-bar-track { height:13px; background:var(--bd); border-radius:7px; overflow:hidden; }
-      .dd-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#f59e0b,var(--brand)); transition:width .6s var(--ease); }
+      .dd-bar-track { height:13px; background:#f1f5f9; border-radius:7px; overflow:hidden; }
+      .dd-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#fb923c 0%,#ea580c 100%); transition:width .6s var(--ease); box-shadow:inset 0 -1px 0 rgba(0,0,0,.08); min-width:4px; }
       .dd-bar-val { text-align:right; font-size:12.5px; font-weight:700; color:var(--txt); font-variant-numeric:tabular-nums; }
       .dd-bar-val i { font-style:normal; font-size:11px; font-weight:700; margin-left:7px; }
 
@@ -4983,7 +4983,7 @@ body { background: var(--bg); color: var(--txt); }
             <div class="dash3-sub" id="dashPageSub">ภาพรวมผลการขาย</div>
           </div>
           <div class="dash3-controls">
-            <select id="dashBranchFilter" class="dash3-branch" onchange="loadDash()" style="display:none"></select>
+            <select id="dashBranchFilter" class="dash3-branch" onchange="_ddDropdownChanged()" style="display:none"></select>
             <button class="dash3-icon-btn" onclick="loadDash()" title="รีเฟรช">🔄</button>
           </div>
         </div>
@@ -6022,8 +6022,9 @@ body { background: var(--bg); color: var(--txt); }
       function showDash() {
         showScreen("sDash");
         setMobTab("mnDash");
-        // เปิดแดชบอร์ดมา = ทุกพาร์ทกลับมาช่วงปัจจุบันเสมอ
+        // เปิดแดชบอร์ดมา = ทุกพาร์ทกลับมาช่วงปัจจุบันเสมอ + เริ่ม session ใหม่ (ปลดล็อก view ให้ใช้ default ของ role)
         _secAnchor = { day: new Date(), week: new Date(), month: new Date(), year: new Date() };
+        _ddViewLocked = false;
         _applyDashRoleView();
         loadDash();
       }
@@ -7985,28 +7986,60 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       // navigation
-      function _ddDrillZone(sec, i) { const z = ((_secItems[sec] || {}).zones || [])[i]; if (!z) return; _ddView = { level: "zone", zone: z.id, branch: null }; renderActive(false); }
-      function _ddDrillBranch(sec, i) { const b = ((_secItems[sec] || {}).branches || [])[i]; if (!b) return; _ddView = { level: "branch", zone: _ddView.zone, branch: b.id }; renderActive(false); }
-      function _ddGoCompany() { _ddView = { level: "company", zone: null, branch: null }; renderActive(false); }
-      function _ddGoZone() { _ddView = { level: "zone", zone: _ddView.zone, branch: null }; renderActive(false); }
+      let _ddViewLocked = false; // true เมื่อ user เลือกเอง (กัน renderActive reset ทับ)
+      function _ddDrillZone(sec, i) { const z = ((_secItems[sec] || {}).zones || [])[i]; if (!z) return; _ddView = { level: "zone", zone: z.id, branch: null }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
+      function _ddDrillBranch(sec, i) { const b = ((_secItems[sec] || {}).branches || [])[i]; if (!b) return; _ddView = { level: "branch", zone: _ddView.zone, branch: b.id }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
+      function _ddGoCompany() { _ddView = { level: "company", zone: null, branch: null }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
+      function _ddGoZone() { _ddView = { level: "zone", zone: _ddView.zone, branch: null }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
 
       function _ddCrumb() {
         const role = (typeof S !== "undefined" && S && S.role) || "";
         if (role === "branch" || role === "franchise") {
-          // หน้าสาขาเห็นแค่สาขาตัวเอง — ไม่ต้องโชว์ breadcrumb (ซ้ำกับหัวข้อ/ซับไตเติล)
-          return "";
+          return ""; // สาขาเห็นแค่ของตัวเอง ไม่ต้องมี crumb
         }
-        // หมายเหตุ: ปุ่ม "🏢 ทั้งบริษัท" ถูกถอดออก — ใช้ dropdown เลือกขอบเขตแทน
         let h = "";
+        const canCompany = (role === "admin" || role === "vp");
+        if (canCompany) {
+          h += `<button class="${_ddView.level === "company" ? "here" : ""}" onclick="_ddGoCompany()">🏢 ทั้งบริษัท</button>`;
+        }
         if (_ddView.zone) {
+          if (h) h += `<span class="dd-sep">›</span>`;
           h += `<button class="${_ddView.level === "zone" ? "here" : ""}" onclick="_ddGoZone()">👥 ${escHtml(_ddView.zone)}</button>`;
         }
         if (_ddView.branch) {
-          if (h) h += `<span class="dd-sep">›</span>`;
+          h += `<span class="dd-sep">›</span>`;
           const nm = (BRANCH_DM_MAP[_ddView.branch] || {}).branch || _ddView.branch;
           h += `<button class="here">🏬 ${escHtml(nm)}</button>`;
         }
         return h;
+      }
+
+      // ปรับค่า dropdown ให้ตรงกับ _ddView ปัจจุบัน (เรียกหลัง drilldown)
+      function _ddSyncDropdown() {
+        const sel = document.getElementById("dashBranchFilter");
+        if (!sel) return;
+        let want = "ALL";
+        if (_ddView.level === "zone" && _ddView.zone) want = "BZM:" + _ddView.zone;
+        else if (_ddView.level === "branch" && _ddView.branch) want = _ddView.branch;
+        if (sel.value !== want) {
+          const exists = Array.from(sel.options).some(o => o.value === want);
+          if (exists) sel.value = want;
+        }
+      }
+
+      // เปลี่ยน dropdown → อัปเดต _ddView ให้สัมพันธ์กัน + โหลดข้อมูลใหม่
+      function _ddDropdownChanged() {
+        const sel = document.getElementById("dashBranchFilter");
+        const v = sel ? sel.value : "ALL";
+        if (v === "ALL") {
+          _ddView = { level: "company", zone: null, branch: null };
+        } else if (typeof v === "string" && v.indexOf("BZM:") === 0) {
+          _ddView = { level: "zone", zone: v.slice(4), branch: null };
+        } else if (v) {
+          _ddView = { level: "branch", zone: _ddZoneOf(v), branch: v };
+        }
+        _ddViewLocked = true;
+        loadDash();
       }
 
       // ── รีเซ็ต/guard เอนทิตี (ใช้ร่วม) แล้ววาดทั้ง 3 พาร์ท ──
@@ -8049,7 +8082,8 @@ body { background: var(--bg); color: var(--txt); }
         const _allowedLv = _ALLOWED[role] || ["company"];
         if (!_allowedLv.includes(_ddView.level)) _ddView = _ddDefaultView(role);
 
-        if (reset) _ddView = _ddDefaultView(role);
+        // รีเซ็ตเป็น default ของ role เฉพาะเมื่อยังไม่มีคนเจาะ (ไม่ลบเลือกจาก dropdown/คลิก drilldown)
+        if (reset && !_ddViewLocked) _ddView = _ddDefaultView(role);
 
         // guard: เป้าหมายที่เจาะอยู่หายไปจากข้อมูลของช่วงนี้
         if (_ddView.level === "zone" && !zones[_ddView.zone]) _ddView = _ddDefaultView(role);
