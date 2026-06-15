@@ -4080,7 +4080,7 @@ body { background: var(--bg); color: var(--txt); }
   margin: 16px 0 12px;
 }
 /* เพิ่มระยะห่างก่อน trend chart (โหมดสัปดาห์ของสาขา) — เลื่อนกราฟลงมาอีกนิด */
-.dd-hero-slot-divider.dd-hero-slot-divider-trend { margin-top: 32px; }
+.dd-hero-slot-divider.dd-hero-slot-divider-trend { margin-top: 56px; }
 /* trend chart header เมื่อฝังในการ์ดสรุปยอดขาย (โหมดสัปดาห์) */
 .dd-hero-trend-hdr { margin: 14px 0 12px; }
 .dd-hero-trend-title { font-size: 14px; font-weight: 700; color: var(--txt); letter-spacing: -.005em; }
@@ -4089,10 +4089,29 @@ body { background: var(--bg); color: var(--txt); }
 .dd-hero-slot-divider + .dd-hero-trend-hdr { margin-top: 8px; }
 /* breakdown compact (มากกว่า 2 แท่ง — เดือน=5 อาทิตย์, ปี=12 เดือน) */
 .dd-rounds-bars.dd-rounds-bars-compact {
-  gap: 6px;
+  gap: 14px;
+  padding: 8px 0 4px;
 }
 .dd-rounds-bars.dd-rounds-bars-compact .dd-rb-row {
   grid-template-columns: 130px minmax(0, 1fr) auto;
+  padding: 3px 0;
+}
+/* ทำการ์ดสรุปยอดขายให้สูงเท่ากล่องข้างๆ + ดัน breakdown bars ให้กระจายเต็มความสูง */
+.dash3-card { display: flex; flex-direction: column; }
+.dash3-card > .dash2-cardhdr { flex: 0 0 auto; }
+.dash3-card > .dd-hero.dd-hero-noico {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.dd-hero.dd-hero-noico .dd-hero-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.dash3-card .dd-rounds-bars.dd-rounds-bars-compact {
+  flex: 1 1 auto;
+  justify-content: space-evenly;
 }
 /* hero ใหม่ — จัดให้บาร์อยู่กึ่งกลางแนวตั้งกับสรุปฝั่งซ้าย */
 .dd-hero { align-items: center !important; }
