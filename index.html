@@ -4096,6 +4096,14 @@ body { background: var(--bg); color: var(--txt); }
   grid-template-columns: 220px minmax(0, 1fr) auto;
   padding: 3px 0;
 }
+/* รายปี (ไม่มี chip) → label แคบ → กราฟชิดซ้ายมากขึ้น */
+.dd-rounds-bars.dd-rounds-bars-narrow .dd-rb-row {
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+}
+/* รายเดือน (มี chip) → label กว้างพอใส่ชื่ออาทิตย์ + chip ช่วงวันที่ */
+.dd-rounds-bars.dd-rounds-bars-with-chip .dd-rb-row {
+  grid-template-columns: 200px minmax(0, 1fr) auto;
+}
 .dd-rounds-bars.dd-rounds-bars-compact .dd-rb-label {
   display: inline-flex;
   align-items: center;
@@ -7597,9 +7605,12 @@ body { background: var(--bg); color: var(--txt); }
               <span class="dd-rb-val">${valHtml}</span>
             </div>`;
           };
+          // ถ้าทุก row ไม่มี sub chip → ใช้ label คอลัมน์แคบ (ชิดซ้ายมากขึ้น)
+          const _hasAnySub = subBars.some(b => b && b.sub);
+          const _compactVar = _hasAnySub ? 'dd-rounds-bars-with-chip' : 'dd-rounds-bars-narrow';
           slotBarsHtml = `
             <div class="dd-hero-slot-divider"></div>
-            <div class="dd-rounds-bars dd-rounds-bars-compact">
+            <div class="dd-rounds-bars dd-rounds-bars-compact ${_compactVar}">
               ${subBars.map(_rowBar).join('')}
             </div>`;
         }
@@ -8104,7 +8115,6 @@ body { background: var(--bg); color: var(--txt); }
               });
               _bars.push({
                 label: _TH_FULL[m],
-                sub: `1–${mLast} ${_TH_SHORT[m]}`,
                 val: mAct, plan: mPlan
               });
             }
