@@ -7515,7 +7515,8 @@ body { background: var(--bg); color: var(--txt); }
             const fillW = Math.min(pctV, 100);
             const sent = b.val > 0;
             const overshoot = pctV > 100;
-            const fillColor = overshoot ? '#16a34a' : (pctV >= 80 ? '#f59e0b' : (b.val > 0 ? '#fb923c' : '#cbd5e1'));
+            // ≥ 100% = ถึงเป้า (เขียว) · 80–99% = amber · < 80% = ส้มแบรนด์ · ไม่มียอด = เทา
+            const fillColor = (pctV >= 100) ? '#16a34a' : (pctV >= 80 ? '#f59e0b' : (b.val > 0 ? '#fb923c' : '#cbd5e1'));
             const valHtml = sent
               ? `<b style="color:${fillColor}">฿${fmt(Math.round(b.val))}</b>${b.plan > 0 ? ` <span style="color:var(--txt2);font-weight:600">${pctV.toFixed(0)}%</span>` : ''}`
               : `<span style="color:var(--txt3)">ยังไม่มียอด</span>`;
