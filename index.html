@@ -4151,73 +4151,107 @@ body { background: var(--bg); color: var(--txt); }
 /* Channel sales donut + stats list */
 .dd-chan-donut-wrap {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(0, 1.4fr);
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 1.5fr);
+  gap: 28px;
+  align-items: stretch;
 }
 .dd-chan-donut-side {
-  display: flex; flex-direction: column; gap: 12px; align-items: stretch;
+  display: flex; flex-direction: column; gap: 14px; align-items: stretch;
+  justify-content: center;
 }
 .dd-chan-donut-canvas {
   position: relative;
-  height: 230px;
+  height: 240px;
 }
 .dd-chan-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  padding: 10px 12px;
-  background: #f8fafc;
-  border-radius: 10px;
+  gap: 8px;
+  padding: 14px 8px;
+  background: linear-gradient(135deg, #fff8f1, #fff);
+  border-radius: 14px;
   border: 1px solid var(--bd);
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.dd-chan-summary > div { display: flex; flex-direction: column; gap: 2px; }
-.dd-chan-summary b { font-size: 14px; color: var(--txt); font-weight: 800; letter-spacing: -.01em; }
-
-.dd-chan-stats { display: flex; flex-direction: column; gap: 10px; }
-.dd-chan-stat {
-  padding: 10px 12px;
-  border: 1px solid var(--bd);
-  border-radius: 10px;
-  background: #fff;
-  transition: border-color .15s, transform .15s;
+.dd-chan-summary > div {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 6px;
+  border-right: 1px solid rgba(15,23,42,.06);
 }
-.dd-chan-stat:hover { border-color: var(--txt3); transform: translateY(-1px); }
-.dd-chan-stat.is-empty { opacity: .5; }
+.dd-chan-summary > div:last-child { border-right: none; }
+.dd-chan-summary .dd-chan-stat-lbl {
+  font-size: 11px; color: var(--txt2); font-weight: 600; text-transform: none;
+}
+.dd-chan-summary b {
+  font-size: 16px; color: var(--txt); font-weight: 800; letter-spacing: -.015em;
+}
+
+.dd-chan-stats { display: flex; flex-direction: column; gap: 8px; }
+.dd-chan-stat {
+  position: relative;
+  padding: 12px 14px 12px 18px;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color .18s, transform .18s, box-shadow .18s;
+  overflow: hidden;
+}
+.dd-chan-stat::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--c, var(--txt3));
+  border-radius: 4px 0 0 4px;
+}
+.dd-chan-stat:hover {
+  border-color: var(--c, var(--txt3));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(15,23,42,.08);
+}
+.dd-chan-stat.is-empty { opacity: .45; }
 .dd-chan-stat-name {
   display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--txt); margin-bottom: 8px;
+  font-size: 13.5px; color: var(--txt); margin-bottom: 10px;
 }
-.dd-chan-stat-name b { font-weight: 700; }
+.dd-chan-stat-name b { font-weight: 800; letter-spacing: -.005em; }
 .dd-chan-stat-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.8), 0 1px 3px rgba(0,0,0,.12);
 }
 .dd-chan-stat-pct {
   margin-left: auto;
-  font-size: 12px; font-weight: 700; color: var(--txt2);
+  font-size: 17px; font-weight: 800;
+  color: var(--c, var(--txt));
   font-variant-numeric: tabular-nums;
+  letter-spacing: -.015em;
 }
 .dd-chan-stat-cells {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  grid-template-columns: 0.8fr 1.4fr 1fr;
+  gap: 6px;
 }
 .dd-chan-stat-cell {
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 3px;
   text-align: left;
+  padding: 4px 0;
+  border-right: 1px solid rgba(15,23,42,.05);
 }
+.dd-chan-stat-cell:last-child { border-right: none; }
 .dd-chan-stat-lbl {
-  font-size: 10.5px; color: var(--txt2); font-weight: 500; letter-spacing: .01em;
+  font-size: 10.5px; color: var(--txt2); font-weight: 500;
+  letter-spacing: .015em; text-transform: uppercase;
 }
 .dd-chan-stat-val {
   font-size: 14px; color: var(--txt); font-weight: 800;
   font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+  line-height: 1.2;
 }
 @media (max-width: 760px) {
   .dd-chan-donut-wrap { grid-template-columns: 1fr; gap: 16px; }
   .dd-chan-donut-canvas { height: 200px; }
+  .dd-chan-stat-cells { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* Channel sales bars — custom HTML version (refined) */
@@ -7566,7 +7600,7 @@ body { background: var(--bg); color: var(--txt); }
           const pct = total > 0 ? (t.value / total) * 100 : 0;
           const avg = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
           const isEmpty = t.value <= 0 && (!t.trans || t.trans <= 0);
-          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}">
+          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}" style="--c:${t.color}">
             <div class="dd-chan-stat-name"><span class="dd-chan-stat-dot" style="background:${t.color}"></span><b>${escHtml(t.label)}</b><span class="dd-chan-stat-pct">${pct.toFixed(1)}%</span></div>
             <div class="dd-chan-stat-cells">
               <div class="dd-chan-stat-cell"><span class="dd-chan-stat-lbl">บิล</span><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span></div>
@@ -7595,15 +7629,16 @@ body { background: var(--bg); color: var(--txt); }
             datasets: [{
               data: items.map(t => t.value),
               backgroundColor: items.map(t => t.color),
-              borderWidth: 2,
+              borderWidth: 3,
               borderColor: "#fff",
-              hoverOffset: 6
+              hoverOffset: 8,
+              hoverBorderWidth: 3
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "62%",
+            cutout: "68%",
             plugins: {
               legend: { display: false },
               tooltip: {
@@ -7621,7 +7656,26 @@ body { background: var(--bg); color: var(--txt); }
                 }
               }
             }
-          }
+          },
+          plugins: [{
+            id: "donutCenter",
+            afterDraw(chart) {
+              const { ctx, chartArea: { left, right, top, bottom } } = chart;
+              const cx = (left + right) / 2;
+              const cy = (top + bottom) / 2;
+              ctx.save();
+              // ยอดรวมเด่นกลาง
+              ctx.textAlign = "center"; ctx.textBaseline = "middle";
+              ctx.fillStyle = "#0f172a";
+              ctx.font = "800 22px Sarabun, sans-serif";
+              ctx.fillText("฿" + fmt(Math.round(total)), cx, cy - 8);
+              // ป้ายย่อยใต้ยอด
+              ctx.fillStyle = "#64748b";
+              ctx.font = "600 11px Sarabun, sans-serif";
+              ctx.fillText("ยอดรวม", cx, cy + 14);
+              ctx.restore();
+            }
+          }]
         });
       }
 
