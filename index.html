@@ -4080,7 +4080,7 @@ body { background: var(--bg); color: var(--txt); }
   margin: 16px 0 12px;
 }
 /* เพิ่มระยะห่างก่อน trend chart (โหมดสัปดาห์ของสาขา) — เลื่อนกราฟลงมาอีกนิด */
-.dd-rounds-bars + .dd-hero-slot-divider { margin-top: 28px; }
+.dd-hero-slot-divider.dd-hero-slot-divider-trend { margin-top: 32px; }
 /* trend chart header เมื่อฝังในการ์ดสรุปยอดขาย (โหมดสัปดาห์) */
 .dd-hero-trend-hdr { margin: 14px 0 12px; }
 .dd-hero-trend-title { font-size: 14px; font-weight: 700; color: var(--txt); letter-spacing: -.005em; }
@@ -8060,7 +8060,7 @@ body { background: var(--bg); color: var(--txt); }
           let _heroContent = _ddBranchHero(rows, codes, map, _heroSlots, _heroSubBars);
           if (sec === 'week' && _isBranchUser) {
             _heroContent += `
-              <div class="dd-hero-slot-divider"></div>
+              <div class="dd-hero-slot-divider dd-hero-slot-divider-trend"></div>
               <div class="dd-hero-trend-hdr">
                 <div class="dd-hero-trend-title">📊 ยอดขายรายวัน (จ–อา) เทียบเป้า</div>
                 <div class="dd-hero-trend-sub">🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า</div>
