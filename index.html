@@ -4222,9 +4222,16 @@ body { background: var(--bg); color: var(--txt); }
   white-space: nowrap;
 }
 .dd-chan-val.is-out { left: 100%; transform: translate(10px, -50%); }
-.dd-chan-val.is-in  { right: 10px; transform: translateY(-50%); color: #fff; }
-.dd-chan-val.is-in b { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.15); }
-.dd-chan-val.is-in .dd-chan-pct { color: rgba(255,255,255,.85); }
+.dd-chan-val.is-in  { right: 12px; transform: translateY(-50%); color: #fff; }
+.dd-chan-val.is-in b {
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0,0,0,.28);
+}
+.dd-chan-val.is-in .dd-chan-pct {
+  color: rgba(255,255,255,.92);
+  text-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
 .dd-chan-val b {
   color: var(--txt);
   font-weight: 800;
@@ -4254,14 +4261,30 @@ body { background: var(--bg); color: var(--txt); }
   font-size: 12px;
 }
 .dd-rb-val.is-out { left: 100%; transform: translate(10px, -50%); }
-.dd-rb-val.is-in  { right: 10px; transform: translateY(-50%); color: #fff; }
-.dd-rb-val.is-in b { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.15); }
-.dd-rb-val.is-in .dd-rb-growth {
-  background: rgba(255,255,255,.22);
+.dd-rb-val.is-in  {
+  right: 12px;
+  transform: translateY(-50%);
   color: #fff;
-  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.dd-rb-val.is-in b {
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0,0,0,.28);
+  letter-spacing: -.01em;
+}
+/* growth pill เปลี่ยนเป็นพื้นขาวข้อความเขียวเมื่ออยู่บนแท่ง — contrast สูง อ่านง่าย */
+.dd-rb-val.is-in .dd-rb-growth {
+  background: #fff;
+  color: #15803d;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
   animation: none;
-  text-shadow: 0 1px 2px rgba(0,0,0,.15);
+  text-shadow: none;
+  font-weight: 800;
+  padding: 3px 10px;
+  font-size: 12px;
 }
 .dd-rb-val b {
   color: var(--brand);
