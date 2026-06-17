@@ -7463,16 +7463,26 @@ body { background: var(--bg); color: var(--txt); }
       function _ddBarList(items, onClick, sec) {
         if (!items.length) return `<div class="dd-empty">ไม่มีข้อมูลในช่วงนี้</div>`;
         const max = Math.max(...items.map(i => i.actual), 1);
+        // เลือกสีแท่งตาม %เป้า: ≥100% เขียว · 80–99% amber · <80% ส้มแบรนด์ · ไม่มีเป้า เทา
+        const colorByPct = (p) => {
+          if (!p && p !== 0) return '#cbd5e1';
+          if (p >= 1)    return '#16a34a';
+          if (p >= 0.80) return '#f59e0b';
+          if (p > 0)     return '#fb923c';
+          return '#cbd5e1';
+        };
         const rows = items.map((i, idx) => {
           const w = (i.actual / max * 100).toFixed(1);
-          const col = _ddAchvColor(i.pct);
+          const base = colorByPct(i.pct);
+          const fillBg = `linear-gradient(90deg, ${base}cc 0%, ${base} 100%)`;
+          const pctTxt = i.pct ? (i.pct * 100).toFixed(0) + "%" : "-";
           const codeChip = i.code ? `<span class="dd-bar-chip">${escHtml(i.code)}</span>` : "";
           const nameTxt  = `<span class="dd-bar-name-text">${escHtml(i.label)}</span>`;
           const nChip    = i.n ? `<span class="dd-bar-chip">${i.n} สาขา</span>` : "";
           return `<button class="dd-bar" onclick="${onClick}('${sec}',${idx})">
             <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}</span>
-            <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%"></span></span>
-            <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${col}">${i.pct ? (i.pct * 100).toFixed(0) + "%" : "-"}</i></span>
+            <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%;background:${fillBg}"></span></span>
+            <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${base}">${pctTxt}</i></span>
           </button>`;
         }).join("");
         return `<div class="dd-bar-head"><span>สาขา / โซน</span><span>ยอดขายจริง</span><span>จริง · %เป้า</span></div><div class="dd-bar-scroll">${rows}</div>`;
