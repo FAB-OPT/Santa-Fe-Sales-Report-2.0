@@ -5145,6 +5145,7 @@ body { background: var(--bg); color: var(--txt); }
           <button class="admin-tab active" data-tab="branches"  onclick="adminSwitchTab('branches')">🏢 จัดการสาขา</button>
           <button class="admin-tab"        data-tab="bzms"      onclick="adminSwitchTab('bzms')">👤 จัดการ BZM</button>
           <button class="admin-tab"        data-tab="zones"     onclick="adminSwitchTab('zones')">🗺️ โซน BZM</button>
+          <button class="admin-tab"        data-tab="users"     onclick="adminSwitchTab('users')">🔐 จัดการผู้ใช้</button>
           <button class="admin-tab"        data-tab="import"    onclick="adminSwitchTab('import')">📥 นำเข้าข้อมูล</button>
           <button class="btn btn-sm" onclick="adminTabReload()" style="background:#f1f5f9;color:#475569;margin-left:auto;margin-bottom:6px">🔄 รีเฟรช</button>
         </div>
@@ -5216,6 +5217,41 @@ body { background: var(--bg); color: var(--txt); }
                      style="width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:12px;margin-bottom:8px;outline:none">
               <div id="adminZoneOut" style="max-height:380px;overflow-y:auto"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- ── Tab: Users (admin only) ── -->
+        <div class="admin-tab-pane" data-tab="users" style="display:none">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+            <button class="btn btn-brand" onclick="openAdminUserModal()" style="font-size:13px">+ เพิ่มผู้ใช้</button>
+            <input type="text" id="adminUserSearch" placeholder="🔍 ค้นหา รหัส/ชื่อ/role..." oninput="renderAdminUsers()"
+                   style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
+            <select id="adminUserRoleFilter" onchange="renderAdminUsers()"
+                    style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px">
+              <option value="">ทุก role</option>
+              <option value="admin">Admin</option>
+              <option value="vp">VP</option>
+              <option value="coo">COO</option>
+              <option value="bzm">BZM</option>
+              <option value="branch">Branch</option>
+              <option value="franchise">Franchise</option>
+            </select>
+            <span id="adminUserCount" style="font-size:12px;color:var(--txt2);font-weight:600">— ผู้ใช้</span>
+          </div>
+          <div class="dash-card-wrap" style="overflow-x:auto">
+            <table class="dash-tbl" style="min-width:680px">
+              <thead><tr>
+                <th>รหัส (PIN)</th>
+                <th>ชื่อ-ชื่อเล่น</th>
+                <th>Role</th>
+                <th>Brand</th>
+                <th>สถานะ</th>
+                <th style="text-align:right;width:140px">Action</th>
+              </tr></thead>
+              <tbody id="adminUserBody">
+                <tr><td colspan="6" style="color:#94a3b8;padding:16px;text-align:center">⏳ กำลังโหลด...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -5322,6 +5358,89 @@ body { background: var(--bg); color: var(--txt); }
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="closeM('mBranch')">ยกเลิก</button>
           <button class="btn btn-brand" id="mBranchSaveBtn" onclick="adminSaveBranch()">บันทึก ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     MODAL: USER ADD/EDIT  (admin only)
+════════════════════════════════════════ -->
+    <div id="mUser" class="modal-bg">
+      <div class="modal">
+        <div class="modal-hdr">
+          <h3 id="mUserTitle">เพิ่มผู้ใช้ใหม่</h3>
+          <button class="modal-close" onclick="closeM('mUser')">×</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="au_oldCode">
+          <div class="field-grid" style="grid-template-columns:1fr 1fr;gap:14px">
+            <div class="field" style="grid-column:1/-1">
+              <label>รหัสล็อกอิน (PIN) *</label>
+              <input id="au_code" type="tel" maxlength="6" inputmode="numeric" placeholder="4 หลัก (สาขา) / 6 หลัก (TM)" autocomplete="off">
+              <div style="font-size:11px;color:var(--txt2);margin-top:4px">กรอกตัวเลขเท่านั้น · เปลี่ยน PIN ได้โดยพิมพ์รหัสใหม่</div>
+            </div>
+            <div class="field">
+              <label>ชื่อ-นามสกุล *</label>
+              <input id="au_name" type="text" placeholder="เช่น นพชัย จันทร์รุ่ง">
+            </div>
+            <div class="field">
+              <label>ชื่อเล่น</label>
+              <input id="au_nick" type="text" placeholder="เช่น พี่นพ">
+            </div>
+            <div class="field">
+              <label>Role *</label>
+              <select id="au_role">
+                <option value="admin">Admin</option>
+                <option value="vp">VP</option>
+                <option value="coo">COO</option>
+                <option value="bzm" selected>BZM</option>
+                <option value="branch">Branch (สาขา)</option>
+                <option value="franchise">Franchise</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Brand</label>
+              <select id="au_brand">
+                <option value="">— ไม่ระบุ —</option>
+                <option value="santafe" selected>Santa Fe</option>
+                <option value="jaedaeng">เจ๊แดง</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input id="au_cross" type="checkbox" style="width:16px;height:16px;cursor:pointer">
+                <span>Cross-brand (ดูแลทั้ง 2 brand)</span>
+              </label>
+              <div style="font-size:11px;color:var(--txt2);margin-top:2px;margin-left:24px">เปิดสำหรับ Admin/COO ที่ดูแลทั้ง Santa Fe และ เจ๊แดง</div>
+            </div>
+            <div class="field" id="au_branchFields" style="grid-column:1/-1;display:none">
+              <div style="display:grid;grid-template-columns:140px 1fr;gap:10px">
+                <div class="field">
+                  <label>รหัสสาขา</label>
+                  <input id="au_branchCode" type="tel" maxlength="4" inputmode="numeric" placeholder="5099">
+                </div>
+                <div class="field">
+                  <label>ชื่อสาขา</label>
+                  <input id="au_branchName" type="text" placeholder="เช่น เซ็นทรัล อยุธยา">
+                </div>
+              </div>
+            </div>
+            <div class="field" id="au_dmField" style="grid-column:1/-1;display:none">
+              <label>BZM ที่ดูแล (สำหรับ role=Branch)</label>
+              <input id="au_dm" type="text" placeholder="เช่น นพชัย จันทร์รุ่ง (พี่นพ)">
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input id="au_active" type="checkbox" checked style="width:16px;height:16px;cursor:pointer">
+                <span>เปิดบัญชี (active)</span>
+              </label>
+            </div>
+          </div>
+          <div id="au_warn" style="display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:10px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeM('mUser')">ยกเลิก</button>
+          <button class="btn btn-brand" id="mUserSaveBtn" onclick="adminSaveUser()">บันทึก ✓</button>
         </div>
       </div>
     </div>
@@ -5826,19 +5945,64 @@ body { background: var(--bg); color: var(--txt); }
         if (e.key === 'Enter') doLogin();
       }
 
-      function doLogin() {
-        if (_loginMode === 'admin') {
-          const code = getAdminCode();
-          const su = SPECIAL_USERS[code];
-          if (!su) {
-            showAlert('❌', 'รหัสผ่านไม่ถูกต้อง', 'ไม่พบบัญชีนี้ในระบบ'); return;
-          }
-          S = _stateFromSpecialUser(code, su);
-          localStorage.setItem(LS_CODE, code);
-          showAlert('👋', 'ยินดีต้อนรับ!', su.name, enterApp);
-          return;
+      // ─── DB users cache (โหลดจาก Supabase) ──────────────────
+      let _USERS_DB = [];
+      function _refreshUsersCache(cb) {
+        apiCall({ mode: "listUsers" }, function(res) {
+          if (res && res.ok && Array.isArray(res.rows)) _USERS_DB = res.rows;
+          if (cb) cb();
+        });
+      }
+      // Convert DB user → state object สำหรับ S
+      function _stateFromDbUser(u) {
+        if (!u) return null;
+        if (u.role === "admin") return { code: "ADMIN", branch: u.nick || u.name || "ADMIN", dm: "", role: "admin" };
+        if (u.role === "vp")    return { code: "_VP_"  + u.code, branch: u.nick || u.name || "", dm: "", role: "vp" };
+        if (u.role === "coo")   return { code: "_COO_" + u.code, branch: u.nick || u.name || "", dm: "", role: "vp" }; // coo = ดูทุกสาขาเหมือน vp
+        if (u.role === "bzm") {
+          const dm = u.nick ? `${u.name} (${u.nick})` : (u.name || "");
+          return { code: "_BZM_" + u.code, branch: u.nick || u.name || "", dm: dm, role: "bzm" };
         }
-        const code = getLoginCode();
+        if (u.role === "branch" || u.role === "franchise") {
+          const bc = u.branch_code || u.code;
+          return { code: bc, branch: u.branch_name || u.name || "", dm: u.dm || "", role: "branch" };
+        }
+        return null;
+      }
+
+      function doLogin() {
+        const code = _loginMode === 'admin' ? getAdminCode() : getLoginCode();
+        // 1) ลองจาก _USERS_DB cache ก่อน (sync · ไว)
+        if (_USERS_DB && _USERS_DB.length) {
+          const u = _USERS_DB.find(x => x.code === code && x.active !== false);
+          if (u) return _doLoginCommit(u);
+        }
+        // 2) Fetch จาก DB
+        apiCall({ mode: "listUsers" }, function(res) {
+          if (res && res.ok && Array.isArray(res.rows)) {
+            _USERS_DB = res.rows;
+            const u = res.rows.find(x => x.code === code && x.active !== false);
+            if (u) return _doLoginCommit(u);
+          }
+          // 3) Fallback: hardcoded SPECIAL_USERS / BRANCH_DM_MAP (กันกรณีตาราง users ยังไม่ migrate)
+          _doLoginFallback(code);
+        });
+      }
+
+      function _doLoginCommit(u) {
+        const newS = _stateFromDbUser(u);
+        if (!newS) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'role ในระบบไม่ถูกต้อง'); return; }
+        S = newS;
+        localStorage.setItem(LS_CODE, u.code);
+        showAlert('👋', 'ยินดีต้อนรับ!', u.nick || u.name || u.code, enterApp);
+      }
+
+      function _doLoginFallback(code) {
+        if (_loginMode === 'admin') {
+          const su = SPECIAL_USERS[code];
+          if (su) { S = _stateFromSpecialUser(code, su); localStorage.setItem(LS_CODE, code); showAlert('👋', 'ยินดีต้อนรับ!', su.name, enterApp); return; }
+          showAlert('❌', 'รหัสผ่านไม่ถูกต้อง', 'ไม่พบบัญชีนี้ในระบบ'); return;
+        }
         const info = BRANCH_DM_MAP[code];
         if (!info) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'ไม่พบรหัสสาขา ' + code); return; }
         S = { code: code, branch: info.branch, dm: info.dm, role: "branch" };
@@ -5925,6 +6089,8 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       async function enterApp() {
+        // โหลด users DB cache เป็น background (ใช้สำหรับ login รอบต่อๆ ไป)
+        _refreshUsersCache();
         // ซ่อนหน้า login ก่อน (กันแสดงค้างระหว่าง await branches load ด้านล่าง)
         const sLogin = document.getElementById("sLogin");
         if (sLogin) sLogin.classList.remove("active");
@@ -6276,11 +6442,174 @@ body { background: var(--bg); color: var(--txt); }
         if (tab === "branches") loadAdminBranches();
         else if (tab === "bzms") loadAdminBzms();
         else if (tab === "zones") loadAdminZones();
+        else if (tab === "users") loadAdminUsers();
         else if (tab === "import") adminImportReset();
       }
 
       function adminTabReload() {
         adminSwitchTab(_adminCurrentTab);
+      }
+
+      /* ══════════════════════════════════════════════
+         ADMIN: USERS  —  จัดการบัญชีทุกระดับ (admin only)
+      ══════════════════════════════════════════════ */
+      let _adminUsers = []; // cache จาก DB
+
+      function loadAdminUsers() {
+        const body = document.getElementById("adminUserBody");
+        if (body) body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:16px;text-align:center">⏳ กำลังโหลด...</td></tr>`;
+        apiCall({ mode: "listUsers" }, function(res) {
+          if (!res || !res.ok) {
+            if (body) body.innerHTML = `<tr><td colspan="6" style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(res && res.error || "")}</td></tr>`;
+            return;
+          }
+          _adminUsers = res.rows || [];
+          renderAdminUsers();
+        });
+      }
+
+      const _ROLE_LABEL = {
+        admin: "Admin", vp: "VP", coo: "COO",
+        bzm: "BZM", branch: "Branch", franchise: "Franchise"
+      };
+      const _ROLE_COLOR = {
+        admin: "#dc2626", vp: "#7c3aed", coo: "#0ea5e9",
+        bzm: "#f59e0b", branch: "#16a34a", franchise: "#16a34a"
+      };
+
+      function renderAdminUsers() {
+        const body = document.getElementById("adminUserBody");
+        const cntEl = document.getElementById("adminUserCount");
+        if (!body) return;
+        const q  = (document.getElementById("adminUserSearch") || {}).value || "";
+        const rf = (document.getElementById("adminUserRoleFilter") || {}).value || "";
+        const qq = q.trim().toLowerCase();
+        const list = _adminUsers.filter(u => {
+          if (rf && u.role !== rf) return false;
+          if (!qq) return true;
+          return (u.code || "").toLowerCase().includes(qq) ||
+                 (u.name || "").toLowerCase().includes(qq) ||
+                 (u.nick || "").toLowerCase().includes(qq) ||
+                 (u.role || "").toLowerCase().includes(qq);
+        });
+        if (cntEl) cntEl.textContent = `${list.length} ผู้ใช้`;
+        if (!list.length) {
+          body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:18px;text-align:center">— ไม่พบผู้ใช้ —</td></tr>`;
+          return;
+        }
+        body.innerHTML = list.map(u => {
+          const roleLbl = _ROLE_LABEL[u.role] || u.role || "-";
+          const roleCol = _ROLE_COLOR[u.role] || "#64748b";
+          const brandLbl = u.brand === "santafe" ? "Santa Fe" : u.brand === "jaedaeng" ? "เจ๊แดง" : "-";
+          const crossTag = u.cross_brand ? ' <span style="font-size:10px;padding:1px 6px;background:#fef3c7;color:#92400e;border-radius:999px;font-weight:700">cross</span>' : "";
+          const status = u.active === false
+            ? '<span style="color:#94a3b8;font-weight:600">ปิดอยู่</span>'
+            : '<span style="color:#16a34a;font-weight:700">●</span>';
+          const isAdminPrime = u.code === "601183";
+          return `<tr>
+            <td style="font-variant-numeric:tabular-nums;font-weight:700">${escHtml(u.code)}</td>
+            <td>${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
+            <td><span style="font-size:11px;padding:2px 8px;background:${roleCol}22;color:${roleCol};border-radius:999px;font-weight:800">${roleLbl}</span></td>
+            <td>${brandLbl}${crossTag}</td>
+            <td>${status}</td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="btn-edit-row btn btn-sm" onclick='openAdminUserModal(${JSON.stringify(u).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
+              ${isAdminPrime ? "" : `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px" onclick="adminDeleteUser('${escHtml(u.code)}','${escHtml((u.nick || u.name || "").replace(/'/g, "\\'"))}')">🗑️</button>`}
+            </td>
+          </tr>`;
+        }).join("");
+      }
+
+      function adminDeleteUser(code, displayName) {
+        showConfirm("⚠️", "ยืนยันการลบผู้ใช้",
+          `ลบบัญชี ${displayName || code} (PIN: ${code}) ?\nผู้ใช้คนนี้จะล็อกอินไม่ได้อีก`,
+          function() {
+            apiCall({ mode: "deleteUser", code: code }, function(res) {
+              if (!res || !res.ok) { showAlert("❌", "ลบไม่สำเร็จ", res && res.error || "เกิดข้อผิดพลาด"); return; }
+              loadAdminUsers();
+              showAlert("✅", "ลบสำเร็จ", "ลบบัญชี " + (displayName || code) + " แล้ว");
+            });
+          }, { danger: true, btnText: "ลบ" });
+      }
+
+      function _adminUserRoleToggle() {
+        const role = (document.getElementById("au_role") || {}).value || "";
+        const isBranch = (role === "branch" || role === "franchise");
+        const isMgmt   = (role === "admin" || role === "coo");
+        const bf = document.getElementById("au_branchFields");
+        const df = document.getElementById("au_dmField");
+        const cc = document.getElementById("au_cross");
+        if (bf) bf.style.display = isBranch ? "" : "none";
+        if (df) df.style.display = isBranch ? "" : "none";
+        if (cc) cc.parentElement.parentElement.style.display = isMgmt ? "" : "none";
+      }
+
+      function openAdminUserModal(user) {
+        // เคลียร์ฟิลด์
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? "" : v; };
+        const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+        const isEdit = !!user;
+        document.getElementById("mUserTitle").textContent = isEdit ? "แก้ไขผู้ใช้" : "เพิ่มผู้ใช้ใหม่";
+        setVal("au_oldCode",   isEdit ? user.code : "");
+        setVal("au_code",      isEdit ? user.code : "");
+        setVal("au_name",      isEdit ? user.name : "");
+        setVal("au_nick",      isEdit ? user.nick : "");
+        setVal("au_role",      isEdit ? user.role : "bzm");
+        setVal("au_brand",     isEdit ? (user.brand || "") : "santafe");
+        setChk("au_cross",     isEdit ? !!user.cross_brand : false);
+        setVal("au_dm",        isEdit ? user.dm : "");
+        setVal("au_branchCode",isEdit ? user.branch_code : "");
+        setVal("au_branchName",isEdit ? user.branch_name : "");
+        setChk("au_active",    isEdit ? user.active !== false : true);
+        document.getElementById("au_warn").style.display = "none";
+        // toggle visibility ของฟิลด์เฉพาะ role
+        _adminUserRoleToggle();
+        const roleSel = document.getElementById("au_role");
+        if (roleSel) roleSel.onchange = _adminUserRoleToggle;
+        openM("mUser");
+      }
+
+      function adminSaveUser() {
+        const warn = document.getElementById("au_warn");
+        const fail = (m) => { warn.style.display = ""; warn.textContent = "⚠️ " + m; };
+        warn.style.display = "none";
+
+        const code  = (document.getElementById("au_code").value || "").trim();
+        const name  = (document.getElementById("au_name").value || "").trim();
+        const role  = (document.getElementById("au_role").value || "").trim();
+        if (!code) return fail("กรุณากรอกรหัสล็อกอิน (PIN)");
+        if (!/^\d+$/.test(code)) return fail("PIN ต้องเป็นตัวเลขเท่านั้น");
+        if (role === "branch" || role === "franchise") {
+          if (code.length !== 4) return fail("PIN ของสาขาต้อง 4 หลัก");
+        } else {
+          if (code.length !== 6) return fail("PIN ของ Team Management ต้อง 6 หลัก");
+        }
+        if (!name) return fail("กรุณากรอกชื่อ-นามสกุล");
+
+        const payload = {
+          mode:        "saveUser",
+          oldCode:     (document.getElementById("au_oldCode").value || "").trim() || undefined,
+          code:        code,
+          name:        name,
+          nick:        (document.getElementById("au_nick").value || "").trim() || undefined,
+          role:        role,
+          brand:       (document.getElementById("au_brand").value || "").trim() || undefined,
+          cross_brand: !!document.getElementById("au_cross").checked,
+          dm:          (document.getElementById("au_dm").value || "").trim() || undefined,
+          branch_code: (document.getElementById("au_branchCode").value || "").trim() || undefined,
+          branch_name: (document.getElementById("au_branchName").value || "").trim() || undefined,
+          active:      !!document.getElementById("au_active").checked
+        };
+        const btn = document.getElementById("mUserSaveBtn");
+        if (btn) { btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก..."; }
+        apiCall(payload, function(res) {
+          if (btn) { btn.disabled = false; btn.textContent = "บันทึก ✓"; }
+          if (!res || !res.ok) { fail(res && res.error || "บันทึกไม่สำเร็จ"); return; }
+          closeM("mUser");
+          loadAdminUsers();
+          _refreshUsersCache();  // อัปเดต cache → login รอบต่อไปใช้ค่าใหม่
+          showAlert("✅", "บันทึกสำเร็จ", "บันทึกบัญชี " + name + " เรียบร้อย");
+        });
       }
 
       /* ══════════════════════════════════════════════
