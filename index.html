@@ -893,17 +893,18 @@
 
       .dd-grid2 { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; }
 
-      .dd-bar-head { display:grid; grid-template-columns:150px 1fr 116px; gap:12px; padding:2px 10px 8px; font-size:11px; color:var(--txt2); border-bottom:1px solid var(--bd); margin-bottom:4px; }
+      .dd-bar-head { display:grid; grid-template-columns:230px minmax(0,1fr) 130px; gap:14px; padding:2px 10px 8px; font-size:11px; color:var(--txt2); border-bottom:1px solid var(--bd); margin-bottom:6px; font-weight:600; }
       .dd-bar-head span:last-child { text-align:right; }
       .dd-bar-scroll { max-height:430px; overflow-y:auto; margin:0 -6px; padding:0 6px; }
-      .dd-bar { display:grid; grid-template-columns:150px 1fr 116px; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-radius:10px; padding:9px 10px; cursor:pointer; transition:background .15s var(--ease); font-family:inherit; }
+      .dd-bar { display:grid; grid-template-columns:230px minmax(0,1fr) 130px; align-items:center; gap:14px; width:100%; text-align:left; background:none; border:none; border-radius:10px; padding:10px 10px; cursor:pointer; transition:background .15s var(--ease, ease); font-family:inherit; }
       .dd-bar:hover { background:rgba(242,108,28,.07); }
-      .dd-bar-name { font-size:13px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-      .dd-bar-name b { color:var(--txt2); font-size:11px; margin-right:5px; font-weight:700; }
-      .dd-bar-track { height:13px; background:#f1f5f9; border-radius:7px; overflow:hidden; }
-      .dd-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#fb923c 0%,#ea580c 100%); transition:width .6s var(--ease); box-shadow:inset 0 -1px 0 rgba(0,0,0,.08); min-width:4px; }
-      .dd-bar-val { text-align:right; font-size:12.5px; font-weight:700; color:var(--txt); font-variant-numeric:tabular-nums; }
-      .dd-bar-val i { font-style:normal; font-size:11px; font-weight:700; margin-left:7px; }
+      .dd-bar-name { font-size:13.5px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; display:inline-flex; align-items:center; gap:8px; min-width:0; }
+      .dd-bar-name-text { overflow:hidden; text-overflow:ellipsis; }
+      .dd-bar-chip { flex-shrink:0; display:inline-block; padding:1px 8px; background:rgba(15,23,42,.06); color:var(--txt2); font-size:11px; font-weight:700; border-radius:999px; font-variant-numeric:tabular-nums; }
+      .dd-bar-track { display:block; height:14px; background:#f1f5f9; border-radius:7px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(15,23,42,.05); }
+      .dd-bar-fill  { display:block; height:100%; border-radius:7px; background:linear-gradient(90deg,#fb923c 0%,#ea580c 100%); transition:width .6s var(--ease, ease); box-shadow:inset 0 -1px 0 rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.25); min-width:6px; }
+      .dd-bar-val { text-align:right; font-size:14.5px; font-weight:800; color:var(--txt); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+      .dd-bar-val i { font-style:normal; font-size:12px; font-weight:700; margin-left:8px; }
 
       .dd-table { width:100%; border-collapse:collapse; font-size:12.5px; }
       .dd-table th, .dd-table td { padding:9px 8px; text-align:right; font-variant-numeric:tabular-nums; }
@@ -7465,8 +7466,11 @@ body { background: var(--bg); color: var(--txt); }
         const rows = items.map((i, idx) => {
           const w = (i.actual / max * 100).toFixed(1);
           const col = _ddAchvColor(i.pct);
+          const codeChip = i.code ? `<span class="dd-bar-chip">${escHtml(i.code)}</span>` : "";
+          const nameTxt  = `<span class="dd-bar-name-text">${escHtml(i.label)}</span>`;
+          const nChip    = i.n ? `<span class="dd-bar-chip">${i.n} สาขา</span>` : "";
           return `<button class="dd-bar" onclick="${onClick}('${sec}',${idx})">
-            <span class="dd-bar-name">${i.code ? `<b>${escHtml(i.code)}</b>` : ""}${escHtml(i.label)}${i.n ? ` <b>· ${i.n} สาขา</b>` : ""}</span>
+            <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}</span>
             <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%"></span></span>
             <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${col}">${i.pct ? (i.pct * 100).toFixed(0) + "%" : "-"}</i></span>
           </button>`;
