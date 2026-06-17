@@ -83,13 +83,64 @@ insert into public.app_settings (key, value) values
 on conflict (key) do nothing;
 
 -- ──────────────────────────────────────────────
--- 5. RLS (Row Level Security) — ปิดไว้ก่อน เพื่อ migrate ง่าย
+-- 5. USERS — บัญชีผู้ใช้งานทุกระดับ (admin/vp/coo/bzm/branch/franchise)
+--    Code (PIN) เป็น primary key — สำหรับเข้าระบบ
+-- ──────────────────────────────────────────────
+create table if not exists public.users (
+  code         text primary key,                              -- รหัสล็อกอิน (PIN) — 4 หลัก (สาขา) / 6 หลัก (TM)
+  name         text not null,                                 -- ชื่อ-นามสกุล
+  nick         text,                                          -- ชื่อเล่น
+  role         text not null check (role in ('admin','vp','coo','bzm','branch','franchise')),
+  brand        text check (brand in ('santafe','jaedaeng')),
+  cross_brand  boolean default false,                         -- admin/coo ที่ดูแลทั้ง 2 brand
+  dm           text,                                          -- ชื่อ BZM ที่ดูแล (เฉพาะ role=branch — ใช้ map ใน UI)
+  branch_code  text,                                          -- รหัสสาขา (เฉพาะ role=branch)
+  branch_name  text,                                          -- ชื่อสาขา (เฉพาะ role=branch)
+  active       boolean default true,                          -- ปิดบัญชีโดยไม่ลบ
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists idx_users_role on public.users(role) where active = true;
+create index if not exists idx_users_brand on public.users(brand) where active = true;
+
+-- Auto-update updated_at เมื่อ row ถูก update
+create or replace function set_users_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_users_updated on public.users;
+create trigger trg_users_updated
+  before update on public.users
+  for each row
+  when (old.* is distinct from new.*)
+  execute function set_users_updated_at();
+
+-- Seed: ย้าย SPECIAL_USERS ที่ hardcoded ใน index.html มาเก็บใน DB
+insert into public.users (code, name, nick, role, brand, cross_brand) values
+  ('601183', 'ADMIN',                          'ADMIN',  'admin', 'santafe', true),
+  ('480808', 'VP. Santa Fe',                   'VP',     'vp',    'santafe', false),
+  ('490033', 'นิรุต เจริญศิลป์',                 'พี่รุต',  'bzm',   'santafe', false),
+  ('570998', 'นพชัย จันทร์รุ่ง',                  'พี่นพ',  'bzm',   'santafe', false),
+  ('500759', 'พัทธดนย์ วัฒนายุทธ',                'พี่ปิ๊ก', 'bzm',   'santafe', false),
+  ('510620', 'สีวิกา สังข์ด้วง',                   'พี่เจี๊ยบ','bzm',   'santafe', false),
+  ('520532', 'ศุกร์แสง วัฒนาฟุ้งเจริญ',           'พี่หยี',  'bzm',   'santafe', false),
+  ('601338', 'อนุรักษ์ สอนภักดี',                  'พี่เอ็ม', 'bzm',   'santafe', false)
+on conflict (code) do nothing;
+
+-- ──────────────────────────────────────────────
+-- 6. RLS (Row Level Security) — ปิดไว้ก่อน เพื่อ migrate ง่าย
 --    ค่อยเปิดและทำ policy ทีหลัง
 -- ──────────────────────────────────────────────
 alter table public.sales_data   disable row level security;
 alter table public.plan_sale    disable row level security;
 alter table public.branches     disable row level security;
 alter table public.app_settings disable row level security;
+alter table public.users        disable row level security;
 
 -- ──────────────────────────────────────────────
 -- 5. Auto-update last_edited_at เมื่อ row ถูก update

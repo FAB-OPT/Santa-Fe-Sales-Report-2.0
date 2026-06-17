@@ -10593,6 +10593,57 @@ body { background: var(--bg); color: var(--txt); }
             return;
           }
 
+          /* ─────── USERS — list/save/delete ─────── */
+          if (mode === "listUsers") {
+            const { data, error } = await sb.from("users")
+              .select("*").order("role", { ascending: true }).order("code", { ascending: true });
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true, rows: data || [] });
+            return;
+          }
+          if (mode === "saveUser") {
+            // ต้องเป็น admin เท่านั้น (เช็คฝั่ง client + อาจเพิ่ม RLS ภายหลัง)
+            const isAdmin = (S.role === "admin" || S.code === "ADMIN");
+            if (!isAdmin) { cb({ ok: false, error: "permission denied" }); return; }
+            const payload = {
+              code:        String(params.code || "").trim(),
+              name:        String(params.name || "").trim(),
+              nick:        params.nick ? String(params.nick).trim() : null,
+              role:        String(params.role || "").trim(),
+              brand:       params.brand ? String(params.brand).trim() : null,
+              cross_brand: !!params.cross_brand,
+              dm:          params.dm ? String(params.dm).trim() : null,
+              branch_code: params.branch_code ? String(params.branch_code).trim() : null,
+              branch_name: params.branch_name ? String(params.branch_name).trim() : null,
+              active:      params.active !== false
+            };
+            if (!payload.code || !payload.name || !payload.role) {
+              cb({ ok: false, error: "missing required fields" }); return;
+            }
+            // ถ้ามี oldCode + ต่างจาก code ปัจจุบัน → เปลี่ยน PIN (ลบเก่า + เพิ่มใหม่)
+            const oldCode = params.oldCode ? String(params.oldCode).trim() : null;
+            if (oldCode && oldCode !== payload.code) {
+              const { error: delErr } = await sb.from("users").delete().eq("code", oldCode);
+              if (delErr) { cb({ ok: false, error: delErr.message }); return; }
+            }
+            const { error } = await sb.from("users").upsert(payload, { onConflict: "code" });
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true, saved: true });
+            return;
+          }
+          if (mode === "deleteUser") {
+            const isAdmin = (S.role === "admin" || S.code === "ADMIN");
+            if (!isAdmin) { cb({ ok: false, error: "permission denied" }); return; }
+            const code = String(params.code || "").trim();
+            if (!code) { cb({ ok: false, error: "missing code" }); return; }
+            // กันลบบัญชี admin คนเดียวที่เหลือ
+            if (code === "601183") { cb({ ok: false, error: "ลบบัญชี Admin หลักไม่ได้" }); return; }
+            const { error } = await sb.from("users").delete().eq("code", code);
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true, deleted: true });
+            return;
+          }
+
           cb({ ok: false, error: "Unknown mode: " + mode });
         } catch (err) {
           console.error("apiCall error:", err);
