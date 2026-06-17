@@ -3186,6 +3186,16 @@ body { background: var(--bg); color: var(--txt); }
 .d-ok    { color: #1a7838 !important; font-weight: 600 !important; }
 .d-low   { color: #d70015 !important; font-weight: 600 !important; }
 
+/* ─── MANPOWER modal cells ─── */
+.mp-cell { display:flex; flex-direction:column; gap:4px; }
+.mp-cell label { font-size:11px; color:var(--txt2); font-weight:600; }
+.mp-cell input { width:100%; padding:8px 10px; border:1px solid var(--bd); border-radius:8px; font-family:inherit; font-size:14px; font-weight:700; text-align:center; background:#fff; outline:none; }
+.mp-cell input:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(234,88,12,.12); }
+.mp-cell-row { display:grid; grid-template-columns:auto 1fr auto 1fr; gap:6px; align-items:center; }
+.mp-cell-row label { font-size:10px; color:var(--txt2); font-weight:700; }
+.mp-cell-row input { padding:6px 8px; border:1px solid var(--bd); border-radius:6px; font-family:inherit; font-size:13px; font-weight:700; text-align:center; background:#fff; outline:none; width:100%; }
+.mp-cell-row input:focus { border-color:var(--brand); box-shadow:0 0 0 2px rgba(234,88,12,.12); }
+
 /* ─── MODALS — Apple style ─── */
 .modal-bg  { background: rgba(0,0,0,.30) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .modal-box { border-radius: 14px !important; border: 1px solid var(--bd) !important; box-shadow: 0 10px 40px rgba(0,0,0,.10) !important; overflow: hidden; background: var(--surface) !important; }
@@ -5203,25 +5213,59 @@ body { background: var(--bg); color: var(--txt); }
 
         <!-- ── Tab: Zones ── -->
         <div class="admin-tab-pane" data-tab="zones" style="display:none">
+          <!-- sub-mode toggle: จัดโซน vs Manpower -->
+          <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--bd);padding-bottom:10px">
+            <button id="zoneSubBtnZone" class="btn btn-brand"     onclick="zoneSubSwitch('zone')" style="font-size:13px">🗺️ จัดโซน</button>
+            <button id="zoneSubBtnMan"  class="btn btn-outline"   onclick="zoneSubSwitch('manpower')" style="font-size:13px">👥 กรอก Manpower</button>
+          </div>
+
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
             <label style="font-size:13px;font-weight:600">เลือก BZM:</label>
-            <select id="adminZoneBzm" onchange="renderAdminZone()"
+            <select id="adminZoneBzm" onchange="renderAdminZone();renderManpowerList();"
                     style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;min-width:240px"></select>
             <span id="adminZoneCount" style="font-size:12px;color:var(--txt2);font-weight:600;margin-left:auto">— สาขาในโซน</span>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" id="adminZoneGrid">
-            <!-- LEFT: branches in this BZM zone -->
-            <div class="dash-card-wrap" style="padding:14px">
-              <div style="font-weight:700;margin-bottom:10px;color:var(--brand)">✅ สาขาในโซนนี้</div>
-              <div id="adminZoneIn" style="max-height:420px;overflow-y:auto"></div>
+          <!-- sub-pane: zone editor -->
+          <div id="zoneSubPaneZone">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" id="adminZoneGrid">
+              <!-- LEFT: branches in this BZM zone -->
+              <div class="dash-card-wrap" style="padding:14px">
+                <div style="font-weight:700;margin-bottom:10px;color:var(--brand)">✅ สาขาในโซนนี้</div>
+                <div id="adminZoneIn" style="max-height:420px;overflow-y:auto"></div>
+              </div>
+              <!-- RIGHT: other branches (not in this zone) -->
+              <div class="dash-card-wrap" style="padding:14px">
+                <div style="font-weight:700;margin-bottom:10px;color:var(--txt2)">📋 สาขาอื่น (คลิก ⇆ เพื่อย้ายมาโซนนี้)</div>
+                <input type="text" id="adminZoneOutSearch" placeholder="🔍 ค้นหา..." oninput="renderAdminZone()"
+                       style="width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:12px;margin-bottom:8px;outline:none">
+                <div id="adminZoneOut" style="max-height:380px;overflow-y:auto"></div>
+              </div>
             </div>
-            <!-- RIGHT: other branches (not in this zone) -->
-            <div class="dash-card-wrap" style="padding:14px">
-              <div style="font-weight:700;margin-bottom:10px;color:var(--txt2)">📋 สาขาอื่น (คลิก ⇆ เพื่อย้ายมาโซนนี้)</div>
-              <input type="text" id="adminZoneOutSearch" placeholder="🔍 ค้นหา..." oninput="renderAdminZone()"
-                     style="width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:12px;margin-bottom:8px;outline:none">
-              <div id="adminZoneOut" style="max-height:380px;overflow-y:auto"></div>
+          </div>
+
+          <!-- sub-pane: manpower -->
+          <div id="zoneSubPaneMan" style="display:none">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+              <label style="font-size:13px;font-weight:600">เดือน:</label>
+              <select id="manpowerMonth" onchange="renderManpowerList()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px"></select>
+              <select id="manpowerYear"  onchange="renderManpowerList()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px"></select>
+              <span id="manpowerHint" style="font-size:12px;color:var(--txt2);margin-left:auto">— สาขา</span>
+            </div>
+            <div class="dash-card-wrap" style="padding:0;overflow:hidden">
+              <table class="adm-tbl" style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="background:var(--bg-2);border-bottom:1px solid var(--bd)">
+                    <th style="text-align:left;padding:10px 12px;font-weight:700">รหัส</th>
+                    <th style="text-align:left;padding:10px 12px;font-weight:700">สาขา</th>
+                    <th style="text-align:center;padding:10px 12px;font-weight:700">👔 ผู้จัดการ</th>
+                    <th style="text-align:center;padding:10px 12px;font-weight:700">🍳 ครัว</th>
+                    <th style="text-align:center;padding:10px 12px;font-weight:700">🍽️ บริการ</th>
+                    <th style="text-align:right;padding:10px 12px;font-weight:700"></th>
+                  </tr>
+                </thead>
+                <tbody id="manpowerBody"><tr><td colspan="6" style="padding:30px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</td></tr></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -5430,6 +5474,75 @@ body { background: var(--bg); color: var(--txt); }
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="closeM('mUser')">ยกเลิก</button>
           <button class="btn btn-brand" id="mUserSaveBtn" onclick="adminSaveUser()">บันทึก ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     MODAL: MANPOWER
+════════════════════════════════════════ -->
+    <div id="mManpower" class="modal-bg">
+      <div class="modal" style="max-width:780px">
+        <div class="modal-header">
+          <h3 id="mpTitle">กรอก Manpower</h3>
+          <button class="modal-close" onclick="closeM('mManpower')">×</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="mp_branchCode">
+          <input type="hidden" id="mp_year">
+          <input type="hidden" id="mp_month">
+
+          <!-- ── ผู้จัดการสาขา ── -->
+          <div style="background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="font-weight:800;color:#7c3aed">👔 ทีมผู้จัดการสาขา</div>
+              <div style="font-size:13px;color:var(--txt2)">รวม: <b id="mpTotMgr" style="color:#7c3aed;font-size:18px">0</b></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div class="mp-cell"><label>RGM</label><input id="mp_rgm" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell"><label>SAM</label><input id="mp_sam" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell"><label>AM</label><input id="mp_am"  type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell"><label>SS</label><input id="mp_ss"  type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+            </div>
+          </div>
+
+          <!-- ── ครัว ── -->
+          <div style="background:#fef9f3;border:1px solid #fed7aa;border-radius:10px;padding:14px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="font-weight:800;color:#ea580c">🍳 พนักงานครัว</div>
+              <div style="font-size:13px;color:var(--txt2)">รวม: <b id="mpTotKit" style="color:#ea580c;font-size:18px">0</b></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:11px;color:var(--txt2);text-align:center;margin-bottom:4px">
+              <div>Basic</div><div>Silver</div><div>Gold</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div class="mp-cell-row"><label>PT</label><input id="mp_k_basic_pt"  type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_k_basic_ft"  type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell-row"><label>PT</label><input id="mp_k_silver_pt" type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_k_silver_ft" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell-row"><label>PT</label><input id="mp_k_gold_pt"   type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_k_gold_ft"   type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+            </div>
+          </div>
+
+          <!-- ── บริการ ── -->
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="font-weight:800;color:#16a34a">🍽️ พนักงานบริการ</div>
+              <div style="font-size:13px;color:var(--txt2)">รวม: <b id="mpTotSrv" style="color:#16a34a;font-size:18px">0</b></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:11px;color:var(--txt2);text-align:center;margin-bottom:4px">
+              <div>Basic</div><div>Silver</div><div>Gold</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div class="mp-cell-row"><label>PT</label><input id="mp_s_basic_pt"  type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_s_basic_ft"  type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell-row"><label>PT</label><input id="mp_s_silver_pt" type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_s_silver_ft" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell-row"><label>PT</label><input id="mp_s_gold_pt"   type="number" min="0" value="0" oninput="_mpRecalc()"><label>FT</label><input id="mp_s_gold_ft"   type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+            </div>
+          </div>
+
+          <div id="mp_warn" style="display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeM('mManpower')">ยกเลิก</button>
+          <button class="btn btn-brand" id="mpSaveBtn" onclick="manpowerSave()">บันทึก ✓</button>
         </div>
       </div>
     </div>
@@ -7178,6 +7291,156 @@ body { background: var(--bg); color: var(--txt); }
         if (error) { showAlert("❌", "ย้ายไม่สำเร็จ", error.message); return; }
         await loadAdminBranches();
         renderAdminZone();
+      }
+
+      /* ════════════════════════════════════════════
+         MANPOWER — กรอกกำลังคนต่อสาขา ต่อเดือน
+      ════════════════════════════════════════════ */
+      var _mpData = {};  // { branch_code: { rgm:..., k_basic_pt:..., ... } }
+      var _MP_MONTHS_TH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+      function zoneSubSwitch(mode) {
+        const isMan = (mode === "manpower");
+        document.getElementById("zoneSubPaneZone").style.display = isMan ? "none" : "";
+        document.getElementById("zoneSubPaneMan").style.display  = isMan ? "" : "none";
+        const bz = document.getElementById("zoneSubBtnZone");
+        const bm = document.getElementById("zoneSubBtnMan");
+        bz.className = isMan ? "btn btn-outline" : "btn btn-brand";
+        bm.className = isMan ? "btn btn-brand" : "btn btn-outline";
+        bz.style.fontSize = "13px"; bm.style.fontSize = "13px";
+        if (isMan) {
+          _ensureManpowerYearMonth();
+          renderManpowerList();
+        }
+      }
+
+      function _ensureManpowerYearMonth() {
+        const mSel = document.getElementById("manpowerMonth");
+        const ySel = document.getElementById("manpowerYear");
+        if (mSel && !mSel.options.length) {
+          for (let i = 1; i <= 12; i++) {
+            const opt = document.createElement("option");
+            opt.value = i; opt.textContent = _MP_MONTHS_TH[i-1];
+            mSel.appendChild(opt);
+          }
+          const now = new Date();
+          mSel.value = now.getMonth() + 1;
+        }
+        if (ySel && !ySel.options.length) {
+          const now = new Date();
+          const cy = now.getFullYear();
+          for (let y = cy - 2; y <= cy + 1; y++) {
+            const opt = document.createElement("option");
+            opt.value = y; opt.textContent = (y + 543); // BE
+            ySel.appendChild(opt);
+          }
+          ySel.value = cy;
+        }
+      }
+
+      function _mpSum(ids) {
+        let t = 0;
+        ids.forEach(id => { const v = parseInt((document.getElementById(id) || {}).value, 10); if (!isNaN(v)) t += v; });
+        return t;
+      }
+      function _mpRecalc() {
+        document.getElementById("mpTotMgr").textContent = _mpSum(["mp_rgm","mp_sam","mp_am","mp_ss"]);
+        document.getElementById("mpTotKit").textContent = _mpSum(["mp_k_basic_pt","mp_k_basic_ft","mp_k_silver_pt","mp_k_silver_ft","mp_k_gold_pt","mp_k_gold_ft"]);
+        document.getElementById("mpTotSrv").textContent = _mpSum(["mp_s_basic_pt","mp_s_basic_ft","mp_s_silver_pt","mp_s_silver_ft","mp_s_gold_pt","mp_s_gold_ft"]);
+      }
+
+      function renderManpowerList() {
+        const body = document.getElementById("manpowerBody");
+        if (!body) return;
+        const targetBzm = document.getElementById("adminZoneBzm").value;
+        const inZone = _adminBranches.filter(b => b.district_manager === targetBzm);
+        const ySel = document.getElementById("manpowerYear");
+        const mSel = document.getElementById("manpowerMonth");
+        if (!ySel || !mSel) return;
+        _ensureManpowerYearMonth();
+        const y = parseInt(ySel.value, 10);
+        const m = parseInt(mSel.value, 10);
+        document.getElementById("manpowerHint").textContent = `${inZone.length} สาขา · ${_MP_MONTHS_TH[m-1]} ${y+543}`;
+        if (!inZone.length) {
+          body.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:#94a3b8">ยังไม่มีสาขาในโซนนี้</td></tr>`;
+          return;
+        }
+        body.innerHTML = `<tr><td colspan="6" style="padding:24px;text-align:center;color:#94a3b8">⏳ กำลังโหลด...</td></tr>`;
+        const codes = inZone.map(b => b.branch_code);
+        apiCall({ mode: "listManpower", year: y, month: m, branch_codes: codes }, function(res) {
+          _mpData = {};
+          if (res && res.ok && Array.isArray(res.rows)) {
+            res.rows.forEach(r => { _mpData[r.branch_code] = r; });
+          }
+          body.innerHTML = inZone.map(b => {
+            const r = _mpData[b.branch_code];
+            const totMgr = r ? (r.rgm + r.sam + r.am + r.ss) : 0;
+            const totKit = r ? (r.k_basic_pt + r.k_basic_ft + r.k_silver_pt + r.k_silver_ft + r.k_gold_pt + r.k_gold_ft) : 0;
+            const totSrv = r ? (r.s_basic_pt + r.s_basic_ft + r.s_silver_pt + r.s_silver_ft + r.s_gold_pt + r.s_gold_ft) : 0;
+            const has = !!r;
+            const cellSty = (n) => `font-weight:800;font-variant-numeric:tabular-nums;color:${n > 0 ? '#0f172a' : '#94a3b8'}`;
+            return `<tr style="border-bottom:1px solid var(--bd-2)">
+              <td style="padding:10px 12px;font-variant-numeric:tabular-nums;font-weight:700">${escHtml(b.branch_code)}</td>
+              <td style="padding:10px 12px">${escHtml(b.branch_name || "-")}</td>
+              <td style="padding:10px 12px;text-align:center;${cellSty(totMgr)}">${totMgr}</td>
+              <td style="padding:10px 12px;text-align:center;${cellSty(totKit)}">${totKit}</td>
+              <td style="padding:10px 12px;text-align:center;${cellSty(totSrv)}">${totSrv}</td>
+              <td style="padding:8px 12px;text-align:right;white-space:nowrap">
+                <button class="btn-edit-row btn btn-sm" onclick="manpowerOpen('${escHtml(b.branch_code)}')">${has ? "✏️ แก้ไข" : "➕ กรอก"}</button>
+              </td>
+            </tr>`;
+          }).join("");
+        });
+      }
+
+      function manpowerOpen(branchCode) {
+        const b = _adminBranches.find(x => x.branch_code === branchCode);
+        if (!b) return;
+        const y = parseInt(document.getElementById("manpowerYear").value, 10);
+        const m = parseInt(document.getElementById("manpowerMonth").value, 10);
+        document.getElementById("mp_branchCode").value = branchCode;
+        document.getElementById("mp_year").value = y;
+        document.getElementById("mp_month").value = m;
+        document.getElementById("mpTitle").textContent = `Manpower · ${b.branch_name || branchCode} · ${_MP_MONTHS_TH[m-1]} ${y+543}`;
+        const r = _mpData[branchCode] || {};
+        const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v == null ? 0 : v); };
+        setV("mp_rgm", r.rgm); setV("mp_sam", r.sam); setV("mp_am", r.am); setV("mp_ss", r.ss);
+        setV("mp_k_basic_pt", r.k_basic_pt); setV("mp_k_basic_ft", r.k_basic_ft);
+        setV("mp_k_silver_pt", r.k_silver_pt); setV("mp_k_silver_ft", r.k_silver_ft);
+        setV("mp_k_gold_pt", r.k_gold_pt); setV("mp_k_gold_ft", r.k_gold_ft);
+        setV("mp_s_basic_pt", r.s_basic_pt); setV("mp_s_basic_ft", r.s_basic_ft);
+        setV("mp_s_silver_pt", r.s_silver_pt); setV("mp_s_silver_ft", r.s_silver_ft);
+        setV("mp_s_gold_pt", r.s_gold_pt); setV("mp_s_gold_ft", r.s_gold_ft);
+        document.getElementById("mp_warn").style.display = "none";
+        _mpRecalc();
+        openM("mManpower");
+      }
+
+      function manpowerSave() {
+        const warn = document.getElementById("mp_warn");
+        const fail = (m) => { warn.style.display = ""; warn.textContent = "⚠️ " + m; };
+        const get = (id) => parseInt((document.getElementById(id) || {}).value, 10) || 0;
+        const payload = {
+          mode: "saveManpower",
+          branch_code: document.getElementById("mp_branchCode").value,
+          year:  parseInt(document.getElementById("mp_year").value, 10),
+          month: parseInt(document.getElementById("mp_month").value, 10),
+          rgm: get("mp_rgm"), sam: get("mp_sam"), am: get("mp_am"), ss: get("mp_ss"),
+          k_basic_pt: get("mp_k_basic_pt"), k_basic_ft: get("mp_k_basic_ft"),
+          k_silver_pt: get("mp_k_silver_pt"), k_silver_ft: get("mp_k_silver_ft"),
+          k_gold_pt: get("mp_k_gold_pt"), k_gold_ft: get("mp_k_gold_ft"),
+          s_basic_pt: get("mp_s_basic_pt"), s_basic_ft: get("mp_s_basic_ft"),
+          s_silver_pt: get("mp_s_silver_pt"), s_silver_ft: get("mp_s_silver_ft"),
+          s_gold_pt: get("mp_s_gold_pt"), s_gold_ft: get("mp_s_gold_ft")
+        };
+        const btn = document.getElementById("mpSaveBtn");
+        if (btn) { btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก..."; }
+        apiCall(payload, function(res) {
+          if (btn) { btn.disabled = false; btn.textContent = "บันทึก ✓"; }
+          if (!res || !res.ok) { fail(res && res.error || "บันทึกไม่สำเร็จ"); return; }
+          closeM("mManpower");
+          renderManpowerList();
+        });
       }
 
       /* ───── TEST MODE (global, เก็บใน row พิเศษของตาราง branches) ─────
@@ -10954,6 +11217,45 @@ body { background: var(--bg); color: var(--txt); }
             const { error } = await sb.from("users").delete().eq("code", code);
             if (error) { cb({ ok: false, error: error.message }); return; }
             cb({ ok: true, deleted: true });
+            return;
+          }
+
+          /* ─────── MANPOWER — list/save ─────── */
+          if (mode === "listManpower") {
+            const y = parseInt(params.year, 10);
+            const m = parseInt(params.month, 10);
+            if (!y || !m) { cb({ ok: false, error: "missing year/month" }); return; }
+            let q = sb.from("manpower").select("*").eq("year", y).eq("month", m);
+            if (Array.isArray(params.branch_codes) && params.branch_codes.length) {
+              q = q.in("branch_code", params.branch_codes);
+            }
+            const { data, error } = await q;
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true, rows: data || [] });
+            return;
+          }
+          if (mode === "saveManpower") {
+            const allowed = (S.role === "admin" || S.role === "vp" || S.role === "bzm" || S.code === "ADMIN");
+            if (!allowed) { cb({ ok: false, error: "permission denied" }); return; }
+            const bc = String(params.branch_code || "").trim();
+            const y  = parseInt(params.year, 10);
+            const m  = parseInt(params.month, 10);
+            if (!bc || !y || !m) { cb({ ok: false, error: "missing branch_code/year/month" }); return; }
+            const N = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : Math.max(0, n); };
+            const row = {
+              branch_code: bc, year: y, month: m,
+              rgm: N(params.rgm), sam: N(params.sam), am: N(params.am), ss: N(params.ss),
+              k_basic_pt: N(params.k_basic_pt), k_basic_ft: N(params.k_basic_ft),
+              k_silver_pt: N(params.k_silver_pt), k_silver_ft: N(params.k_silver_ft),
+              k_gold_pt: N(params.k_gold_pt), k_gold_ft: N(params.k_gold_ft),
+              s_basic_pt: N(params.s_basic_pt), s_basic_ft: N(params.s_basic_ft),
+              s_silver_pt: N(params.s_silver_pt), s_silver_ft: N(params.s_silver_ft),
+              s_gold_pt: N(params.s_gold_pt), s_gold_ft: N(params.s_gold_ft)
+            };
+            const { error } = await sb.from("manpower")
+              .upsert(row, { onConflict: "branch_code,year,month" });
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true });
             return;
           }
 

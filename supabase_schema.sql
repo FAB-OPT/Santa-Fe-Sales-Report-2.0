@@ -133,7 +133,50 @@ insert into public.users (code, name, nick, role, brand, cross_brand) values
 on conflict (code) do nothing;
 
 -- ──────────────────────────────────────────────
--- 6. RLS (Row Level Security) — ปิดไว้ก่อน เพื่อ migrate ง่าย
+-- 6. MANPOWER — กำลังคนต่อสาขา ต่อเดือน
+--    16 fields: 4 ผู้จัดการ + 6 ครัว + 6 บริการ
+-- ──────────────────────────────────────────────
+create table if not exists public.manpower (
+  id            bigserial primary key,
+  branch_code   text not null,
+  year          int  not null,
+  month         int  not null check (month between 1 and 12),
+  -- ทีมผู้จัดการสาขา (รวมยอด = rgm+sam+am+ss)
+  rgm           int default 0,
+  sam           int default 0,
+  am            int default 0,
+  ss            int default 0,
+  -- พนักงานครัว (รวมยอด = sum 6 ช่อง)
+  k_basic_pt    int default 0,
+  k_basic_ft    int default 0,
+  k_silver_pt   int default 0,
+  k_silver_ft   int default 0,
+  k_gold_pt     int default 0,
+  k_gold_ft     int default 0,
+  -- พนักงานบริการ (รวมยอด = sum 6 ช่อง)
+  s_basic_pt    int default 0,
+  s_basic_ft    int default 0,
+  s_silver_pt   int default 0,
+  s_silver_ft   int default 0,
+  s_gold_pt     int default 0,
+  s_gold_ft     int default 0,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  constraint uq_manpower_branch_year_month unique (branch_code, year, month)
+);
+
+create index if not exists idx_manpower_year_month on public.manpower(year, month);
+create index if not exists idx_manpower_branch     on public.manpower(branch_code, year, month);
+
+drop trigger if exists trg_manpower_updated on public.manpower;
+create trigger trg_manpower_updated
+  before update on public.manpower
+  for each row
+  when (old.* is distinct from new.*)
+  execute function set_users_updated_at();  -- reuse generic updated_at setter
+
+-- ──────────────────────────────────────────────
+-- 7. RLS (Row Level Security) — ปิดไว้ก่อน เพื่อ migrate ง่าย
 --    ค่อยเปิดและทำ policy ทีหลัง
 -- ──────────────────────────────────────────────
 alter table public.sales_data   disable row level security;
@@ -141,6 +184,7 @@ alter table public.plan_sale    disable row level security;
 alter table public.branches     disable row level security;
 alter table public.app_settings disable row level security;
 alter table public.users        disable row level security;
+alter table public.manpower     disable row level security;
 
 -- ──────────────────────────────────────────────
 -- 5. Auto-update last_edited_at เมื่อ row ถูก update
