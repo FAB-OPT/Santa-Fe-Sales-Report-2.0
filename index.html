@@ -5237,10 +5237,8 @@ body { background: var(--bg); color: var(--txt); }
               <option value="">ทุก role</option>
               <option value="admin">Admin</option>
               <option value="vp">VP</option>
-              <option value="coo">COO</option>
               <option value="bzm">BZM</option>
-              <option value="branch">Branch</option>
-              <option value="franchise">Franchise</option>
+              <option value="branch">สาขา</option>
             </select>
             <span id="adminUserCount" style="font-size:12px;color:var(--txt2);font-weight:600">— ผู้ใช้</span>
           </div>
@@ -5398,27 +5396,17 @@ body { background: var(--bg); color: var(--txt); }
               <select id="au_role">
                 <option value="admin">Admin</option>
                 <option value="vp">VP</option>
-                <option value="coo">COO</option>
                 <option value="bzm" selected>BZM</option>
-                <option value="branch">Branch (สาขา)</option>
-                <option value="franchise">Franchise</option>
+                <option value="branch">สาขา</option>
               </select>
             </div>
             <div class="field">
               <label>Brand</label>
               <select id="au_brand">
-                <option value="">— ไม่ระบุ —</option>
                 <option value="santafe" selected>Santa Fe</option>
-                <option value="jaedaeng">เจ๊แดง</option>
               </select>
             </div>
-            <div class="field" style="grid-column:1/-1">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <input id="au_cross" type="checkbox" style="width:16px;height:16px;cursor:pointer">
-                <span>Cross-brand (ดูแลทั้ง 2 brand)</span>
-              </label>
-              <div style="font-size:11px;color:var(--txt2);margin-top:2px;margin-left:24px">เปิดสำหรับ Admin/COO ที่ดูแลทั้ง Santa Fe และ เจ๊แดง</div>
-            </div>
+            <input id="au_cross" type="hidden" value="">
             <div class="field" id="au_branchFields" style="grid-column:1/-1;display:none">
               <div style="display:grid;grid-template-columns:140px 1fr;gap:10px">
                 <div class="field">
@@ -6475,12 +6463,10 @@ body { background: var(--bg); color: var(--txt); }
       }
 
       const _ROLE_LABEL = {
-        admin: "Admin", vp: "VP", coo: "COO",
-        bzm: "BZM", branch: "Branch", franchise: "Franchise"
+        admin: "Admin", vp: "VP", bzm: "BZM", branch: "สาขา"
       };
       const _ROLE_COLOR = {
-        admin: "#dc2626", vp: "#7c3aed", coo: "#0ea5e9",
-        bzm: "#f59e0b", branch: "#16a34a", franchise: "#16a34a"
+        admin: "#dc2626", vp: "#7c3aed", bzm: "#f59e0b", branch: "#16a34a"
       };
 
       function renderAdminUsers() {
@@ -6506,8 +6492,8 @@ body { background: var(--bg); color: var(--txt); }
         body.innerHTML = list.map(u => {
           const roleLbl = _ROLE_LABEL[u.role] || u.role || "-";
           const roleCol = _ROLE_COLOR[u.role] || "#64748b";
-          const brandLbl = u.brand === "santafe" ? "Santa Fe" : u.brand === "jaedaeng" ? "เจ๊แดง" : "-";
-          const crossTag = u.cross_brand ? ' <span style="font-size:10px;padding:1px 6px;background:#fef3c7;color:#92400e;border-radius:999px;font-weight:700">cross</span>' : "";
+          const brandLbl = "Santa Fe";
+          const crossTag = "";
           const status = u.active === false
             ? '<span style="color:#94a3b8;font-weight:600">ปิดอยู่</span>'
             : '<span style="color:#16a34a;font-weight:700">●</span>';
@@ -6540,14 +6526,11 @@ body { background: var(--bg); color: var(--txt); }
 
       function _adminUserRoleToggle() {
         const role = (document.getElementById("au_role") || {}).value || "";
-        const isBranch = (role === "branch" || role === "franchise");
-        const isMgmt   = (role === "admin" || role === "coo");
+        const isBranch = (role === "branch");
         const bf = document.getElementById("au_branchFields");
         const df = document.getElementById("au_dmField");
-        const cc = document.getElementById("au_cross");
         if (bf) bf.style.display = isBranch ? "" : "none";
         if (df) df.style.display = isBranch ? "" : "none";
-        if (cc) cc.parentElement.parentElement.style.display = isMgmt ? "" : "none";
       }
 
       function openAdminUserModal(user) {
@@ -6585,7 +6568,7 @@ body { background: var(--bg); color: var(--txt); }
         const role  = (document.getElementById("au_role").value || "").trim();
         if (!code) return fail("กรุณากรอกรหัสล็อกอิน (PIN)");
         if (!/^\d+$/.test(code)) return fail("PIN ต้องเป็นตัวเลขเท่านั้น");
-        if (role === "branch" || role === "franchise") {
+        if (role === "branch") {
           if (code.length !== 4) return fail("PIN ของสาขาต้อง 4 หลัก");
         } else {
           if (code.length !== 6) return fail("PIN ของ Team Management ต้อง 6 หลัก");
@@ -6599,8 +6582,8 @@ body { background: var(--bg); color: var(--txt); }
           name:        name,
           nick:        (document.getElementById("au_nick").value || "").trim() || undefined,
           role:        role,
-          brand:       (document.getElementById("au_brand").value || "").trim() || undefined,
-          cross_brand: !!document.getElementById("au_cross").checked,
+          brand:       (document.getElementById("au_brand").value || "").trim() || "santafe",
+          cross_brand: false,
           dm:          (document.getElementById("au_dm").value || "").trim() || undefined,
           branch_code: (document.getElementById("au_branchCode").value || "").trim() || undefined,
           branch_name: (document.getElementById("au_branchName").value || "").trim() || undefined,
