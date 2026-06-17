@@ -4629,6 +4629,9 @@ body { background: var(--bg); color: var(--txt); }
         <button class="desk-nav-btn admin-only-nav" id="dnAdminZones" onclick="showAdmin('zones')" style="display:none">
           <span class="desk-nav-ico">🗺️</span>โซน BZM
         </button>
+        <button class="desk-nav-btn admin-only-nav" id="dnAdminUsers" onclick="showAdmin('users')" style="display:none">
+          <span class="desk-nav-ico">🔐</span>จัดการผู้ใช้
+        </button>
       </nav>
       <div class="desk-nav-sep"></div>
 
@@ -4707,6 +4710,9 @@ body { background: var(--bg); color: var(--txt); }
         </button>
         <button class="md-nav-btn admin-only-nav" id="mdAdminZones" onclick="showAdmin('zones'); closeMobDrawer()" style="display:none">
           <span class="md-nav-ico">🗺️</span><span class="md-nav-lbl">โซน BZM</span>
+        </button>
+        <button class="md-nav-btn admin-only-nav" id="mdAdminUsers" onclick="showAdmin('users'); closeMobDrawer()" style="display:none">
+          <span class="md-nav-ico">🔐</span><span class="md-nav-lbl">จัดการผู้ใช้</span>
         </button>
         <button class="md-nav-btn admin-only-nav" id="mdAdminImport" onclick="showAdmin('import'); closeMobDrawer()" style="display:none">
           <span class="md-nav-ico">📥</span><span class="md-nav-lbl">นำเข้าข้อมูล</span>
@@ -7200,7 +7206,7 @@ body { background: var(--bg); color: var(--txt); }
          ไม่ต้องสร้าง table ใหม่ — ใช้ branch_code = "_SYS_TEST_MODE_"
          branch_name = "true" / "false" */
       const SETTINGS_ROW_CODE = "_SYS_TEST_MODE_";
-      let _testMode = false;
+      var _testMode = false;
       async function loadTestModeFromDB() {
         try {
           const { data } = await sb.from("branches").select("branch_name")
