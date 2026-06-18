@@ -7634,6 +7634,7 @@ body { background: var(--bg); color: var(--txt); }
           if (res && res.ok && Array.isArray(res.rows)) {
             res.rows.forEach(r => { _mpData[r.branch_code] = r; });
           }
+          const canEdit = (S.role === "bzm");  // เฉพาะ BZM กรอก/แก้ได้ — admin/vp ดูประวัติอย่างเดียว
           body.innerHTML = inZone.map(b => {
             const r = _mpData[b.branch_code];
             const totMgr = r ? (r.rgm + r.sam + r.am + r.ss) : 0;
@@ -7641,6 +7642,9 @@ body { background: var(--bg); color: var(--txt); }
             const totSrv = r ? (r.s_basic_pt + r.s_basic_ft + r.s_silver_pt + r.s_silver_ft + r.s_gold_pt + r.s_gold_ft) : 0;
             const has = !!r;
             const numStyle = (n, col) => `font-weight:800;font-variant-numeric:tabular-nums;font-size:16px;color:${n > 0 ? col : '#cbd5e1'}`;
+            const editBtn = canEdit
+              ? `<button class="btn-edit-row btn btn-sm" onclick="manpowerOpen('${escHtml(b.branch_code)}')">${has ? "✏️ แก้ไข" : "➕ กรอก"}</button>`
+              : "";
             return `<tr style="border-bottom:1px solid #f1f5f9">
               <td style="padding:12px 14px;font-variant-numeric:tabular-nums;font-weight:700;color:#64748b">${escHtml(b.branch_code)}</td>
               <td style="padding:12px 14px;font-weight:700">${escHtml(b.branch_name || "-")}</td>
@@ -7649,7 +7653,7 @@ body { background: var(--bg); color: var(--txt); }
               <td style="padding:12px 10px;text-align:center;${numStyle(totSrv, '#16a34a')}">${totSrv}</td>
               <td style="padding:8px 14px;text-align:right;white-space:nowrap">
                 <button class="btn btn-sm" onclick="manpowerHistOpen('${escHtml(b.branch_code)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:6px 10px;border-radius:8px;margin-right:4px">📜 ประวัติ</button>
-                <button class="btn-edit-row btn btn-sm" onclick="manpowerOpen('${escHtml(b.branch_code)}')">${has ? "✏️ แก้ไข" : "➕ กรอก"}</button>
+                ${editBtn}
               </td>
             </tr>`;
           }).join("");
@@ -7713,16 +7717,20 @@ body { background: var(--bg); color: var(--txt); }
               <div class="mp-h-cell-l">${label}</div>
               <div class="mp-h-cell-n" style="${n > 0 ? `color:${col}` : 'color:#cbd5e1'}">${n}</div>
             </div>`;
+          const canDelete = (S.role === "admin" || S.code === "ADMIN");
           body.innerHTML = rows.map(r => {
             const period = `${_MP_MONTHS_TH[r.month-1]} ${r.year+543}`;
             const upd = r.updated_at ? new Date(r.updated_at).toLocaleDateString("th-TH", { day:"2-digit", month:"short", year:"2-digit" }) : "—";
             const kPT = totKitPT(r), kFT = totKitFT(r);
             const sPT = totSrvPT(r), sFT = totSrvFT(r);
+            const delBtn = canDelete
+              ? `<button class="btn btn-sm" onclick="manpowerHistDelete('${escHtml(r.branch_code)}',${r.year},${r.month})" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11px;padding:4px 10px;border-radius:7px;margin-left:10px">🗑️ ลบ</button>`
+              : "";
             return `
               <div class="mp-h-card">
                 <div class="mp-h-card-hdr">
                   <div class="mp-h-period">📅 ${period}</div>
-                  <div class="mp-h-upd">แก้ล่าสุด: ${upd}</div>
+                  <div style="display:flex;align-items:center"><span class="mp-h-upd">แก้ล่าสุด: ${upd}</span>${delBtn}</div>
                 </div>
                 <div class="mp-h-grid">
                   <div class="mp-h-sec mp-h-mgr">
@@ -7775,6 +7783,23 @@ body { background: var(--bg); color: var(--txt); }
               </div>`;
           }).join("");
         });
+      }
+
+      function manpowerHistDelete(branchCode, year, month) {
+        const bInfo = BRANCH_DM_MAP[branchCode] || {};
+        const bName = bInfo.branch || branchCode;
+        const period = `${_MP_MONTHS_TH[month-1]} ${year+543}`;
+        showConfirm("⚠️", "ยืนยันการลบ",
+          `ลบ Manpower ของ ${bName}\nเดือน ${period} ?`,
+          function() {
+            apiCall({ mode: "deleteManpower", branch_code: branchCode, year: year, month: month }, function(res) {
+              if (!res || !res.ok) { showAlert("❌", "ลบไม่สำเร็จ", res && res.error || "—"); return; }
+              showAlert("✅", "ลบสำเร็จ", `ลบข้อมูล ${bName} · ${period} แล้ว`);
+              // รีโหลดประวัติ + ตารางหลัก
+              manpowerHistOpen(branchCode);
+              renderManpowerList();
+            });
+          }, { danger: true, btnText: "ลบ" });
       }
 
       function manpowerSave() {
@@ -11616,6 +11641,19 @@ body { background: var(--bg); color: var(--txt); }
             const { data, error } = await q;
             if (error) { cb({ ok: false, error: error.message }); return; }
             cb({ ok: true, rows: data || [] });
+            return;
+          }
+          if (mode === "deleteManpower") {
+            const isAdmin = (S.role === "admin" || S.code === "ADMIN");
+            if (!isAdmin) { cb({ ok: false, error: "permission denied" }); return; }
+            const bc = String(params.branch_code || "").trim();
+            const y  = parseInt(params.year, 10);
+            const m  = parseInt(params.month, 10);
+            if (!bc || !y || !m) { cb({ ok: false, error: "missing branch_code/year/month" }); return; }
+            const { error } = await sb.from("manpower").delete()
+              .eq("branch_code", bc).eq("year", y).eq("month", m);
+            if (error) { cb({ ok: false, error: error.message }); return; }
+            cb({ ok: true, deleted: true });
             return;
           }
           if (mode === "histManpower") {
