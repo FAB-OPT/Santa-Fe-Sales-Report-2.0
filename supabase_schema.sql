@@ -160,6 +160,13 @@ create table if not exists public.manpower (
   s_silver_ft   int default 0,
   s_gold_pt     int default 0,
   s_gold_ft     int default 0,
+  -- รายละเอียด Part-time (รวมจากครัว+บริการ ที่เป็น PT)
+  pt_8h         int default 0,    -- PT 8 ชั่วโมง
+  pt_dual40     int default 0,    -- PT ทวิภาคี 40 ชั่วโมง
+  pt_45h        int default 0,    -- PT 4-5 ชม
+  -- รายละเอียด ทวิภาคี (dual_pt ต้องเท่ากับ pt_dual40)
+  dual_ft       int default 0,    -- ทวิภาคี FT
+  dual_pt       int default 0,    -- ทวิภาคี PT (= pt_dual40)
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   constraint uq_manpower_branch_year_month unique (branch_code, year, month)
@@ -167,6 +174,13 @@ create table if not exists public.manpower (
 
 create index if not exists idx_manpower_year_month on public.manpower(year, month);
 create index if not exists idx_manpower_branch     on public.manpower(branch_code, year, month);
+
+-- ALTER (สำหรับตารางที่มีอยู่แล้ว ก่อนเพิ่ม PT-detail + ทวิภาคี) — รัน idempotent
+alter table public.manpower add column if not exists pt_8h     int default 0;
+alter table public.manpower add column if not exists pt_dual40 int default 0;
+alter table public.manpower add column if not exists pt_45h    int default 0;
+alter table public.manpower add column if not exists dual_ft   int default 0;
+alter table public.manpower add column if not exists dual_pt   int default 0;
 
 drop trigger if exists trg_manpower_updated on public.manpower;
 create trigger trg_manpower_updated

@@ -3191,6 +3191,8 @@ body { background: var(--bg); color: var(--txt); }
 .mp-sec-mgr { background:linear-gradient(135deg,#faf5ff 0%,#f5f3ff 100%); border-color:#e9d5ff; }
 .mp-sec-kit { background:linear-gradient(135deg,#fff7ed 0%,#fef2e2 100%); border-color:#fed7aa; }
 .mp-sec-srv { background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%); border-color:#bbf7d0; }
+.mp-sec-pt  { background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); border-color:#bfdbfe; }
+.mp-sec-dual{ background:linear-gradient(135deg,#fdf2f8 0%,#fce7f3 100%); border-color:#fbcfe8; }
 .mp-sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .mp-sec-title { font-size:15px; font-weight:800; letter-spacing:-.01em; }
 .mp-sec-mgr .mp-sec-title { color:#7c3aed; }
@@ -3201,6 +3203,10 @@ body { background: var(--bg); color: var(--txt); }
 .mp-sec-mgr .mp-sec-tot b { color:#7c3aed; }
 .mp-sec-kit .mp-sec-tot b { color:#ea580c; }
 .mp-sec-srv .mp-sec-tot b { color:#16a34a; }
+.mp-sec-pt  .mp-sec-title { color:#2563eb; }
+.mp-sec-pt  .mp-sec-tot b { color:#2563eb; }
+.mp-sec-dual .mp-sec-title { color:#db2777; }
+.mp-sec-dual .mp-sec-tot b { color:#db2777; }
 
 .mp-grid-mgr { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
 .mp-cell { display:flex; flex-direction:column; gap:5px; }
@@ -3242,20 +3248,37 @@ body { background: var(--bg); color: var(--txt); }
 .mp-hist-tbl td.l { text-align:left; font-weight:700; }
 .mp-hist-tbl tr:hover td { background:#fafbfc; }
 
-/* detailed history (per-field breakdown) */
-.mp-hist-detail { font-size:12px; min-width:1280px; }
-.mp-hist-detail th, .mp-hist-detail td { padding:7px 8px; white-space:nowrap; }
-.mp-hist-detail .mp-grp th { font-size:13px; padding:8px 10px; border-bottom:1px solid #cbd5e1; }
-.mp-hist-detail .mp-grp-mgr { background:#faf5ff; color:#7c3aed; }
-.mp-hist-detail .mp-grp-kit { background:#fff7ed; color:#ea580c; }
-.mp-hist-detail .mp-grp-srv { background:#f0fdf4; color:#16a34a; }
-.mp-hist-detail th.mp-c-mgr, .mp-hist-detail th.mp-tot-mgr { background:#faf5ff; color:#7c3aed; font-size:10.5px; }
-.mp-hist-detail th.mp-c-kit, .mp-hist-detail th.mp-st-kit, .mp-hist-detail th.mp-tot-kit { background:#fff7ed; color:#ea580c; font-size:10.5px; }
-.mp-hist-detail th.mp-c-srv, .mp-hist-detail th.mp-st-srv, .mp-hist-detail th.mp-tot-srv { background:#f0fdf4; color:#16a34a; font-size:10.5px; }
-.mp-hist-detail td.mp-tot-mgr { background:#faf5ff; color:#7c3aed; font-weight:800; font-size:14px; }
-.mp-hist-detail td.mp-tot-kit { background:#fff7ed; color:#ea580c; font-weight:800; font-size:14px; }
-.mp-hist-detail td.mp-tot-srv { background:#f0fdf4; color:#16a34a; font-weight:800; font-size:14px; }
-.mp-hist-detail td.mp-st-kit, .mp-hist-detail td.mp-st-srv { background:#fafbfc; font-weight:700; color:#475569; }
+/* history — card layout per month (no horizontal scroll) */
+.mp-h-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:14px 16px; margin-bottom:14px; box-shadow:0 1px 2px rgba(0,0,0,.03); }
+.mp-h-card-hdr { display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid #f1f5f9; }
+.mp-h-period { font-size:15px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
+.mp-h-upd { font-size:11px; color:var(--txt2); font-weight:600; }
+.mp-h-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.mp-h-sec { border-radius:10px; padding:10px 12px; border:1px solid; }
+.mp-h-mgr  { background:#faf5ff; border-color:#e9d5ff; grid-column:1/-1; }
+.mp-h-kit  { background:#fff7ed; border-color:#fed7aa; grid-column:1/-1; }
+.mp-h-srv  { background:#f0fdf4; border-color:#bbf7d0; grid-column:1/-1; }
+.mp-h-pt   { background:#eff6ff; border-color:#bfdbfe; }
+.mp-h-dual { background:#fdf2f8; border-color:#fbcfe8; }
+.mp-h-sec-hdr { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:12.5px; font-weight:800; margin-bottom:8px; }
+.mp-h-sec-hdr b { font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; margin-left:auto; }
+.mp-h-mgr .mp-h-sec-hdr, .mp-h-mgr .mp-h-sec-hdr b { color:#7c3aed; }
+.mp-h-kit .mp-h-sec-hdr, .mp-h-kit .mp-h-sec-hdr b { color:#ea580c; }
+.mp-h-srv .mp-h-sec-hdr, .mp-h-srv .mp-h-sec-hdr b { color:#16a34a; }
+.mp-h-pt  .mp-h-sec-hdr, .mp-h-pt  .mp-h-sec-hdr b { color:#2563eb; }
+.mp-h-dual .mp-h-sec-hdr, .mp-h-dual .mp-h-sec-hdr b { color:#db2777; }
+.mp-h-pt-ft { font-size:11px; font-weight:700; color:#475569; padding:2px 8px; background:rgba(255,255,255,.7); border-radius:999px; }
+.mp-h-row { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
+.mp-h-mgr .mp-h-row  { grid-template-columns:repeat(4,1fr); }
+.mp-h-pt   .mp-h-row { grid-template-columns:repeat(3,1fr); }
+.mp-h-dual .mp-h-row { grid-template-columns:repeat(2,1fr); }
+.mp-h-cell { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:6px 4px; text-align:center; min-width:0; }
+.mp-h-cell-l { font-size:10px; color:var(--txt2); font-weight:700; letter-spacing:.02em; }
+.mp-h-cell-n { font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; }
+@media (max-width: 640px) {
+  .mp-h-grid { grid-template-columns:1fr; }
+  .mp-h-pt, .mp-h-dual { grid-column:1/-1; }
+}
 
 /* ─── MODALS — Apple style ─── */
 .modal-bg  { background: rgba(0,0,0,.30) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -5653,6 +5676,36 @@ body { background: var(--bg); color: var(--txt); }
             </div>
           </div>
 
+          <!-- ── รายละเอียด Part-time ── -->
+          <div class="mp-sec mp-sec-pt">
+            <div class="mp-sec-hdr">
+              <div class="mp-sec-title">⏱️ รายละเอียด Part-time</div>
+              <div class="mp-sec-tot">รวม: <b id="mpTotPt">0</b> <span id="mpPtMatch" style="font-size:11px;font-weight:600;margin-left:8px"></span></div>
+            </div>
+            <div class="mp-grid-mgr">
+              <div class="mp-cell"><label>PT 8 ชม.</label><input id="mp_pt_8h"     type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell"><label>PT ทวิภาคี 40 ชม.</label><input id="mp_pt_dual40" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell"><label>PT 4-5 ชม.</label><input id="mp_pt_45h"    type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell" style="background:#fafbfc;border-radius:9px;padding:6px"><label>PT จาก ครัว+บริการ</label><input id="mp_pt_ref" type="text" value="0" readonly tabindex="-1" style="background:#fafbfc;color:#64748b;border:1px dashed #cbd5e1"></div>
+            </div>
+          </div>
+
+          <!-- ── รายละเอียด ทวิภาคี ── -->
+          <div class="mp-sec mp-sec-dual">
+            <div class="mp-sec-hdr">
+              <div class="mp-sec-title">🎓 รายละเอียด ทวิภาคี</div>
+              <div class="mp-sec-tot">รวม: <b id="mpTotDual">0</b></div>
+            </div>
+            <div class="mp-grid-mgr" style="grid-template-columns:1fr 1fr">
+              <div class="mp-cell"><label>ทวิภาคี FT</label><input id="mp_dual_ft" type="number" min="0" value="0" oninput="_mpRecalc()"></div>
+              <div class="mp-cell">
+                <label>ทวิภาคี PT <span style="color:#dc2626;font-size:10px">(= PT ทวิภาคี 40 ชม.)</span></label>
+                <input id="mp_dual_pt" type="number" min="0" value="0" oninput="_mpRecalc()">
+                <div id="mpDualMatch" style="font-size:11px;font-weight:600;margin-top:2px;color:#16a34a">✓ ตรงกับ PT ทวิภาคี 40 ชม.</div>
+              </div>
+            </div>
+          </div>
+
           <div id="mp_warn" style="display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px"></div>
         </div>
         <div class="modal-footer">
@@ -7510,6 +7563,26 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("mpSrvPT").textContent = sPT;
         document.getElementById("mpSrvFT").textContent = sFT;
         document.getElementById("mpTotSrv").textContent = sPT + sFT;
+
+        // Part-time details
+        const pt8  = parseInt(document.getElementById("mp_pt_8h").value, 10)     || 0;
+        const ptD  = parseInt(document.getElementById("mp_pt_dual40").value, 10) || 0;
+        const pt45 = parseInt(document.getElementById("mp_pt_45h").value, 10)    || 0;
+        const ptTot = pt8 + ptD + pt45;
+        document.getElementById("mpTotPt").textContent = ptTot;
+        const ptRef = kPT + sPT;
+        document.getElementById("mp_pt_ref").value = ptRef;
+        const ptMatch = document.getElementById("mpPtMatch");
+        if (ptTot === ptRef) ptMatch.innerHTML = `<span style="color:#16a34a">✓ ตรงกับ ${ptRef}</span>`;
+        else                 ptMatch.innerHTML = `<span style="color:#dc2626">≠ ${ptRef} (ห่าง ${Math.abs(ptTot - ptRef)})</span>`;
+
+        // ทวิภาคี
+        const dFT = parseInt(document.getElementById("mp_dual_ft").value, 10) || 0;
+        const dPT = parseInt(document.getElementById("mp_dual_pt").value, 10) || 0;
+        document.getElementById("mpTotDual").textContent = dFT + dPT;
+        const dMatch = document.getElementById("mpDualMatch");
+        if (dPT === ptD) dMatch.innerHTML = `<span style="color:#16a34a">✓ ตรงกับ PT ทวิภาคี 40 ชม. (${ptD})</span>`;
+        else             dMatch.innerHTML = `<span style="color:#dc2626">⚠ ต้องเท่ากับ ${ptD} (ปัจจุบัน ${dPT})</span>`;
       }
 
       function renderManpowerList() {
@@ -7581,6 +7654,8 @@ body { background: var(--bg); color: var(--txt); }
         setV("mp_s_basic_pt", r.s_basic_pt); setV("mp_s_basic_ft", r.s_basic_ft);
         setV("mp_s_silver_pt", r.s_silver_pt); setV("mp_s_silver_ft", r.s_silver_ft);
         setV("mp_s_gold_pt", r.s_gold_pt); setV("mp_s_gold_ft", r.s_gold_ft);
+        setV("mp_pt_8h", r.pt_8h); setV("mp_pt_dual40", r.pt_dual40); setV("mp_pt_45h", r.pt_45h);
+        setV("mp_dual_ft", r.dual_ft); setV("mp_dual_pt", r.dual_pt);
         document.getElementById("mp_warn").style.display = "none";
         _mpRecalc();
         openM("mManpower");
@@ -7604,58 +7679,81 @@ body { background: var(--bg); color: var(--txt); }
             return;
           }
           const sum = (...keys) => (r) => keys.reduce((t,k)=>t+(parseInt(r[k],10)||0),0);
-          const totMgr = sum("rgm","sam","am","ss");
+          const totMgr  = sum("rgm","sam","am","ss");
           const totKitPT = sum("k_basic_pt","k_silver_pt","k_gold_pt");
           const totKitFT = sum("k_basic_ft","k_silver_ft","k_gold_ft");
           const totSrvPT = sum("s_basic_pt","s_silver_pt","s_gold_pt");
           const totSrvFT = sum("s_basic_ft","s_silver_ft","s_gold_ft");
-          // เรียงใหม่สุด → เก่า
+          const totPt   = sum("pt_8h","pt_dual40","pt_45h");
+          const totDual = sum("dual_ft","dual_pt");
           rows.sort((a,b) => (b.year - a.year) || (b.month - a.month));
-          body.innerHTML = `
-            <div style="overflow-x:auto">
-            <table class="mp-hist-tbl mp-hist-detail">
-              <thead>
-                <tr class="mp-grp">
-                  <th class="l" rowspan="2">เดือน</th>
-                  <th colspan="5" class="mp-grp-mgr">👔 ทีมผู้จัดการสาขา</th>
-                  <th colspan="9" class="mp-grp-kit">🍳 พนักงานครัว</th>
-                  <th colspan="9" class="mp-grp-srv">🍽️ พนักงานบริการ</th>
-                  <th rowspan="2">แก้ล่าสุด</th>
-                </tr>
-                <tr>
-                  <th class="mp-c-mgr">RGM</th><th class="mp-c-mgr">SAM</th><th class="mp-c-mgr">AM</th><th class="mp-c-mgr">SS</th><th class="mp-tot-mgr">รวม</th>
-                  <th class="mp-c-kit">B·PT</th><th class="mp-c-kit">B·FT</th><th class="mp-c-kit">S·PT</th><th class="mp-c-kit">S·FT</th><th class="mp-c-kit">G·PT</th><th class="mp-c-kit">G·FT</th><th class="mp-st-kit">PT</th><th class="mp-st-kit">FT</th><th class="mp-tot-kit">รวม</th>
-                  <th class="mp-c-srv">B·PT</th><th class="mp-c-srv">B·FT</th><th class="mp-c-srv">S·PT</th><th class="mp-c-srv">S·FT</th><th class="mp-c-srv">G·PT</th><th class="mp-c-srv">G·FT</th><th class="mp-st-srv">PT</th><th class="mp-st-srv">FT</th><th class="mp-tot-srv">รวม</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.map(r => {
-                  const period = `${_MP_MONTHS_TH[r.month-1]} ${r.year+543}`;
-                  const upd = r.updated_at ? new Date(r.updated_at).toLocaleDateString("th-TH", { day:"2-digit", month:"short", year:"2-digit" }) : "—";
-                  const v = (k) => r[k] || 0;
-                  const dim = (n) => n > 0 ? "" : "color:#cbd5e1";
-                  const kPT = totKitPT(r), kFT = totKitFT(r);
-                  const sPT = totSrvPT(r), sFT = totSrvFT(r);
-                  return `<tr>
-                    <td class="l">${period}</td>
-                    <td style="${dim(v('rgm'))}">${v('rgm')}</td><td style="${dim(v('sam'))}">${v('sam')}</td><td style="${dim(v('am'))}">${v('am')}</td><td style="${dim(v('ss'))}">${v('ss')}</td>
-                    <td class="mp-tot-mgr">${totMgr(r)}</td>
-                    <td style="${dim(v('k_basic_pt'))}">${v('k_basic_pt')}</td><td style="${dim(v('k_basic_ft'))}">${v('k_basic_ft')}</td>
-                    <td style="${dim(v('k_silver_pt'))}">${v('k_silver_pt')}</td><td style="${dim(v('k_silver_ft'))}">${v('k_silver_ft')}</td>
-                    <td style="${dim(v('k_gold_pt'))}">${v('k_gold_pt')}</td><td style="${dim(v('k_gold_ft'))}">${v('k_gold_ft')}</td>
-                    <td class="mp-st-kit">${kPT}</td><td class="mp-st-kit">${kFT}</td>
-                    <td class="mp-tot-kit">${kPT + kFT}</td>
-                    <td style="${dim(v('s_basic_pt'))}">${v('s_basic_pt')}</td><td style="${dim(v('s_basic_ft'))}">${v('s_basic_ft')}</td>
-                    <td style="${dim(v('s_silver_pt'))}">${v('s_silver_pt')}</td><td style="${dim(v('s_silver_ft'))}">${v('s_silver_ft')}</td>
-                    <td style="${dim(v('s_gold_pt'))}">${v('s_gold_pt')}</td><td style="${dim(v('s_gold_ft'))}">${v('s_gold_ft')}</td>
-                    <td class="mp-st-srv">${sPT}</td><td class="mp-st-srv">${sFT}</td>
-                    <td class="mp-tot-srv">${sPT + sFT}</td>
-                    <td style="color:var(--txt2);font-size:11px;white-space:nowrap">${upd}</td>
-                  </tr>`;
-                }).join("")}
-              </tbody>
-            </table>
+          const v = (r, k) => r[k] || 0;
+          const cell = (label, n, col) => `
+            <div class="mp-h-cell">
+              <div class="mp-h-cell-l">${label}</div>
+              <div class="mp-h-cell-n" style="${n > 0 ? `color:${col}` : 'color:#cbd5e1'}">${n}</div>
             </div>`;
+          body.innerHTML = rows.map(r => {
+            const period = `${_MP_MONTHS_TH[r.month-1]} ${r.year+543}`;
+            const upd = r.updated_at ? new Date(r.updated_at).toLocaleDateString("th-TH", { day:"2-digit", month:"short", year:"2-digit" }) : "—";
+            const kPT = totKitPT(r), kFT = totKitFT(r);
+            const sPT = totSrvPT(r), sFT = totSrvFT(r);
+            return `
+              <div class="mp-h-card">
+                <div class="mp-h-card-hdr">
+                  <div class="mp-h-period">📅 ${period}</div>
+                  <div class="mp-h-upd">แก้ล่าสุด: ${upd}</div>
+                </div>
+                <div class="mp-h-grid">
+                  <div class="mp-h-sec mp-h-mgr">
+                    <div class="mp-h-sec-hdr">👔 ผู้จัดการ <b>${totMgr(r)}</b></div>
+                    <div class="mp-h-row">
+                      ${cell("RGM", v(r,'rgm'), '#7c3aed')}
+                      ${cell("SAM", v(r,'sam'), '#7c3aed')}
+                      ${cell("AM", v(r,'am'), '#7c3aed')}
+                      ${cell("SS", v(r,'ss'), '#7c3aed')}
+                    </div>
+                  </div>
+                  <div class="mp-h-sec mp-h-kit">
+                    <div class="mp-h-sec-hdr">🍳 ครัว <b>${kPT + kFT}</b> <span class="mp-h-pt-ft">PT:${kPT} · FT:${kFT}</span></div>
+                    <div class="mp-h-row">
+                      ${cell("B·PT", v(r,'k_basic_pt'), '#ea580c')}
+                      ${cell("B·FT", v(r,'k_basic_ft'), '#ea580c')}
+                      ${cell("S·PT", v(r,'k_silver_pt'), '#ea580c')}
+                      ${cell("S·FT", v(r,'k_silver_ft'), '#ea580c')}
+                      ${cell("G·PT", v(r,'k_gold_pt'), '#ea580c')}
+                      ${cell("G·FT", v(r,'k_gold_ft'), '#ea580c')}
+                    </div>
+                  </div>
+                  <div class="mp-h-sec mp-h-srv">
+                    <div class="mp-h-sec-hdr">🍽️ บริการ <b>${sPT + sFT}</b> <span class="mp-h-pt-ft">PT:${sPT} · FT:${sFT}</span></div>
+                    <div class="mp-h-row">
+                      ${cell("B·PT", v(r,'s_basic_pt'), '#16a34a')}
+                      ${cell("B·FT", v(r,'s_basic_ft'), '#16a34a')}
+                      ${cell("S·PT", v(r,'s_silver_pt'), '#16a34a')}
+                      ${cell("S·FT", v(r,'s_silver_ft'), '#16a34a')}
+                      ${cell("G·PT", v(r,'s_gold_pt'), '#16a34a')}
+                      ${cell("G·FT", v(r,'s_gold_ft'), '#16a34a')}
+                    </div>
+                  </div>
+                  <div class="mp-h-sec mp-h-pt">
+                    <div class="mp-h-sec-hdr">⏱️ Part-time <b>${totPt(r)}</b></div>
+                    <div class="mp-h-row">
+                      ${cell("PT 8 ชม.", v(r,'pt_8h'), '#2563eb')}
+                      ${cell("PT ทวิ 40 ชม.", v(r,'pt_dual40'), '#2563eb')}
+                      ${cell("PT 4-5 ชม.", v(r,'pt_45h'), '#2563eb')}
+                    </div>
+                  </div>
+                  <div class="mp-h-sec mp-h-dual">
+                    <div class="mp-h-sec-hdr">🎓 ทวิภาคี <b>${totDual(r)}</b></div>
+                    <div class="mp-h-row">
+                      ${cell("FT", v(r,'dual_ft'), '#db2777')}
+                      ${cell("PT", v(r,'dual_pt'), '#db2777')}
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+          }).join("");
         });
       }
 
@@ -7674,14 +7772,28 @@ body { background: var(--bg); color: var(--txt); }
           k_gold_pt: get("mp_k_gold_pt"), k_gold_ft: get("mp_k_gold_ft"),
           s_basic_pt: get("mp_s_basic_pt"), s_basic_ft: get("mp_s_basic_ft"),
           s_silver_pt: get("mp_s_silver_pt"), s_silver_ft: get("mp_s_silver_ft"),
-          s_gold_pt: get("mp_s_gold_pt"), s_gold_ft: get("mp_s_gold_ft")
+          s_gold_pt: get("mp_s_gold_pt"), s_gold_ft: get("mp_s_gold_ft"),
+          pt_8h: get("mp_pt_8h"), pt_dual40: get("mp_pt_dual40"), pt_45h: get("mp_pt_45h"),
+          dual_ft: get("mp_dual_ft"), dual_pt: get("mp_dual_pt")
         };
         // ─── validation: ผลรวมแต่ละหมวดต้องไม่เป็น 0 ───
         const totMgr = payload.rgm + payload.sam + payload.am + payload.ss;
+        const kPT = payload.k_basic_pt + payload.k_silver_pt + payload.k_gold_pt;
+        const sPT = payload.s_basic_pt + payload.s_silver_pt + payload.s_gold_pt;
         const totKitSrv = payload.k_basic_pt + payload.k_basic_ft + payload.k_silver_pt + payload.k_silver_ft + payload.k_gold_pt + payload.k_gold_ft
                         + payload.s_basic_pt + payload.s_basic_ft + payload.s_silver_pt + payload.s_silver_ft + payload.s_gold_pt + payload.s_gold_ft;
         if (totMgr === 0) return fail("ทีมผู้จัดการสาขาต้องมีอย่างน้อย 1 คน (รวมต้องไม่เท่ากับ 0)");
         if (totKitSrv === 0) return fail("พนักงานครัว+บริการต้องมีอย่างน้อย 1 คน (รวมต้องไม่เท่ากับ 0)");
+        // ─── validation: ทวิภาคี PT ต้องเท่ากับ PT ทวิภาคี 40 ชม. ───
+        if (payload.dual_pt !== payload.pt_dual40) {
+          return fail(`ทวิภาคี PT (${payload.dual_pt}) ต้องเท่ากับ PT ทวิภาคี 40 ชม. (${payload.pt_dual40})`);
+        }
+        // ─── soft check: PT-detail รวม ควรเท่ากับ PT จากครัว+บริการ ───
+        const ptSum = payload.pt_8h + payload.pt_dual40 + payload.pt_45h;
+        const ptRef = kPT + sPT;
+        if (ptSum !== ptRef) {
+          return fail(`PT-detail รวม (${ptSum}) ไม่เท่ากับ PT จากครัว+บริการ (${ptRef}) — แก้ให้ตรงกันก่อนบันทึก`);
+        }
         const btn = document.getElementById("mpSaveBtn");
         if (btn) { btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก..."; }
         apiCall(payload, function(res) {
@@ -11514,7 +11626,9 @@ body { background: var(--bg); color: var(--txt); }
               k_gold_pt: N(params.k_gold_pt), k_gold_ft: N(params.k_gold_ft),
               s_basic_pt: N(params.s_basic_pt), s_basic_ft: N(params.s_basic_ft),
               s_silver_pt: N(params.s_silver_pt), s_silver_ft: N(params.s_silver_ft),
-              s_gold_pt: N(params.s_gold_pt), s_gold_ft: N(params.s_gold_ft)
+              s_gold_pt: N(params.s_gold_pt), s_gold_ft: N(params.s_gold_ft),
+              pt_8h: N(params.pt_8h), pt_dual40: N(params.pt_dual40), pt_45h: N(params.pt_45h),
+              dual_ft: N(params.dual_ft), dual_pt: N(params.dual_pt)
             };
             const { error } = await sb.from("manpower")
               .upsert(row, { onConflict: "branch_code,year,month" });
