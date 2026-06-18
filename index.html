@@ -7583,12 +7583,16 @@ body { background: var(--bg); color: var(--txt); }
         const ptRef = kPT + sPT;
         document.getElementById("mp_pt_ref").value = ptRef;
         const ptMatch = document.getElementById("mpPtMatch");
-        if (ptTot === ptRef) {
+        const ptDiff = ptTot - ptRef;
+        if (ptDiff === 0) {
           ptMatch.className = "mp-chk ok";
-          ptMatch.innerHTML = `✓ PT-detail (${ptTot}) ตรงกับ PT จากครัว+บริการ (${ptRef})`;
+          ptMatch.innerHTML = `✓ แยกประเภท PT ครบแล้ว (${ptTot} คน)`;
+        } else if (ptDiff < 0) {
+          ptMatch.className = "mp-chk bad";
+          ptMatch.innerHTML = `❌ ยังต้องกรอกอีก ${-ptDiff} คน — รวมต้องได้ ${ptRef} คน (ตอนนี้ ${ptTot})`;
         } else {
           ptMatch.className = "mp-chk bad";
-          ptMatch.innerHTML = `⚠ PT-detail (${ptTot}) ต้องเท่ากับ PT จากครัว+บริการ (${ptRef}) · ห่าง ${Math.abs(ptTot - ptRef)}`;
+          ptMatch.innerHTML = `❌ กรอกเกินไป ${ptDiff} คน — รวมต้องได้ ${ptRef} คน (ตอนนี้ ${ptTot})`;
         }
 
         // ทวิภาคี
@@ -7598,10 +7602,10 @@ body { background: var(--bg); color: var(--txt); }
         const dMatch = document.getElementById("mpDualMatch");
         if (dPT === ptD) {
           dMatch.className = "mp-chk ok";
-          dMatch.innerHTML = `✓ ทวิภาคี PT (${dPT}) ตรงกับ PT ทวิภาคี 40 ชม. (${ptD})`;
+          dMatch.innerHTML = `✓ ทวิภาคี PT ถูกต้อง`;
         } else {
           dMatch.className = "mp-chk bad";
-          dMatch.innerHTML = `⚠ ทวิภาคี PT (${dPT}) ต้องเท่ากับ PT ทวิภาคี 40 ชม. (${ptD}) · ห่าง ${Math.abs(dPT - ptD)}`;
+          dMatch.innerHTML = `❌ ทวิภาคี PT ต้องเป็น ${ptD} คน (ตอนนี้ ${dPT}) — เท่ากับช่อง "PT ทวิภาคี 40 ชม." ด้านบน`;
         }
       }
 
@@ -7802,17 +7806,19 @@ body { background: var(--bg); color: var(--txt); }
         const sPT = payload.s_basic_pt + payload.s_silver_pt + payload.s_gold_pt;
         const totKitSrv = payload.k_basic_pt + payload.k_basic_ft + payload.k_silver_pt + payload.k_silver_ft + payload.k_gold_pt + payload.k_gold_ft
                         + payload.s_basic_pt + payload.s_basic_ft + payload.s_silver_pt + payload.s_silver_ft + payload.s_gold_pt + payload.s_gold_ft;
-        if (totMgr === 0) return fail("ทีมผู้จัดการสาขาต้องมีอย่างน้อย 1 คน (รวมต้องไม่เท่ากับ 0)");
-        if (totKitSrv === 0) return fail("พนักงานครัว+บริการต้องมีอย่างน้อย 1 คน (รวมต้องไม่เท่ากับ 0)");
+        if (totMgr === 0) return fail("ยังไม่ได้กรอกทีมผู้จัดการสาขา");
+        if (totKitSrv === 0) return fail("ยังไม่ได้กรอกพนักงานครัว/บริการ");
         // ─── validation: ทวิภาคี PT ต้องเท่ากับ PT ทวิภาคี 40 ชม. ───
         if (payload.dual_pt !== payload.pt_dual40) {
-          return fail(`ทวิภาคี PT (${payload.dual_pt}) ต้องเท่ากับ PT ทวิภาคี 40 ชม. (${payload.pt_dual40})`);
+          return fail(`ทวิภาคี PT ต้องเป็น ${payload.pt_dual40} คน (ตอนนี้ ${payload.dual_pt})`);
         }
         // ─── soft check: PT-detail รวม ควรเท่ากับ PT จากครัว+บริการ ───
         const ptSum = payload.pt_8h + payload.pt_dual40 + payload.pt_45h;
         const ptRef = kPT + sPT;
         if (ptSum !== ptRef) {
-          return fail(`PT-detail รวม (${ptSum}) ไม่เท่ากับ PT จากครัว+บริการ (${ptRef}) — แก้ให้ตรงกันก่อนบันทึก`);
+          const diff = ptSum - ptRef;
+          if (diff < 0) return fail(`Part-time ยังต้องกรอกอีก ${-diff} คน — รวมต้องได้ ${ptRef}`);
+          return fail(`Part-time กรอกเกินไป ${diff} คน — รวมต้องได้ ${ptRef}`);
         }
         const btn = document.getElementById("mpSaveBtn");
         if (btn) { btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก..."; }
