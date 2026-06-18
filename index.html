@@ -5373,11 +5373,13 @@ body { background: var(--bg); color: var(--txt); }
           </div>
         </div>
 
-        <div id="mpBzmWrap" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-          <label style="font-size:13px;font-weight:700;color:var(--txt2)">BZM:</label>
-          <select id="mpBzmSel" onchange="renderManpowerList()"
-                  style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;min-width:240px"></select>
-          <span id="manpowerHint" style="font-size:12px;color:var(--txt2);margin-left:auto;font-weight:600">— สาขา</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <div id="mpBzmWrap" style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:13px;font-weight:700;color:var(--txt2)">BZM:</label>
+            <select id="mpBzmSel" onchange="renderManpowerList()"
+                    style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;min-width:240px"></select>
+          </div>
+          <span id="manpowerHint" style="font-size:13px;color:var(--txt2);margin-left:auto;font-weight:700">— สาขา</span>
         </div>
 
         <div class="dash-card-wrap" style="padding:0;overflow:hidden">
