@@ -1273,7 +1273,13 @@
         font-family: inherit; font-size: 13px; font-weight: 700;
         font-variant-numeric: tabular-nums;
         background: #fff; outline: none;
+        -moz-appearance: textfield;
       }
+      .mp-bulk-tbl tbody td input::-webkit-outer-spin-button,
+      .mp-bulk-tbl tbody td input::-webkit-inner-spin-button {
+        -webkit-appearance: none; margin: 0;
+      }
+      .mp-bulk-tbl tbody td input::placeholder { color: #cbd5e1; font-weight: 600; }
       .mp-bulk-tbl tbody td input:focus {
         border-color: var(--brand);
         box-shadow: 0 0 0 2px rgba(242,108,28,.18);
@@ -8975,9 +8981,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const bInfo = BRANCH_DM_MAP[code] || {};
           let row = `<tr id="mpbrow_${code}"><td class="branch-cell"><span class="code">${escHtml(code)}</span>${escHtml(bInfo.branch || "-")}</td>`;
           _MP_BULK_FIELDS.forEach((f, idx) => {
-            const val = (r[f.k] != null ? r[f.k] : 0);
+            const rawVal = r[f.k];
+            // โชว์ค่าเฉพาะเมื่อมีค่าจริงๆ (ไม่ใช่ 0 default) — 0 → placeholder
+            const valAttr = (rawVal != null && rawVal !== 0) ? `value="${rawVal}"` : `value=""`;
             const cls = `g-${f.g}` + (isGroupStart(idx) ? ` gstart ${f.g}` : "") + (isSubEnd(idx) ? " sub-end" : "");
-            row += `<td class="${cls}"><input id="mpb_${code}_${f.k}" type="number" min="0" value="${val}" oninput="_mpBulkRowRecalc('${code}')"></td>`;
+            row += `<td class="${cls}"><input id="mpb_${code}_${f.k}" type="number" min="0" inputmode="numeric" placeholder="0" ${valAttr} oninput="_mpBulkRowRecalc('${code}')"></td>`;
           });
           row += `<td class="status-cell" id="mpbstat_${code}">—</td></tr>`;
           return row;
