@@ -4758,7 +4758,22 @@ body { background: var(--bg); color: var(--txt); }
   /* รวมตาราง 2 อันบนมือถือ — ซ่อน legend, ใช้ตารางอย่างเดียว (มี % แล้ว) */
   .dd-donut-legend { display:none !important; }
   .dd-donut-table-wrap { margin-top: 8px; padding-top: 10px; }
-  .dd-table-channels { font-size:12px; }
+  /* mobile "อื่นๆ" overflow menu */
+.mn-more-btn { display:none !important; }
+.mn-more-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter:blur(2px); z-index:9990; }
+.mn-more-bg.open { display:block; }
+.mn-more-pop { display:none; position:fixed; right:12px; bottom:80px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 12px 28px -8px rgba(0,0,0,.25); padding:6px; min-width:220px; z-index:9991; }
+.mn-more-pop.open { display:flex; flex-direction:column; gap:2px; }
+.mn-more-row { display:flex; align-items:center; gap:10px; padding:11px 14px; background:transparent; border:none; border-radius:9px; font-family:inherit; font-size:14px; font-weight:700; color:#0f172a; cursor:pointer; width:100%; text-align:left; }
+.mn-more-row:hover, .mn-more-row:active { background:#f1f5f9; }
+.mn-more-ico { font-size:18px; }
+.mn-more-lbl { display:flex; flex:1; align-items:center; gap:8px; }
+@media (max-width: 640px) {
+  /* ซ่อนปุ่ม 3 อันใน nav แท่ง — ย้ายมาอยู่ใน "อื่นๆ" popup */
+  .mn-more-item { display:none !important; }
+  .mn-more-btn  { display:flex !important; }
+}
+.dd-table-channels { font-size:12px; }
   .dd-table-channels thead th { padding:8px 6px; font-size:11px; }
   .dd-table-channels tbody td { padding:9px 6px; }
 }
@@ -6008,20 +6023,43 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">🔐</span>
           <span class="mob-nav-lbl">ผู้ใช้</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnAdminImport" onclick="showAdmin('import')" style="display:none">
+        <!-- mobile-only: ปุ่ม "อื่นๆ" รวม นำเข้า/ทดสอบ/ข้ามกฎ -->
+        <button class="mob-nav-btn admin-only-nav mn-more-btn" id="mnMore" onclick="toggleMnMore()" style="display:none">
+          <span class="mob-nav-ico">⋯</span>
+          <span class="mob-nav-lbl">อื่นๆ</span>
+        </button>
+        <!-- desktop: ยังเห็นตรงๆ — ซ่อนบนมือถือ -->
+        <button class="mob-nav-btn admin-only-nav mn-more-item" id="mnAdminImport" onclick="showAdmin('import')" style="display:none">
           <span class="mob-nav-ico">📥</span>
           <span class="mob-nav-lbl">นำเข้า</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnTestMode" onclick="toggleTestModeAdmin()" style="display:none">
+        <button class="mob-nav-btn admin-only-nav mn-more-item" id="mnTestMode" onclick="toggleTestModeAdmin()" style="display:none">
           <span class="mob-nav-ico">🧪</span>
           <span class="mob-nav-lbl">ทดสอบ</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnBypassOrder" onclick="toggleBypassOrderAdmin()" style="display:none">
+        <button class="mob-nav-btn admin-only-nav mn-more-item" id="mnBypassOrder" onclick="toggleBypassOrderAdmin()" style="display:none">
           <span class="mob-nav-ico">🚫</span>
           <span class="mob-nav-lbl">ข้ามกฎ</span>
         </button>
       </div>
     </nav>
+
+    <!-- Mobile "อื่นๆ" popup — admin เท่านั้น -->
+    <div id="mnMoreBg" class="mn-more-bg" onclick="closeMnMore()"></div>
+    <div id="mnMorePop" class="mn-more-pop">
+      <button class="mn-more-row" onclick="closeMnMore();showAdmin('import')">
+        <span class="mn-more-ico">📥</span>
+        <span class="mn-more-lbl">นำเข้าข้อมูล</span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnMore();toggleTestModeAdmin()">
+        <span class="mn-more-ico">🧪</span>
+        <span class="mn-more-lbl">โหมดทดสอบ <span id="mnMoreTestStat" style="color:var(--brand);font-weight:800;margin-left:auto">ปิด</span></span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnMore();toggleBypassOrderAdmin()">
+        <span class="mn-more-ico">🚫</span>
+        <span class="mn-more-lbl">ข้ามกฎลำดับ <span id="mnMoreBypassStat" style="color:var(--brand);font-weight:800;margin-left:auto">ปิด</span></span>
+      </button>
+    </div>
 
 
     <!-- ════════════════════════════════════════
@@ -8341,7 +8379,8 @@ body { background: var(--bg); color: var(--txt); }
         [
           document.getElementById("testModeStatus"),
           document.getElementById("mdTestModeStatus"),
-          document.getElementById("hdrTestModeStatus")
+          document.getElementById("hdrTestModeStatus"),
+          document.getElementById("mnMoreTestStat")
         ].forEach(s => {
           if (!s) return;
           s.textContent = _testMode ? "เปิด" : "ปิด";
@@ -8397,7 +8436,8 @@ body { background: var(--bg); color: var(--txt); }
           md1.style.borderColor = _bypassOrder ? "#dc2626" : "#fecaca";
         }
         [document.getElementById("bypassOrderStatus"),
-         document.getElementById("mdBypassOrderStatus")].forEach(s => {
+         document.getElementById("mdBypassOrderStatus"),
+         document.getElementById("mnMoreBypassStat")].forEach(s => {
           if (!s) return;
           s.textContent = _bypassOrder ? "เปิด" : "ปิด";
           s.style.color = _bypassOrder ? "var(--green)" : "var(--red)";
@@ -8415,6 +8455,21 @@ body { background: var(--bg); color: var(--txt); }
         applyBypassOrderUI();
         return true;
       }
+      function toggleMnMore() {
+        const pop = document.getElementById("mnMorePop");
+        const bg  = document.getElementById("mnMoreBg");
+        if (!pop || !bg) return;
+        const open = !pop.classList.contains("open");
+        pop.classList.toggle("open", open);
+        bg.classList.toggle("open", open);
+      }
+      function closeMnMore() {
+        const pop = document.getElementById("mnMorePop");
+        const bg  = document.getElementById("mnMoreBg");
+        if (pop) pop.classList.remove("open");
+        if (bg)  bg.classList.remove("open");
+      }
+
       function toggleBypassOrderAdmin() {
         if (S.code !== "ADMIN") return;
         const mDrw = document.getElementById("mobDrawer");
