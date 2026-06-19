@@ -3338,7 +3338,9 @@ body { background: var(--bg); color: var(--txt); }
 
   /* Test mode banner — เพิ่ม padding-top body */
   body.test-mode-on, body.bypass-order-on { padding-top: 36px; }
+  body.banners-both { padding-top: 72px; }
   body.test-mode-on .hdr, body.bypass-order-on .hdr { top: 36px; }
+  body.banners-both .hdr { top: 72px; }
   .hdr-logout-btn {
     background: transparent !important; color: var(--brand) !important;
     font-size: 14px !important; font-weight: 600 !important;
@@ -3613,8 +3615,11 @@ body { background: var(--bg); color: var(--txt); }
 
   /* เมื่อ test mode ON → ดัน sidebar + content ลงให้พ้น banner (~36px) */
   body.test-mode-on .desk-sidebar, body.bypass-order-on .desk-sidebar { top: 36px !important; }
+  body.banners-both .desk-sidebar                                     { top: 72px !important; }
   body.test-mode-on .hdr,           body.bypass-order-on .hdr           { top: 36px !important; }
+  body.banners-both .hdr                                               { top: 72px !important; }
   body.test-mode-on .screen.active, body.bypass-order-on .screen.active { padding-top: 36px; }
+  body.banners-both .screen.active                                     { padding-top: 72px; }
 
   /* ─ Admin tabs — เป็นหัวข้อหลักของหน้า ─ */
   .admin-tab {
@@ -6455,10 +6460,13 @@ body { background: var(--bg); color: var(--txt); }
           const hb = document.getElementById("hdrHubBtn"); if (hb) hb.style.display = "none";
           const ds = document.getElementById("deskSidebar"); if (ds) ds.classList.add("hidden");
           const mn = document.getElementById("mobNav"); if (mn) mn.classList.remove("visible");
-          // Hide test mode banner + reset body class (กัน layout offset ค้าง)
+          // Hide test mode + bypass-order banners + reset body class (กัน layout offset ค้าง)
           const banner = document.getElementById("testModeBanner");
           if (banner) banner.style.display = "none";
+          const banner2 = document.getElementById("bypassOrderBanner");
+          if (banner2) banner2.style.display = "none";
           document.body.classList.remove("test-mode-on");
+          document.body.classList.remove("bypass-order-on");
           // Clear active state ทุก nav button
           document.querySelectorAll(".mob-nav-btn, .desk-nav-btn").forEach(b => b.classList.remove("active"));
           // ซ่อน admin-only buttons (กันเห็นค้าง)
@@ -8182,14 +8190,24 @@ body { background: var(--bg); color: var(--txt); }
         } catch (_) { _testMode = false; }
         applyTestModeUI();
       }
+      function _recomputeBanners() {
+        const t = !!(_testMode && S.code);
+        const b = !!(_bypassOrder && S.code);
+        const bnT = document.getElementById("testModeBanner");
+        const bnB = document.getElementById("bypassOrderBanner");
+        // bypass-order ขึ้นก่อน (top:0); test mode ลงล่าง (top:36) ถ้า bypass on
+        if (bnB) { bnB.style.display = b ? "block" : "none"; bnB.style.top = "0"; }
+        if (bnT) { bnT.style.display = t ? "block" : "none"; bnT.style.top = (b ? "36px" : "0"); }
+        // body offset: 0 / 36 / 72
+        const both = t && b;
+        document.body.classList.toggle("test-mode-on", t && !both);
+        document.body.classList.toggle("bypass-order-on", b && !both);
+        document.body.classList.toggle("banners-both", both);
+      }
       function applyTestModeUI() {
         const cb = document.getElementById("testMode");
         if (cb) cb.checked = _testMode;
-        const showBanner = !!(_testMode && S.code);
-        const banner = document.getElementById("testModeBanner");
-        if (banner) banner.style.display = showBanner ? "block" : "none";
-        // toggle body class → CSS จะดัน sidebar / header / content ลง
-        document.body.classList.toggle("test-mode-on", showBanner);
+        _recomputeBanners();
         [
           document.getElementById("testModeStatus"),
           document.getElementById("mdTestModeStatus"),
@@ -8237,10 +8255,7 @@ body { background: var(--bg); color: var(--txt); }
         applyBypassOrderUI();
       }
       function applyBypassOrderUI() {
-        const banner = document.getElementById("bypassOrderBanner");
-        const show = !!(_bypassOrder && S.code);
-        if (banner) banner.style.display = show ? "block" : "none";
-        document.body.classList.toggle("bypass-order-on", show);
+        _recomputeBanners();
         const sb1 = document.getElementById("bypassOrderBtn");
         if (sb1) {
           sb1.style.background = _bypassOrder ? "#fee2e2" : "";
