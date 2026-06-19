@@ -6432,6 +6432,23 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:0 0 auto; display:flex; flex-
       let _planCache     = {}; // cache: "branch|date" → plan_sale
       let _planFetchCbs  = {}; // callback queue: "branch|date" → [fn,...] (ป้องกัน fetch ซ้ำ)
 
+      /* Detect touch device — หลายชั้น (iPad Safari report pointer:fine ในบาง mode) */
+      function _detectTouch() {
+        try {
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
+          if (window.matchMedia && window.matchMedia("(hover: none)").matches) return true;
+          if ((navigator.maxTouchPoints || 0) > 1) return true;
+          if ('ontouchstart' in window) return true;
+          // iPad on iOS 13+ identifies as Mac — ตรวจ user agent + touch
+          const ua = navigator.userAgent || "";
+          if (/iPad|iPhone|iPod|Android|Mobile|Tablet/i.test(ua)) return true;
+          if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 0) return true;
+        } catch (_) {}
+        return false;
+      }
+      // ตั้ง body.is-touch ตั้งแต่ load (ก่อน login) เพื่อให้ login screen / banner เลย์เอาต์ถูก
+      document.body.classList.toggle("is-touch", _detectTouch());
+
       /* ════════════════════════════════════════════
          INIT  —  SSO bootstrap (อ่าน session จาก Hub)
       ════════════════════════════════════════════ */
@@ -6835,10 +6852,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:0 0 auto; display:flex; flex-
         document.body.classList.toggle("is-admin", isAdmin);
         document.body.classList.toggle("is-tm", isMgmt);
         // อุปกรณ์สัมผัส (iPad/tablet/มือถือ) → บังคับ "mobile look"
-        try {
-          const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-          document.body.classList.toggle("is-touch", !!isTouch);
-        } catch (_) {}
+        document.body.classList.toggle("is-touch", _detectTouch());
         const mnAdminBtn = document.getElementById("mnAdmin");
         if (mnAdminBtn) mnAdminBtn.style.display = isAdmin ? "flex" : "none";
 
