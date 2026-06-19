@@ -970,9 +970,13 @@
       }
       @media (max-width: 560px) {
         .dd-kpis { grid-template-columns:1fr 1fr; }
-        .dd-bar-head, .dd-bar { grid-template-columns:1fr 96px; }
+        .dd-bar-head, .dd-bar { grid-template-columns:1fr auto; }
         .dd-bar-track { display:none; }
         .dd-hero { flex-direction:column; align-items:center; text-align:center; }
+        /* หัวตาราง: ซ่อนคอลัมน์กลาง (track หาย) — เหลือ 2 คอลัมน์ ชัดเจน */
+        .dd-bar-head { font-size:12.5px; font-weight:800; color:#475569; padding:6px 12px 10px; border-bottom:2px solid var(--bd); margin-bottom:8px; }
+        .dd-bar-head span:nth-child(2) { display:none; }
+        .dd-bar-head span:last-child { text-align:right; min-width:100px; }
       }
 
       /* ─────────────────────────────────────────
