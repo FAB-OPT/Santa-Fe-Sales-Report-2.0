@@ -934,6 +934,157 @@
       body.is-touch .mob-nav.visible .mob-nav-btn.active { color: var(--brand) !important; }
       body.is-touch .mob-nav.visible .mob-nav-ico { font-size: 20px !important; line-height: 1 !important; }
       body.is-touch .mob-nav.visible .mob-nav-lbl { font-size: 11px !important; font-weight: 700 !important; white-space: nowrap !important; }
+
+      /* ═══════════════════════════════════════════════════════
+         MOBILE/iPad CARD VIEW — admin tables, manpower, edit history
+         แปลง <table> → การ์ดเรียงแนวตั้งบน touch device · desktop ไม่แตะ
+      ═══════════════════════════════════════════════════════ */
+      /* Admin tabs row → horizontal scroll (เลิก wrap) */
+      body.is-touch .admin-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+        margin-bottom: 14px !important;
+      }
+      body.is-touch .admin-tabs::-webkit-scrollbar { display: none; }
+      body.is-touch .admin-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-size: 13px !important;
+        padding: 8px 14px !important;
+      }
+      /* ปุ่มรีเฟรชในแถบแท็บ → ขยับลงเป็นแถวใหม่ */
+      body.is-touch .admin-tabs > button.btn-sm:last-child {
+        position: sticky; right: 0;
+        background: var(--bg) !important;
+      }
+
+      /* Tables → cards */
+      body.is-touch .dash-card-wrap,
+      body.is-touch .dash-card-wrap[style*="overflow"] {
+        overflow: visible !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      body.is-touch .adm-tbl,
+      body.is-touch #adminBranchBody, body.is-touch #adminBzmBody,
+      body.is-touch #adminUserBody, body.is-touch #ehBody,
+      body.is-touch #manpowerBody {
+        display: block !important;
+        min-width: 0 !important;
+        width: 100% !important;
+      }
+      body.is-touch .adm-tbl thead,
+      body.is-touch #sAdmin .dash-tbl thead {
+        display: none !important;
+      }
+      body.is-touch .adm-tbl tbody,
+      body.is-touch #sAdmin .dash-tbl tbody {
+        display: block !important;
+        width: 100% !important;
+      }
+      body.is-touch .adm-tbl tr,
+      body.is-touch #sAdmin .dash-tbl tr {
+        display: block !important;
+        background: #fff !important;
+        border: 1px solid var(--bd) !important;
+        border-radius: 14px !important;
+        padding: 12px 14px !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05) !important;
+      }
+      body.is-touch .adm-tbl td,
+      body.is-touch #sAdmin .dash-tbl td {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 7px 0 !important;
+        border: none !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        width: 100% !important;
+        font-size: 13.5px !important;
+      }
+      body.is-touch .adm-tbl td:last-child,
+      body.is-touch #sAdmin .dash-tbl td:last-child {
+        border-bottom: none !important;
+        padding-top: 10px !important;
+        margin-top: 6px;
+        border-top: 1px solid #e2e8f0 !important;
+        justify-content: flex-end !important;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      /* data-label ป้ายฟิลด์ — โผล่เป็นกลุ่มก่อนค่า */
+      body.is-touch .adm-tbl td[data-label]::before,
+      body.is-touch #sAdmin .dash-tbl td[data-label]::before {
+        content: attr(data-label);
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--txt2);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        min-width: 70px;
+        flex-shrink: 0;
+      }
+      /* td ที่ทำเป็น "หัวการ์ด" (data-card-head) → แสดงเต็มแถว ไม่มี label */
+      body.is-touch .adm-tbl td[data-card-head],
+      body.is-touch #sAdmin .dash-tbl td[data-card-head] {
+        display: block !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        padding: 0 0 10px !important;
+        margin-bottom: 4px;
+        border-bottom: 1.5px solid #e2e8f0 !important;
+      }
+      body.is-touch .adm-tbl td[data-card-head]::before,
+      body.is-touch #sAdmin .dash-tbl td[data-card-head]::before {
+        display: none;
+      }
+
+      /* ปุ่มในแถว action — เต็มจอ + ใหญ่ขึ้น */
+      body.is-touch .adm-tbl td:last-child button,
+      body.is-touch #sAdmin .dash-tbl td:last-child button {
+        font-size: 13px !important;
+        padding: 8px 14px !important;
+        min-height: 36px;
+      }
+
+      /* Zone grid — stack 2 columns เป็นแนวตั้งบน touch */
+      body.is-touch #adminZoneGrid {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Edit history filter row — รวม inputs ทุกตัวเต็มจอ */
+      body.is-touch #ehDateFrom, body.is-touch #ehDateTo,
+      body.is-touch #ehSearch {
+        flex: 1 1 100%;
+        min-width: 0 !important;
+      }
+
+      /* Manpower BZM select — ขยายเต็มจอ */
+      body.is-touch #mpBzmSel { min-width: 0 !important; flex: 1; }
+      body.is-touch #mpBzmWrap { width: 100%; }
+
+      /* Manpower period pill — ขยับมาบรรทัดใหม่ + เต็มจอ */
+      body.is-touch .mp-period-pill {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Search/filter row — wrap ลงและขยายเต็มจอ */
+      body.is-touch #adminBranchSearch, body.is-touch #adminBzmSearch,
+      body.is-touch #adminUserSearch, body.is-touch #adminUserRoleFilter {
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+      }
+
       @media (max-width: 560px) {
         .dash3-hero { padding: 14px; }
         .dash3-kpis { gap: 10px; }
@@ -7244,14 +7395,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             : '<span style="color:#16a34a;font-weight:700">●</span>';
           const isAdminPrime = u.code === "601183";
           return `<tr>
-            <td style="font-variant-numeric:tabular-nums;font-weight:700">${escHtml(u.code)}</td>
-            <td>${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
-            <td><span style="font-size:11px;padding:2px 8px;background:${roleCol}22;color:${roleCol};border-radius:999px;font-weight:800">${roleLbl}</span></td>
-            <td>${brandLbl}${crossTag}</td>
-            <td>${status}</td>
+            <td data-label="PIN" style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${escHtml(u.code)}</td>
+            <td data-label="ชื่อ" style="font-weight:600">${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
+            <td data-label="Role"><span style="font-size:11px;padding:2px 8px;background:${roleCol}22;color:${roleCol};border-radius:999px;font-weight:800">${roleLbl}</span></td>
+            <td data-label="Brand">${brandLbl}${crossTag}</td>
+            <td data-label="สถานะ">${status}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick='openAdminUserModal(${JSON.stringify(u).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
-              ${isAdminPrime ? "" : `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px" onclick="adminDeleteUser('${escHtml(u.code)}','${escHtml((u.nick || u.name || "").replace(/'/g, "\\'"))}')">🗑️</button>`}
+              ${isAdminPrime ? "" : `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px" onclick="adminDeleteUser('${escHtml(u.code)}','${escHtml((u.nick || u.name || "").replace(/'/g, "\\'"))}')">🗑️ ลบ</button>`}
             </td>
           </tr>`;
         }).join("");
@@ -7656,9 +7807,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         body.innerHTML = list.map(b => `
           <tr>
-            <td style="font-weight:700;font-variant-numeric:tabular-nums">${escHtml(b.branch_code)}</td>
-            <td>${escHtml(b.branch_name)}</td>
-            <td style="color:var(--txt2)">${escHtml(b.district_manager || "")}</td>
+            <td data-label="รหัส" style="font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand)">${escHtml(b.branch_code)}</td>
+            <td data-label="ชื่อสาขา" style="font-weight:600">${escHtml(b.branch_name)}</td>
+            <td data-label="BZM" style="color:var(--txt2)">${escHtml(b.district_manager || "—")}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick='adminEditBranch(${JSON.stringify(b).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
               <button class="btn btn-sm" onclick="adminDeleteBranch('${escHtml(b.branch_code)}', '${escHtml(b.branch_name).replace(/'/g, "\\'")}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px">🗑️ ลบ</button>
@@ -7800,8 +7951,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         body.innerHTML = list.map(b => `
           <tr>
-            <td style="font-weight:600">${escHtml(b.name)}</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums">${b.count}</td>
+            <td data-label="ชื่อ BZM" style="font-weight:700">${escHtml(b.name)}</td>
+            <td data-label="จำนวนสาขา" style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${b.count}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick="openAdminBzmModal('${escHtml(b.name).replace(/'/g, "\\'")}')">✏️ แก้ไข</button>
               <button class="btn btn-sm" onclick="adminDeleteBzm('${escHtml(b.name).replace(/'/g, "\\'")}')"
@@ -8081,11 +8232,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               ? `<button class="btn-edit-row btn btn-sm" onclick="manpowerOpen('${escHtml(b.branch_code)}')">${has ? "✏️ แก้ไข" : "➕ กรอก"}</button>`
               : "";
             return `<tr style="border-bottom:1px solid #f1f5f9">
-              <td style="padding:12px 14px;font-variant-numeric:tabular-nums;font-weight:700;color:#64748b">${escHtml(b.branch_code)}</td>
-              <td style="padding:12px 14px;font-weight:700">${escHtml(b.branch_name || "-")}</td>
-              <td style="padding:12px 10px;text-align:center;${numStyle(totMgr, '#7c3aed')}">${totMgr}</td>
-              <td style="padding:12px 10px;text-align:center;${numStyle(totKit, '#ea580c')}">${totKit}</td>
-              <td style="padding:12px 10px;text-align:center;${numStyle(totSrv, '#16a34a')}">${totSrv}</td>
+              <td data-label="รหัส" style="padding:12px 14px;font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${escHtml(b.branch_code)}</td>
+              <td data-label="สาขา" style="padding:12px 14px;font-weight:700">${escHtml(b.branch_name || "-")}</td>
+              <td data-label="👔 ผู้จัดการ" style="padding:12px 10px;text-align:center;${numStyle(totMgr, '#7c3aed')}">${totMgr}</td>
+              <td data-label="🍳 ครัว" style="padding:12px 10px;text-align:center;${numStyle(totKit, '#ea580c')}">${totKit}</td>
+              <td data-label="🍽️ บริการ" style="padding:12px 10px;text-align:center;${numStyle(totSrv, '#16a34a')}">${totSrv}</td>
               <td style="padding:8px 14px;text-align:right;white-space:nowrap">
                 <button class="btn btn-sm" onclick="manpowerHistOpen('${escHtml(b.branch_code)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:6px 10px;border-radius:8px;margin-right:4px">📜 ประวัติ</button>
                 ${editBtn}
@@ -8308,14 +8459,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const slotCol = r.submit_time_slot === "สิ้นวัน" ? "#7c3aed" : "#0ea5e9";
           const slotBg  = r.submit_time_slot === "สิ้นวัน" ? "#faf5ff" : "#f0f9ff";
           return `<tr style="border-bottom:1px solid #f1f5f9">
-            <td style="padding:10px 12px;font-weight:700">${fmtSubDate(r.submit_date)}</td>
-            <td style="padding:10px 10px;text-align:center"><span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:${slotBg};color:${slotCol}">${escHtml(r.submit_time_slot || "—")}</span></td>
-            <td style="padding:10px 12px"><span style="color:#64748b;font-variant-numeric:tabular-nums;font-weight:700">${escHtml(r.branch_code || "")}</span> ${escHtml(r.branch_name || "—")}</td>
-            <td style="padding:10px 12px;color:var(--txt2)">${escHtml(r.district_manager || "—")}</td>
-            <td style="padding:10px 12px">${escHtml(r.submitter_name || "—")}</td>
-            <td style="padding:10px 10px;text-align:center"><span style="font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:3px 12px;border-radius:999px">${r.edit_count}</span></td>
-            <td style="padding:10px 12px;color:var(--txt2);font-size:12px">${fmtDate(r.last_edited_at)}</td>
-            <td style="padding:8px 12px;text-align:right"><button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดู</button></td>
+            <td data-label="วันที่" style="padding:10px 12px;font-weight:700">${fmtSubDate(r.submit_date)}</td>
+            <td data-label="รอบ" style="padding:10px 10px;text-align:center"><span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:${slotBg};color:${slotCol}">${escHtml(r.submit_time_slot || "—")}</span></td>
+            <td data-label="สาขา" style="padding:10px 12px"><span style="color:#64748b;font-variant-numeric:tabular-nums;font-weight:700">${escHtml(r.branch_code || "")}</span> ${escHtml(r.branch_name || "—")}</td>
+            <td data-label="BZM" style="padding:10px 12px;color:var(--txt2)">${escHtml(r.district_manager || "—")}</td>
+            <td data-label="ผู้ส่ง" style="padding:10px 12px">${escHtml(r.submitter_name || "—")}</td>
+            <td data-label="แก้ (ครั้ง)" style="padding:10px 10px;text-align:center"><span style="font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:3px 12px;border-radius:999px">${r.edit_count}</span></td>
+            <td data-label="แก้ล่าสุด" style="padding:10px 12px;color:var(--txt2);font-size:12px">${fmtDate(r.last_edited_at)}</td>
+            <td style="padding:8px 12px;text-align:right"><button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดูรายละเอียด</button></td>
           </tr>`;
         }).join("");
       }
