@@ -4479,7 +4479,7 @@ body { background: var(--bg); color: var(--txt); }
 }
 @media (max-width: 900px) {
   .dd-chan-donut-wrap { grid-template-columns: 1fr; gap: 16px; }
-  .dd-chan-donut-canvas { height: 200px; }
+  .dd-chan-donut-canvas { height: 240px; }
   /* Mobile: 2-row layout per channel — name+% on top, amount+bills+avg below */
   .dd-chan-stat {
     grid-template-columns: 1fr auto;
@@ -4637,10 +4637,14 @@ body { background: var(--bg); color: var(--txt); }
 @media (max-width: 560px) {
   .dd-hero-summary { min-width: 0; width: 100%; align-items: center; text-align: center; }
   .dd-hero-pct { font-size: 2.1rem; text-align: center; }
-  .dd-rb-row { grid-template-columns: 70px 1fr; row-gap: 4px; }
-  /* val + growth chip ลงบรรทัดใหม่ ครอบเต็มแถว ชิดซ้ายภายในการ์ด */
-  .dd-rb-val { grid-column: 1 / -1; justify-self: start; white-space: normal; flex-wrap: wrap; gap: 6px; }
-  .dd-rb-growth { margin-left: 0; font-size: 11px; padding: 3px 8px; }
+  /* สรุปยอดขาย — ไม่เอากราฟแท่ง: 1 บรรทัด: ⏰ ช่วง · ฿ยอด ──*/
+  .dd-rounds-bars { gap: 10px; }
+  .dd-rb-row { grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 6px; padding: 10px 12px; background: #fafafa; border: 1px solid var(--bd); border-radius: 10px; align-items: center; }
+  .dd-rb-track { display: none; }
+  .dd-rb-label { font-size: 14px; font-weight: 700; }
+  .dd-rb-val { grid-column: 2; justify-self: end; white-space: nowrap; flex-wrap: wrap; gap: 6px; font-size: 16px; }
+  .dd-rb-val b { font-size: 1em; }
+  .dd-rb-growth { margin-left: 0; font-size: 10.5px; padding: 2px 7px; grid-column: 1 / -1; justify-self: end; }
 }
 
 /* Day-mode hero — สรุปด้านบน · กราฟอยู่ล่าง (เลย์เอาต์แนวตั้ง) */
@@ -9426,16 +9430,20 @@ body { background: var(--bg); color: var(--txt); }
               const { ctx, chartArea: { left, right, top, bottom } } = chart;
               const cx = (left + right) / 2;
               const cy = (top + bottom) / 2;
+              const w = right - left;
+              // scale font ตามขนาดวงกลม (มือถือเล็ก → ใหญ่สัมพันธ์กับวง)
+              const valSize = Math.max(20, Math.min(34, Math.round(w * 0.14)));
+              const lblSize = Math.max(10, Math.round(valSize * 0.5));
               ctx.save();
-              // ยอดรวมเด่นกลาง
               ctx.textAlign = "center"; ctx.textBaseline = "middle";
-              ctx.fillStyle = "#0f172a";
-              ctx.font = "800 22px Sarabun, sans-serif";
-              ctx.fillText("฿" + fmt(Math.round(total)), cx, cy - 8);
-              // ป้ายย่อยใต้ยอด
+              // ยอดรวมเด่นกลาง — ใช้สีแบรนด์ส้ม
+              ctx.fillStyle = "#f26c1c";
+              ctx.font = `800 ${valSize}px Sarabun, sans-serif`;
+              ctx.fillText("฿" + fmt(Math.round(total)), cx, cy - lblSize * 0.6);
+              // ป้าย "ยอดขายจริง" ใต้ยอด
               ctx.fillStyle = "#64748b";
-              ctx.font = "600 11px Sarabun, sans-serif";
-              ctx.fillText("ยอดรวม", cx, cy + 14);
+              ctx.font = `700 ${lblSize}px Sarabun, sans-serif`;
+              ctx.fillText("ยอดขายจริง", cx, cy + valSize * 0.55);
               ctx.restore();
             }
           }]
