@@ -3338,8 +3338,8 @@ body { background: var(--bg); color: var(--txt); }
   .hdr { box-shadow: none !important; border-bottom: 1px solid var(--bd) !important; }
 
   /* Test mode banner — เพิ่ม padding-top body */
-  body.test-mode-on, body.bypass-order-on, body.banners-both { padding-top: 36px; }
-  body.test-mode-on .hdr, body.bypass-order-on .hdr, body.banners-both .hdr { top: 36px; }
+  body.test-mode-on, body.bypass-order-on, body.banners-both { padding-top: var(--banner-h, 36px); }
+  body.test-mode-on .hdr, body.bypass-order-on .hdr, body.banners-both .hdr { top: var(--banner-h, 36px); }
   .hdr-logout-btn {
     background: transparent !important; color: var(--brand) !important;
     font-size: 14px !important; font-weight: 600 !important;
@@ -3613,9 +3613,9 @@ body { background: var(--bg); color: var(--txt); }
   #sAdmin .admin-tabs { display: none !important; }
 
   /* เมื่อ test mode ON → ดัน sidebar + content ลงให้พ้น banner (~36px) */
-  body.test-mode-on .desk-sidebar, body.bypass-order-on .desk-sidebar, body.banners-both .desk-sidebar { top: 36px !important; }
-  body.test-mode-on .hdr,           body.bypass-order-on .hdr,           body.banners-both .hdr           { top: 36px !important; }
-  body.test-mode-on .screen.active, body.bypass-order-on .screen.active, body.banners-both .screen.active { padding-top: 36px; }
+  body.test-mode-on .desk-sidebar, body.bypass-order-on .desk-sidebar, body.banners-both .desk-sidebar { top: var(--banner-h, 36px) !important; }
+  body.test-mode-on .hdr,           body.bypass-order-on .hdr,           body.banners-both .hdr           { top: var(--banner-h, 36px) !important; }
+  body.test-mode-on .screen.active, body.bypass-order-on .screen.active, body.banners-both .screen.active { padding-top: var(--banner-h, 36px); }
 
   /* ─ Admin tabs — เป็นหัวข้อหลักของหน้า ─ */
   .admin-tab {
@@ -4602,6 +4602,9 @@ body { background: var(--bg); color: var(--txt); }
   .dd-hero-summary { min-width: 0; width: 100%; align-items: center; text-align: center; }
   .dd-hero-pct { font-size: 2.1rem; text-align: center; }
   .dd-rb-row { grid-template-columns: 70px 1fr; row-gap: 4px; }
+  /* val + growth chip ลงบรรทัดใหม่ ครอบเต็มแถว ชิดซ้ายภายในการ์ด */
+  .dd-rb-val { grid-column: 1 / -1; justify-self: start; white-space: normal; flex-wrap: wrap; gap: 6px; }
+  .dd-rb-growth { margin-left: 0; font-size: 11px; padding: 3px 8px; }
 }
 
 /* Day-mode hero — สรุปด้านบน · กราฟอยู่ล่าง (เลย์เอาต์แนวตั้ง) */
@@ -4686,10 +4689,10 @@ body { background: var(--bg); color: var(--txt); }
      SHARED HEADER (hidden until logged in)
 ════════════════════════════════════════ -->
     <!-- Test mode global banner (เห็นเมื่อเปิด test mode ใน DB) -->
-    <div id="bypassOrderBanner" style="display:none;background:linear-gradient(90deg,#fee2e2,#fecaca);color:#991b1b;text-align:center;padding:8px 12px;font-size:13px;font-weight:700;border-bottom:1px solid #fca5a5;position:fixed;top:0;left:0;right:0;z-index:9998;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4">
+    <div id="bypassOrderBanner" style="display:none;background:linear-gradient(90deg,#fee2e2,#fecaca);color:#991b1b;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fca5a5;position:fixed;top:0;left:0;right:0;z-index:9998;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
       🚫 ข้ามกฎลำดับ : ระบบจะไม่ตรวจลำดับการส่งยอด
     </div>
-    <div id="testModeBanner" style="display:none;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:8px 12px;font-size:13px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4">
+    <div id="testModeBanner" style="display:none;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
       🧪 โหมดทดสอบ — ระบบจะไม่บันทึกข้อมูลจริง
     </div>
 
@@ -5157,7 +5160,7 @@ body { background: var(--bg); color: var(--txt); }
         <!-- ═══════════════ 4 ช่วงเวลา (แสดงทีละอันตามแท็บ): วัน / สัปดาห์ / เดือน / ปี ═══════════════ -->
         <section class="dash3-section" id="secDayWrap">
           <div class="dash2-cardhdr dsum-hdr" style="margin-bottom:12px">
-            <div><h3 style="margin:0">📅 รายวัน</h3><div class="dash2-cardsub" id="secDaySub" style="display:none"></div></div>
+            <div><h3 style="margin:0">📅 รายวัน</h3><div class="dash2-cardsub" id="secDaySub"></div></div>
             <div class="dash3-nav">
               <button class="dash3-nav-btn" id="secDayPrev" onclick="dashSecNav('day',-1)" title="วันก่อนหน้า">◀</button>
               <input type="date" class="dash3-pick" id="secDayPick" onchange="dashSecPick('day',this.value)" title="เลือกวันจากปฏิทิน">
@@ -8180,7 +8183,6 @@ body { background: var(--bg); color: var(--txt); }
         const bnT = document.getElementById("testModeBanner");
         const bnB = document.getElementById("bypassOrderBanner");
         const both = t && b;
-        // ทั้งคู่เปิด → แบ่งซ้าย-ขวา (ครึ่ง-ครึ่ง, top:0); อันเดียว → เต็มแถว top:0
         if (bnB) {
           bnB.style.display = b ? "block" : "none";
           bnB.style.top = "0";
@@ -8193,10 +8195,16 @@ body { background: var(--bg); color: var(--txt); }
           bnT.style.left = both ? "50%" : "0";
           bnT.style.right = "0";
         }
-        // body offset: 0 / 36 (ทั้งกรณีเดี่ยวและกรณีคู่ — แบ่งซ้ายขวาก็สูง 36)
         document.body.classList.toggle("test-mode-on", t && !both);
         document.body.classList.toggle("bypass-order-on", b && !both);
         document.body.classList.toggle("banners-both", both);
+        // วัดความสูง banner จริง (อาจ wrap 2 บรรทัดบนมือถือ) → set CSS var
+        requestAnimationFrame(() => {
+          let h = 0;
+          if (b && bnB) h = Math.max(h, bnB.offsetHeight);
+          if (t && bnT) h = Math.max(h, bnT.offsetHeight);
+          document.documentElement.style.setProperty("--banner-h", h ? h + "px" : "0px");
+        });
       }
       function applyTestModeUI() {
         const cb = document.getElementById("testMode");
