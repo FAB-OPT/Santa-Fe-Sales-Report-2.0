@@ -6603,8 +6603,9 @@ body { background: var(--bg); color: var(--txt); }
           el.style.display = showMp ? "flex" : "none";
         });
 
-        // Refresh test mode banner (อาจถูก toggle จาก admin อื่นระหว่าง user offline)
+        // Refresh test mode + bypass-order banners (อาจถูก toggle จาก admin อื่นระหว่าง user offline)
         loadTestModeFromDB();
+        loadBypassOrderFromDB();
         // โหลด branches ของจริงก่อนเปิดหน้าจอ — กัน dashboard fetch ก่อน BRANCH_DM_MAP พร้อม
         await loadBranchesFromSupabase();
 
