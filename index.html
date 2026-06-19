@@ -5982,6 +5982,15 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">🗂️</span>
           <span class="mob-nav-lbl">ประวัติ</span>
         </button>
+        <!-- TM (admin/vp/bzm) menu -->
+        <button class="mob-nav-btn tm-nav" id="mnManpower" onclick="showManpower()" style="display:none">
+          <span class="mob-nav-ico">👥</span>
+          <span class="mob-nav-lbl">Manpower</span>
+        </button>
+        <button class="mob-nav-btn tm-nav" id="mnEditHist" onclick="showEditHistory()" style="display:none">
+          <span class="mob-nav-ico">📝</span>
+          <span class="mob-nav-lbl">ประวัติแก้ไข</span>
+        </button>
         <!-- Admin sub-tabs -->
         <button class="mob-nav-btn admin-only-nav" id="mnAdminBranches" onclick="showAdmin('branches')" style="display:none">
           <span class="mob-nav-ico">🏢</span>
@@ -5995,9 +6004,21 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">🗺️</span>
           <span class="mob-nav-lbl">โซน</span>
         </button>
+        <button class="mob-nav-btn admin-only-nav" id="mnAdminUsers" onclick="showAdmin('users')" style="display:none">
+          <span class="mob-nav-ico">🔐</span>
+          <span class="mob-nav-lbl">ผู้ใช้</span>
+        </button>
         <button class="mob-nav-btn admin-only-nav" id="mnAdminImport" onclick="showAdmin('import')" style="display:none">
           <span class="mob-nav-ico">📥</span>
           <span class="mob-nav-lbl">นำเข้า</span>
+        </button>
+        <button class="mob-nav-btn admin-only-nav" id="mnTestMode" onclick="toggleTestModeAdmin()" style="display:none">
+          <span class="mob-nav-ico">🧪</span>
+          <span class="mob-nav-lbl">ทดสอบ</span>
+        </button>
+        <button class="mob-nav-btn admin-only-nav" id="mnBypassOrder" onclick="toggleBypassOrderAdmin()" style="display:none">
+          <span class="mob-nav-ico">🚫</span>
+          <span class="mob-nav-lbl">ข้ามกฎ</span>
         </button>
       </div>
     </nav>
