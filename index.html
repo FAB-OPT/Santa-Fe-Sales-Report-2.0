@@ -4740,18 +4740,18 @@ body { background: var(--bg); color: var(--txt); }
 .dd-donut-table-wrap .dd-table { margin-top: 0; }
 .dd-table th.dd-ch-pct, .dd-table td.dd-ch-pct { text-align:right; font-weight:800; }
 /* ตารางช่องทาง — กรอบหัวเข้ม + แถบสีตามช่องทาง */
-.dd-table-channels { border:1px solid #000 !important; border-radius:10px; overflow:hidden; }
+.dd-table-channels { border:2px solid #000 !important; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.08); }
 .dd-table-channels thead tr { background:#000 !important; }
 .dd-table-channels thead th {
   background:#000 !important; color:#fff !important; font-weight:800 !important; font-size:12px !important;
-  padding:10px 8px !important; border-bottom:none !important;
+  padding:10px 8px !important; border-bottom:2px solid #000 !important;
   text-transform:none !important; letter-spacing:.02em !important;
 }
-.dd-table-channels tbody tr { border-left:5px solid var(--c, transparent); transition:background .15s; }
-.dd-table-channels tbody tr:hover { background:#fafbfc; }
-.dd-table-channels tbody td { padding:10px 8px; border-bottom:1px solid #f1f5f9; }
-.dd-table-channels tbody tr:last-child td { border-bottom:none; }
-.dd-table-channels tbody td:first-child { padding-left:12px; }
+.dd-table-channels tbody tr { border-left:6px solid var(--c, transparent); transition:background .15s; background:#fff; }
+.dd-table-channels tbody tr:hover { filter:brightness(.97); }
+.dd-table-channels tbody td { padding:10px 8px !important; border-bottom:1px solid #e2e8f0 !important; color:var(--c, var(--txt)) !important; font-weight:700 !important; }
+.dd-table-channels tbody tr:last-child td { border-bottom:none !important; }
+.dd-table-channels tbody td:first-child { padding-left:12px !important; }
 .dd-table-channels .dd-ch b { font-weight:800; }
 
 @media (max-width: 640px) {
