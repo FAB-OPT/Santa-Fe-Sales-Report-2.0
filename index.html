@@ -5199,12 +5199,13 @@ body { background: var(--bg); color: var(--txt); }
           <button class="btn btn-sm btn-outline" onclick="showForm()">← ส่งยอด</button>
           <button class="btn btn-sm btn-brand" onclick="loadHistory()">🔄 รีเฟรช</button>
         </div>
-        <!-- Date range — จาก / ถึง ตรงๆ -->
+        <!-- Date range — จาก / ถึง (จำกัด 30 วันย้อนหลัง) -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">📅 จาก</label>
           <input type="date" id="histDateFrom" onchange="loadHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">ถึง</label>
           <input type="date" id="histDateTo" onchange="loadHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
+          <span style="font-size:11px;color:var(--txt2);margin-left:auto">เลือกได้สูงสุด 30 วันย้อนหลัง</span>
         </div>
 
         <!-- Desktop: table -->
@@ -11593,15 +11594,16 @@ body { background: var(--bg); color: var(--txt); }
         populateBranchFilter("histBranchFilter");
         const queryCodes = getQueryBranchCodes("histBranchFilter"); // array | null
 
-        // Init date inputs ถ้ายังว่าง: default = 30 วันล่าสุด → วันนี้
+        // Init date inputs ถ้ายังว่าง + บังคับช่วง min/max = 30 วันย้อนหลัง → วันนี้
         const fromEl = document.getElementById("histDateFrom");
         const toEl   = document.getElementById("histDateTo");
         const _fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-        if (fromEl && !fromEl.value) {
-          const d = new Date(); d.setDate(d.getDate() - 29);
-          fromEl.value = _fmt(d);
-        }
-        if (toEl && !toEl.value) toEl.value = todayStr();
+        const today = todayStr();
+        const minDate = (function(){ const d = new Date(); d.setDate(d.getDate() - 29); return _fmt(d); })();
+        if (fromEl) { fromEl.min = minDate; fromEl.max = today; if (!fromEl.value || fromEl.value < minDate) fromEl.value = minDate; }
+        if (toEl)   { toEl.min   = minDate; toEl.max   = today; if (!toEl.value   || toEl.value   > today)   toEl.value   = today; }
+        // กัน from > to
+        if (fromEl.value > toEl.value) { const t = fromEl.value; fromEl.value = toEl.value; toEl.value = t; }
         const since = fromEl.value;
         const until = toEl.value;
         const titleEl = document.getElementById("histTitle");
