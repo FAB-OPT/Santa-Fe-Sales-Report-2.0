@@ -2287,6 +2287,12 @@
         justify-content: center;
         padding: 16px;
       }
+      /* เมื่อมี banner ด้านบน (โหมดทดสอบ/ข้ามกฎ) → ดัน modal ลงให้พ้น banner */
+      body.test-mode-on .modal-bg,
+      body.bypass-order-on .modal-bg,
+      body.banners-both .modal-bg {
+        padding-top: calc(16px + var(--banner-h, 36px));
+      }
 
       .modal-bg.open {
         display: flex;
