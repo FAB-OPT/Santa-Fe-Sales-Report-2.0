@@ -2138,6 +2138,20 @@
         text-align: center;
         padding: 24px 0 8px;
       }
+      .alert-ico.wave {
+        display: inline-block;
+        width: 100%;
+        animation: alertWave 1.6s ease-in-out infinite;
+        transform-origin: 70% 80%;
+      }
+      @keyframes alertWave {
+        0%, 60%, 100% { transform: rotate(0deg); }
+        10% { transform: rotate(14deg); }
+        20% { transform: rotate(-8deg); }
+        30% { transform: rotate(14deg); }
+        40% { transform: rotate(-4deg); }
+        50% { transform: rotate(10deg); }
+      }
 
       .alert-title {
         font-size: 20px;
@@ -6292,7 +6306,11 @@ body { background: var(--bg); color: var(--txt); }
         if (!newS) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'role ในระบบไม่ถูกต้อง'); return; }
         S = newS;
         localStorage.setItem(LS_CODE, u.code);
-        showAlert('👋', 'ยินดีต้อนรับ!', u.nick || u.name || u.code, enterApp);
+        const isBranch = (u.role === "branch" || u.role === "franchise");
+        const msg = isBranch
+          ? `${u.branch_code || u.code} ${u.branch_name || u.name || ""}`.trim()
+          : (u.nick || u.name || u.code);
+        showAlert('👋', 'ยินดีต้อนรับ!', msg, enterApp);
       }
 
       function _doLoginFallback(code) {
@@ -6305,7 +6323,7 @@ body { background: var(--bg); color: var(--txt); }
         if (!info) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'ไม่พบรหัสสาขา ' + code); return; }
         S = { code: code, branch: info.branch, dm: info.dm, role: "branch" };
         localStorage.setItem(LS_CODE, code);
-        showAlert('👋', 'ยินดีต้อนรับ!', info.branch, enterApp);
+        showAlert('👋', 'ยินดีต้อนรับ!', `${code} ${info.branch}`, enterApp);
       }
 
       // กลับเมนูหลัก Hub โดย "ไม่" logout (session ค้างไว้ → กลับมาไม่ต้อง login ใหม่)
@@ -11712,7 +11730,9 @@ body { background: var(--bg); color: var(--txt); }
       let _alertCancelCb = null;
       function showAlert(ico, title, msg, okCb, opts) {
         opts = opts || {};
-        document.getElementById("alertIco").textContent = ico;
+        const icoEl = document.getElementById("alertIco");
+        icoEl.textContent = ico;
+        icoEl.classList.toggle("wave", ico === "👋");
         document.getElementById("alertTitle").textContent = title;
         const msgEl = document.getElementById("alertMsg");
         if (opts.html) msgEl.innerHTML = msg; else msgEl.textContent = msg;
