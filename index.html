@@ -7925,6 +7925,8 @@ body { background: var(--bg); color: var(--txt); }
             apiCall({ mode: "deleteManpower", branch_code: branchCode, year: year, month: month }, function(res) {
               if (!res || !res.ok) { showAlert("❌", "ลบไม่สำเร็จ", res && res.error || "—"); return; }
               showAlert("✅", "ลบสำเร็จ", `ลบข้อมูล ${bName} · ${period} แล้ว`);
+              // mirror delete → Google Sheets
+              pushToSheet("delete_manpower", { branch_code: branchCode, year: year, month: month, deleted_by: (S.code || "") });
               // รีโหลดประวัติ + ตารางหลัก
               manpowerHistOpen(branchCode);
               renderManpowerList();
@@ -8158,6 +8160,13 @@ body { background: var(--bg); color: var(--txt); }
           renderManpowerList();
           const bInfo = BRANCH_DM_MAP[payload.branch_code] || {};
           const m = payload.month, y = payload.year;
+          // mirror → Google Sheets
+          pushToSheet("save_manpower", {
+            ...payload,
+            branch_name: bInfo.branch || "",
+            district_manager: bInfo.dm || "",
+            saved_by: (S.code || "") + " · " + (S.branch || S.dm || "")
+          });
           showAlert("✅", "บันทึก Manpower สำเร็จ", `${bInfo.branch || payload.branch_code} · ${_MP_MONTHS_TH[m-1]} ${y+543}`);
         });
       }
