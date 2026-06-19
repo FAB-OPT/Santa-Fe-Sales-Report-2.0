@@ -1132,6 +1132,86 @@
         background: #fff; border: 1px dashed var(--bd); border-radius: 14px;
       }
 
+      /* Manpower accordion mode */
+      .mp-card.expanded .mp-card-stats { display: none; }
+      .mp-card-toggle {
+        margin-left: auto;
+        background: none; border: none; padding: 6px 10px;
+        font-size: 14px; color: var(--txt2); cursor: pointer;
+        transition: transform .18s ease;
+      }
+      .mp-card.expanded .mp-card-toggle { transform: rotate(90deg); color: var(--brand); }
+      .mp-card-hd { cursor: pointer; }
+      .mp-card-form { display: none; padding: 12px 14px 4px; background: #fafbfc; border-top: 1px solid #e2e8f0; }
+      .mp-card.expanded .mp-card-form { display: block; }
+
+      /* Mini-modal-like sections inside accordion */
+      .mpa-sec {
+        background: #fff; border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px 12px; margin-bottom: 10px;
+      }
+      .mpa-sec-hdr {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .mpa-sec-title { font-size: 13px; font-weight: 800; }
+      .mpa-sec-tot { font-size: 12px; color: var(--txt2); font-weight: 700; }
+      .mpa-sec-tot b { color: var(--brand); font-size: 14px; }
+      .mpa-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+      .mpa-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+      .mpa-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; }
+      .mpa-grid-staff { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+      .mpa-staff-col {
+        background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 6px 6px 8px;
+      }
+      .mpa-staff-lbl { font-size: 10px; font-weight: 800; color: var(--txt2); text-align: center; margin-bottom: 4px; letter-spacing: .03em; }
+      .mpa-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+      .mpa-pair > div { display: flex; flex-direction: column; align-items: center; }
+      .mpa-pair span { font-size: 9.5px; font-weight: 700; color: var(--txt2); }
+      .mpa-pair input {
+        width: 100%; min-width: 0; text-align: center;
+        padding: 6px 4px; border: 1px solid var(--bd); border-radius: 6px;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        background: #fff; color: var(--txt); outline: none;
+      }
+      .mpa-cell { display: flex; flex-direction: column; gap: 3px; }
+      .mpa-cell label { font-size: 10.5px; font-weight: 700; color: var(--txt2); }
+      .mpa-cell input {
+        width: 100%; min-width: 0; text-align: center;
+        padding: 7px 6px; border: 1px solid var(--bd); border-radius: 7px;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        background: #fff; color: var(--txt); outline: none;
+      }
+      .mpa-chk { font-size: 11.5px; font-weight: 700; margin-top: 6px; padding: 5px 8px; border-radius: 6px; }
+      .mpa-chk.ok { background: #dcfce7; color: #166534; }
+      .mpa-chk.bad { background: #fee2e2; color: #991b1b; }
+      .mpa-warn { display: none; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 8px 10px; border-radius: 7px; font-size: 12.5px; margin-top: 4px; }
+
+      /* Sticky bottom bulk-save bar */
+      body.is-touch .mp-bulk-bar {
+        position: sticky;
+        bottom: calc(env(safe-area-inset-bottom) + 70px);
+        background: rgba(255,255,255,.96);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-top: 1px solid var(--bd);
+        margin: 14px -14px 0;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+        z-index: 50;
+        display: none;
+      }
+      body.is-touch .mp-bulk-bar.active { display: flex; gap: 10px; align-items: center; }
+      .mp-bulk-bar .mp-bulk-info { flex: 1; font-size: 13px; font-weight: 700; color: var(--txt); }
+      .mp-bulk-bar .mp-bulk-info b { color: var(--brand); }
+      .mp-bulk-bar button {
+        min-height: 42px; padding: 10px 18px;
+        font-size: 14px; font-weight: 800;
+      }
+
       /* Edit History — Desktop vs Mobile swap */
       .eh-mob-wrap { display: none; }
       body.is-touch .eh-desk-wrap { display: none !important; }
@@ -6028,6 +6108,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>
         <!-- Mobile/touch cards -->
         <div id="manpowerCards" class="mp-mob-wrap"></div>
+
+        <!-- Bulk save (touch only) -->
+        <div id="mpBulkBar" class="mp-bulk-bar">
+          <span class="mp-bulk-info"><b id="mpBulkCount">0</b> สาขามีการแก้ไข</span>
+          <button class="btn btn-outline" onclick="_mpCollapseAll()" style="padding:8px 14px">ปิดทั้งหมด</button>
+          <button class="btn btn-brand" onclick="_mpSaveAllDirty()">💾 บันทึกทุกสาขา</button>
+        </div>
       </div>
     </div>
 
@@ -8395,48 +8482,291 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </tr>`;
           }).join("");
 
-          // ── Mobile/touch cards ──
+          // ── Mobile/touch cards (accordion mode) ──
           if (cards) {
-            cards.innerHTML = inZone.map(b => {
-              const r = _mpData[b.branch_code];
-              const totMgr = r ? (r.rgm + r.sam + r.am + r.ss) : 0;
-              const totKit = r ? (r.k_basic_pt + r.k_basic_ft + r.k_silver_pt + r.k_silver_ft + r.k_gold_pt + r.k_gold_ft) : 0;
-              const totSrv = r ? (r.s_basic_pt + r.s_basic_ft + r.s_silver_pt + r.s_silver_ft + r.s_gold_pt + r.s_gold_ft) : 0;
-              const has = !!r;
-              const nCls = n => "num" + (n > 0 ? "" : " zero");
-              const editBtn = canEdit
-                ? `<button class="btn btn-brand" onclick="manpowerOpen('${escHtml(b.branch_code)}')">${has ? "✏️ แก้ไข" : "➕ กรอก"}</button>`
-                : "";
-              return `<div class="mp-card">
-                <div class="mp-card-hd">
-                  <span class="mp-card-code">${escHtml(b.branch_code)}</span>
-                  <span class="mp-card-name">${escHtml(b.branch_name || "-")}</span>
-                </div>
-                <div class="mp-card-stats">
-                  <div class="mp-card-stat">
-                    <span class="ico">👔</span>
-                    <span class="${nCls(totMgr)}" style="color:${totMgr>0?'#7c3aed':'#cbd5e1'}">${totMgr}</span>
-                    <span class="lbl">ผู้จัดการ</span>
-                  </div>
-                  <div class="mp-card-stat">
-                    <span class="ico">🍳</span>
-                    <span class="${nCls(totKit)}" style="color:${totKit>0?'#ea580c':'#cbd5e1'}">${totKit}</span>
-                    <span class="lbl">ครัว</span>
-                  </div>
-                  <div class="mp-card-stat">
-                    <span class="ico">🍽️</span>
-                    <span class="${nCls(totSrv)}" style="color:${totSrv>0?'#16a34a':'#cbd5e1'}">${totSrv}</span>
-                    <span class="lbl">บริการ</span>
-                  </div>
-                </div>
-                <div class="mp-card-actions">
-                  <button class="btn btn-outline" onclick="manpowerHistOpen('${escHtml(b.branch_code)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe">📜 ประวัติ</button>
-                  ${editBtn}
-                </div>
-              </div>`;
-            }).join("");
+            _mpDirty = {}; // reset dirty tracking on render
+            cards.innerHTML = inZone.map(b => _mpRenderAccordionCard(b, canEdit)).join("");
+            _mpUpdateBulkBar();
           }
         });
+      }
+
+      /* ─────────────────────────────────────────
+         MANPOWER — Accordion mode (touch only)
+         แต่ละสาขาขยายเป็นฟอร์มเต็มในที่เดียว, บันทึกได้พร้อมกัน
+      ───────────────────────────────────────── */
+      var _mpDirty = {};  // { branch_code: true } เมื่อ user แตะค่าใดค่าหนึ่ง
+
+      function _mpRenderAccordionCard(b, canEdit) {
+        const code = b.branch_code;
+        const r = _mpData[code] || {};
+        const totMgr = (r.rgm||0) + (r.sam||0) + (r.am||0) + (r.ss||0);
+        const totKit = (r.k_basic_pt||0)+(r.k_basic_ft||0)+(r.k_silver_pt||0)+(r.k_silver_ft||0)+(r.k_gold_pt||0)+(r.k_gold_ft||0);
+        const totSrv = (r.s_basic_pt||0)+(r.s_basic_ft||0)+(r.s_silver_pt||0)+(r.s_silver_ft||0)+(r.s_gold_pt||0)+(r.s_gold_ft||0);
+        const v = (k) => (r[k] != null ? r[k] : 0);
+        const inp = (field, val) => `<input id="mpa_${code}_${field}" type="number" min="0" value="${val}" oninput="_mpaRecalc('${code}')" ${canEdit?'':'disabled'}>`;
+        return `<div class="mp-card" id="mpcard_${code}">
+          <div class="mp-card-hd" onclick="_mpToggleAcc('${code}')">
+            <span class="mp-card-code">${escHtml(code)}</span>
+            <span class="mp-card-name">${escHtml(b.branch_name || "-")}</span>
+            <button class="mp-card-toggle" type="button" aria-label="ขยาย">▶</button>
+          </div>
+          <div class="mp-card-stats">
+            <div class="mp-card-stat"><span class="ico">👔</span><span class="num" id="mpsum_${code}_mgr" style="color:${totMgr>0?'#7c3aed':'#cbd5e1'}">${totMgr}</span><span class="lbl">ผู้จัดการ</span></div>
+            <div class="mp-card-stat"><span class="ico">🍳</span><span class="num" id="mpsum_${code}_kit" style="color:${totKit>0?'#ea580c':'#cbd5e1'}">${totKit}</span><span class="lbl">ครัว</span></div>
+            <div class="mp-card-stat"><span class="ico">🍽️</span><span class="num" id="mpsum_${code}_srv" style="color:${totSrv>0?'#16a34a':'#cbd5e1'}">${totSrv}</span><span class="lbl">บริการ</span></div>
+          </div>
+          ${canEdit ? `<div class="mp-card-form">
+            <div class="mpa-sec">
+              <div class="mpa-sec-hdr"><div class="mpa-sec-title">👔 ทีมผู้จัดการสาขา</div><div class="mpa-sec-tot">รวม: <b id="mpa_${code}_totMgr">${totMgr}</b></div></div>
+              <div class="mpa-grid-4">
+                <div class="mpa-cell"><label>RGM</label>${inp('rgm', v('rgm'))}</div>
+                <div class="mpa-cell"><label>SAM</label>${inp('sam', v('sam'))}</div>
+                <div class="mpa-cell"><label>AM</label>${inp('am', v('am'))}</div>
+                <div class="mpa-cell"><label>SS</label>${inp('ss', v('ss'))}</div>
+              </div>
+            </div>
+            <div class="mpa-sec">
+              <div class="mpa-sec-hdr"><div class="mpa-sec-title">🍳 พนักงานครัว</div><div class="mpa-sec-tot">รวม: <b id="mpa_${code}_totKit">${totKit}</b></div></div>
+              <div class="mpa-grid-staff">
+                ${_mpaStaffCol(code, 'k', 'basic', 'Basic', v)}
+                ${_mpaStaffCol(code, 'k', 'silver', 'Silver', v)}
+                ${_mpaStaffCol(code, 'k', 'gold', 'Gold', v)}
+              </div>
+            </div>
+            <div class="mpa-sec">
+              <div class="mpa-sec-hdr"><div class="mpa-sec-title">🍽️ พนักงานบริการ</div><div class="mpa-sec-tot">รวม: <b id="mpa_${code}_totSrv">${totSrv}</b></div></div>
+              <div class="mpa-grid-staff">
+                ${_mpaStaffCol(code, 's', 'basic', 'Basic', v)}
+                ${_mpaStaffCol(code, 's', 'silver', 'Silver', v)}
+                ${_mpaStaffCol(code, 's', 'gold', 'Gold', v)}
+              </div>
+            </div>
+            <div class="mpa-sec">
+              <div class="mpa-sec-hdr"><div class="mpa-sec-title">⏱️ รายละเอียด Part-time</div><div class="mpa-sec-tot">รวม: <b id="mpa_${code}_totPt">0</b></div></div>
+              <div class="mpa-grid-3">
+                <div class="mpa-cell"><label>PT 8 ชม.</label>${inp('pt_8h', v('pt_8h'))}</div>
+                <div class="mpa-cell"><label>PT ทวิภาคี 40 ชม.</label>${inp('pt_dual40', v('pt_dual40'))}</div>
+                <div class="mpa-cell"><label>PT 4-5 ชม.</label>${inp('pt_45h', v('pt_45h'))}</div>
+              </div>
+              <div id="mpa_${code}_ptMatch" class="mpa-chk"></div>
+            </div>
+            <div class="mpa-sec">
+              <div class="mpa-sec-hdr"><div class="mpa-sec-title">🎓 ทวิภาคี</div><div class="mpa-sec-tot">รวม: <b id="mpa_${code}_totDual">0</b></div></div>
+              <div class="mpa-grid-2">
+                <div class="mpa-cell"><label>ทวิภาคี FT</label>${inp('dual_ft', v('dual_ft'))}</div>
+                <div class="mpa-cell"><label>ทวิภาคี PT</label>${inp('dual_pt', v('dual_pt'))}</div>
+              </div>
+              <div id="mpa_${code}_dualMatch" class="mpa-chk"></div>
+            </div>
+            <div id="mpa_${code}_warn" class="mpa-warn"></div>
+          </div>` : ""}
+          <div class="mp-card-actions">
+            <button class="btn btn-outline" onclick="event.stopPropagation();manpowerHistOpen('${escHtml(code)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe">📜 ประวัติ</button>
+            ${canEdit ? `<button class="btn btn-brand" onclick="event.stopPropagation();_mpaSaveOne('${escHtml(code)}')">💾 บันทึก</button>` : ""}
+          </div>
+        </div>`;
+      }
+      function _mpaStaffCol(code, kind, tier, lbl, v) {
+        return `<div class="mpa-staff-col">
+          <div class="mpa-staff-lbl">${lbl}</div>
+          <div class="mpa-pair">
+            <div><span>PT</span><input id="mpa_${code}_${kind}_${tier}_pt" type="number" min="0" value="${v(kind+'_'+tier+'_pt')}" oninput="_mpaRecalc('${code}')"></div>
+            <div><span>FT</span><input id="mpa_${code}_${kind}_${tier}_ft" type="number" min="0" value="${v(kind+'_'+tier+'_ft')}" oninput="_mpaRecalc('${code}')"></div>
+          </div>
+        </div>`;
+      }
+
+      function _mpToggleAcc(code) {
+        const el = document.getElementById("mpcard_" + code);
+        if (!el) return;
+        el.classList.toggle("expanded");
+        if (el.classList.contains("expanded")) _mpaRecalc(code);
+      }
+      function _mpCollapseAll() {
+        document.querySelectorAll(".mp-card.expanded").forEach(c => c.classList.remove("expanded"));
+      }
+
+      function _mpaGet(code, field) {
+        const el = document.getElementById(`mpa_${code}_${field}`);
+        return el ? (parseInt(el.value, 10) || 0) : 0;
+      }
+      function _mpaRecalc(code) {
+        _mpDirty[code] = true;
+        const get = (f) => _mpaGet(code, f);
+        const totMgr = get('rgm') + get('sam') + get('am') + get('ss');
+        const kPT = get('k_basic_pt') + get('k_silver_pt') + get('k_gold_pt');
+        const kFT = get('k_basic_ft') + get('k_silver_ft') + get('k_gold_ft');
+        const sPT = get('s_basic_pt') + get('s_silver_pt') + get('s_gold_pt');
+        const sFT = get('s_basic_ft') + get('s_silver_ft') + get('s_gold_ft');
+        const totKit = kPT + kFT, totSrv = sPT + sFT;
+        const pt8 = get('pt_8h'), ptD = get('pt_dual40'), pt45 = get('pt_45h');
+        const ptTot = pt8 + ptD + pt45;
+        const dFT = get('dual_ft'), dPT = get('dual_pt');
+        const setTxt = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+        setTxt(`mpa_${code}_totMgr`, totMgr);
+        setTxt(`mpa_${code}_totKit`, totKit);
+        setTxt(`mpa_${code}_totSrv`, totSrv);
+        setTxt(`mpa_${code}_totPt`, ptTot);
+        setTxt(`mpa_${code}_totDual`, dFT + dPT);
+        // summary stats
+        const sumM = document.getElementById(`mpsum_${code}_mgr`);
+        const sumK = document.getElementById(`mpsum_${code}_kit`);
+        const sumS = document.getElementById(`mpsum_${code}_srv`);
+        if (sumM) { sumM.textContent = totMgr; sumM.style.color = totMgr>0?'#7c3aed':'#cbd5e1'; }
+        if (sumK) { sumK.textContent = totKit; sumK.style.color = totKit>0?'#ea580c':'#cbd5e1'; }
+        if (sumS) { sumS.textContent = totSrv; sumS.style.color = totSrv>0?'#16a34a':'#cbd5e1'; }
+        // PT match
+        const ptRef = kPT + sPT;
+        const ptMatch = document.getElementById(`mpa_${code}_ptMatch`);
+        if (ptMatch) {
+          if (ptTot === ptRef) {
+            ptMatch.className = "mpa-chk ok";
+            ptMatch.textContent = `✓ ผลรวมตรงกับ PT ครัว+บริการ (${ptRef} คน)`;
+          } else {
+            ptMatch.className = "mpa-chk bad";
+            ptMatch.textContent = `❌ ต้องเท่ากับ PT ครัว+บริการ = ${ptRef} คน (ตอนนี้ ${ptTot})`;
+          }
+        }
+        // Dual match
+        const dualMatch = document.getElementById(`mpa_${code}_dualMatch`);
+        if (dualMatch) {
+          if (dPT === ptD) {
+            dualMatch.className = "mpa-chk ok";
+            dualMatch.textContent = `✓ ทวิภาคี PT ถูกต้อง`;
+          } else {
+            dualMatch.className = "mpa-chk bad";
+            dualMatch.textContent = `❌ ทวิภาคี PT ต้องเป็น ${ptD} คน (ตอนนี้ ${dPT})`;
+          }
+        }
+        _mpUpdateBulkBar();
+      }
+
+      function _mpUpdateBulkBar() {
+        const bar = document.getElementById("mpBulkBar");
+        const cnt = document.getElementById("mpBulkCount");
+        if (!bar || !cnt) return;
+        const n = Object.keys(_mpDirty).filter(k => _mpDirty[k]).length;
+        cnt.textContent = n;
+        bar.classList.toggle("active", n > 0);
+      }
+
+      function _mpaCollectPayload(code) {
+        const y = parseInt(document.getElementById("manpowerYear").value, 10);
+        const m = parseInt(document.getElementById("manpowerMonth").value, 10);
+        const get = (f) => _mpaGet(code, f);
+        return {
+          mode: "saveManpower", branch_code: code, year: y, month: m,
+          rgm: get('rgm'), sam: get('sam'), am: get('am'), ss: get('ss'),
+          k_basic_pt: get('k_basic_pt'), k_basic_ft: get('k_basic_ft'),
+          k_silver_pt: get('k_silver_pt'), k_silver_ft: get('k_silver_ft'),
+          k_gold_pt: get('k_gold_pt'), k_gold_ft: get('k_gold_ft'),
+          s_basic_pt: get('s_basic_pt'), s_basic_ft: get('s_basic_ft'),
+          s_silver_pt: get('s_silver_pt'), s_silver_ft: get('s_silver_ft'),
+          s_gold_pt: get('s_gold_pt'), s_gold_ft: get('s_gold_ft'),
+          pt_8h: get('pt_8h'), pt_dual40: get('pt_dual40'), pt_45h: get('pt_45h'),
+          dual_ft: get('dual_ft'), dual_pt: get('dual_pt')
+        };
+      }
+      function _mpaValidatePayload(p) {
+        const totMgr = p.rgm + p.sam + p.am + p.ss;
+        const kPT = p.k_basic_pt + p.k_silver_pt + p.k_gold_pt;
+        const sPT = p.s_basic_pt + p.s_silver_pt + p.s_gold_pt;
+        const totKitSrv = p.k_basic_pt+p.k_basic_ft+p.k_silver_pt+p.k_silver_ft+p.k_gold_pt+p.k_gold_ft
+                        + p.s_basic_pt+p.s_basic_ft+p.s_silver_pt+p.s_silver_ft+p.s_gold_pt+p.s_gold_ft;
+        if (totMgr === 0) return "ยังไม่ได้กรอกทีมผู้จัดการสาขา";
+        if (totKitSrv === 0) return "ยังไม่ได้กรอกพนักงานครัว/บริการ";
+        if (p.dual_pt !== p.pt_dual40) return `ทวิภาคี PT ต้องเป็น ${p.pt_dual40} คน (ตอนนี้ ${p.dual_pt})`;
+        const ptSum = p.pt_8h + p.pt_dual40 + p.pt_45h;
+        const ptRef = kPT + sPT;
+        if (ptSum !== ptRef) return `Part-time: ผลรวมต้องเท่ากับ PT ครัว+บริการ = ${ptRef} คน (ตอนนี้ ${ptSum})`;
+        return null;
+      }
+      function _mpaShowWarn(code, msg) {
+        const w = document.getElementById(`mpa_${code}_warn`);
+        if (!w) return;
+        if (msg) { w.style.display = "block"; w.textContent = "⚠️ " + msg; }
+        else { w.style.display = "none"; w.textContent = ""; }
+      }
+      function _mpaSaveOne(code) {
+        const p = _mpaCollectPayload(code);
+        const err = _mpaValidatePayload(p);
+        if (err) {
+          // expand card to show warning
+          const card = document.getElementById("mpcard_" + code);
+          if (card && !card.classList.contains("expanded")) card.classList.add("expanded");
+          _mpaShowWarn(code, err);
+          return;
+        }
+        _mpaShowWarn(code, "");
+        apiCall(p, function(res) {
+          if (!res || !res.ok) { _mpaShowWarn(code, res && res.error || "บันทึกไม่สำเร็จ"); return; }
+          _mpData[code] = { ...(_mpData[code] || {}), ...p };
+          _mpDirty[code] = false;
+          _mpUpdateBulkBar();
+          const bInfo = BRANCH_DM_MAP[code] || {};
+          pushToSheet("save_manpower", {
+            ...p, branch_name: bInfo.branch || "", district_manager: bInfo.dm || "",
+            saved_by: (S.code || "") + " · " + (S.branch || S.dm || "")
+          });
+          showAlert("✅", "บันทึกสำเร็จ", `${bInfo.branch || code}`);
+        });
+      }
+      function _mpSaveAllDirty() {
+        const codes = Object.keys(_mpDirty).filter(k => _mpDirty[k]);
+        if (!codes.length) return;
+        // validate ทั้งหมดก่อน
+        const errors = [];
+        const payloads = codes.map(c => {
+          const p = _mpaCollectPayload(c);
+          const err = _mpaValidatePayload(p);
+          if (err) errors.push({ code: c, err });
+          return p;
+        });
+        if (errors.length) {
+          errors.forEach(e => {
+            const card = document.getElementById("mpcard_" + e.code);
+            if (card && !card.classList.contains("expanded")) card.classList.add("expanded");
+            _mpaShowWarn(e.code, e.err);
+          });
+          const lines = errors.slice(0, 5).map(e => {
+            const bInfo = BRANCH_DM_MAP[e.code] || {};
+            return `• ${bInfo.branch || e.code}: ${e.err}`;
+          }).join("\n") + (errors.length > 5 ? `\n…และอีก ${errors.length - 5} สาขา` : "");
+          showAlert("⚠️", `กรอกไม่ครบ ${errors.length} สาขา`, lines);
+          return;
+        }
+        const btn = document.querySelector("#mpBulkBar .btn-brand");
+        if (btn) { btn.disabled = true; btn.textContent = `⏳ กำลังบันทึก 0/${codes.length}`; }
+        let done = 0, fail = 0;
+        const next = (i) => {
+          if (i >= codes.length) {
+            if (btn) { btn.disabled = false; btn.textContent = "💾 บันทึกทุกสาขา"; }
+            _mpUpdateBulkBar();
+            if (fail === 0) showAlert("✅", "บันทึกสำเร็จทุกสาขา", `บันทึก ${done} สาขา`);
+            else showAlert("⚠️", "บันทึกบางส่วน", `สำเร็จ ${done} สาขา · ล้มเหลว ${fail} สาขา`);
+            return;
+          }
+          const p = payloads[i];
+          apiCall(p, function(res) {
+            done++;
+            if (!res || !res.ok) {
+              fail++;
+              _mpaShowWarn(p.branch_code, res && res.error || "บันทึกไม่สำเร็จ");
+            } else {
+              _mpData[p.branch_code] = { ...(_mpData[p.branch_code] || {}), ...p };
+              _mpDirty[p.branch_code] = false;
+              const bInfo = BRANCH_DM_MAP[p.branch_code] || {};
+              pushToSheet("save_manpower", {
+                ...p, branch_name: bInfo.branch || "", district_manager: bInfo.dm || "",
+                saved_by: (S.code || "") + " · " + (S.branch || S.dm || "")
+              });
+            }
+            if (btn) btn.textContent = `⏳ กำลังบันทึก ${done}/${codes.length}`;
+            next(i + 1);
+          });
+        };
+        next(0);
       }
 
       function manpowerOpen(branchCode) {
