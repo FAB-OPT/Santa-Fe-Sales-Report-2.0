@@ -6292,7 +6292,7 @@ body { background: var(--bg); color: var(--txt); }
         if (!newS) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'role ในระบบไม่ถูกต้อง'); return; }
         S = newS;
         localStorage.setItem(LS_CODE, u.code);
-        showAlert('👋', 'ยินดีต้อนรับ!', u.nick || u.name || u.code, enterApp);
+        showAlert('👋', 'ยินดีต้อนรับ!', u.name || u.nick || u.code, enterApp);
       }
 
       function _doLoginFallback(code) {
