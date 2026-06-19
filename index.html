@@ -884,6 +884,23 @@
       body.is-touch .dash3-icon-btn { display: none !important; }
       body.is-touch .dash3-branch { min-width: 0; width: 100%; }
       body.is-touch .dd-crumb { display: none !important; }
+      /* iPad/tablet: บังคับ mobile-style chrome (sidebar ออก, bottom nav เข้า, header แสดง) */
+      body.is-touch .desk-sidebar { display: none !important; }
+      body.is-touch #appHdr { display: flex !important; }
+      body.is-touch .screen.active:not(#sLogin) { margin-left: 0 !important; padding-bottom: 80px; }
+      body.is-touch .mob-nav.visible {
+        display: block !important;
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 110;
+        background: var(--surface);
+        border-top: 1.5px solid var(--bd);
+        box-shadow: 0 -2px 12px rgba(0,0,0,.09);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      body.is-touch .mob-nav-inner {
+        display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      body.is-touch .mob-nav-inner::-webkit-scrollbar { display: none; }
       @media (max-width: 560px) {
         .dash3-hero { padding: 14px; }
         .dash3-kpis { gap: 10px; }
