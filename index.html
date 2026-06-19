@@ -4689,7 +4689,7 @@ body { background: var(--bg); color: var(--txt); }
       🚫 ระบบจะไม่ตรวจลำดับการส่งยอด
     </div>
     <div id="testModeBanner" style="display:none;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:8px 16px;font-size:13px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999">
-      🧪 ระบบจะไม่ตรวจสอบลำดับการส่งยอด
+      🧪 โหมดทดสอบ — ระบบจะไม่บันทึกข้อมูลจริง
     </div>
 
 
@@ -8309,8 +8309,8 @@ body { background: var(--bg); color: var(--txt); }
           next ? "🧪" : "🔒",
           `${action}โหมดทดสอบ?`,
           next
-            ? "เมื่อเปิด: ทุกสาขาจะส่งยอดขายได้โดยไม่ตรวจลำดับการส่ง\n(16.00 ต้องมาก่อนสิ้นวัน / สิ้นวันเมื่อวานต้องมาก่อน 16.00 ของวันนี้)\n\nสาขาจะเห็น banner แจ้งเตือนด้านบน"
-            : "เมื่อปิด: ระบบจะกลับมาตรวจลำดับการส่งยอดตามปกติ",
+            ? "เมื่อเปิด: ข้อมูลที่สาขาส่งจะไม่ถูกบันทึกลงฐานข้อมูล\n(หน้าจอจะแสดงว่าส่งสำเร็จ แต่ DB จะไม่ถูกแก้ — ใช้ฝึก/สาธิตเท่านั้น)\n\nสาขาจะเห็น banner เหลืองแจ้งเตือนด้านบน"
+            : "เมื่อปิด: ระบบจะกลับมาบันทึกข้อมูลจริงตามปกติ",
           async function() {
             const ok = await saveTestModeToDB(next);
             if (ok) {
@@ -10948,9 +10948,10 @@ body { background: var(--bg); color: var(--txt); }
           }
 
           // ── BLOCK ตรวจลำดับการส่งยอด ──
-          // ใช้ _testMode หรือ _bypassOrder (global states) — ปิดทั้งคู่ = ตรวจตามปกติ
+          // _testMode ไม่ skip order check แล้ว — มันแค่ไม่บันทึก DB
+          // _bypassOrder = global flag เดียวที่ skip ตรวจลำดับ
           console.log("[submit] testMode:", _testMode, "bypassOrder:", _bypassOrder, "slot:", slot, "date:", date);
-          if (!_testMode && !_bypassOrder) {
+          if (!_bypassOrder) {
             checkSubmissionOrder(date, slot, function(check) {
               console.log("[submit] order check result:", check);
               if (!check.ok) {
@@ -11085,6 +11086,19 @@ body { background: var(--bg); color: var(--txt); }
         if (!_pendingPayload) return;
         const btn = document.getElementById("confirmBtn");
         btn.disabled = true; btn.textContent = "⏳ กำลังส่ง...";
+
+        // โหมดทดสอบ — ไม่ส่งข้อมูลจริง (จำลองว่าส่งสำเร็จ)
+        if (_testMode) {
+          setTimeout(() => {
+            btn.disabled = false; btn.textContent = "ยืนยันส่ง ✓";
+            closeM("mReview");
+            showAlert("🧪", "ทดสอบสำเร็จ (ไม่ได้บันทึก)",
+              `${S.branch}\nวันที่ ${_pendingPayload.submit_date}  รอบ ${_pendingPayload.submit_time_slot}\n\n⚠️ โหมดทดสอบเปิดอยู่ — ข้อมูลไม่ถูกบันทึกลงฐานข้อมูล`);
+            _pendingPayload = null;
+            clearForm();
+          }, 500);
+          return;
+        }
 
         apiCall(_pendingPayload, function (res) {
           btn.disabled = false; btn.textContent = "ยืนยันส่ง ✓";
