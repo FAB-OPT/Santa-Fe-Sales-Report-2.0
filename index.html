@@ -1132,6 +1132,80 @@
         background: #fff; border: 1px dashed var(--bd); border-radius: 14px;
       }
 
+      /* Edit History — Desktop vs Mobile swap */
+      .eh-mob-wrap { display: none; }
+      body.is-touch .eh-desk-wrap { display: none !important; }
+      body.is-touch .eh-mob-wrap  { display: flex !important; flex-direction: column; gap: 10px; }
+
+      /* Edit History mobile card */
+      .eh-card {
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,.05);
+      }
+      .eh-card-hd {
+        display: flex; align-items: center; gap: 10px;
+        padding: 11px 14px;
+        background: linear-gradient(135deg,#fafbfc,#f1f5f9);
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .eh-card-date {
+        font-size: 14px; font-weight: 800;
+        color: var(--txt);
+      }
+      .eh-card-slot {
+        font-size: 11px; font-weight: 800;
+        padding: 3px 10px; border-radius: 999px;
+      }
+      .eh-card-cnt {
+        margin-left: auto;
+        display: inline-flex; align-items: baseline; gap: 4px;
+        font-size: 14px; font-weight: 800;
+        color: #dc2626; background: #fee2e2;
+        padding: 4px 12px; border-radius: 999px;
+      }
+      .eh-card-cnt .lbl { font-size: 10px; font-weight: 700; opacity: .85; }
+      .eh-card-body {
+        padding: 10px 14px 12px;
+        display: flex; flex-direction: column; gap: 5px;
+      }
+      .eh-card-branch {
+        font-size: 14.5px; font-weight: 800; color: var(--txt);
+        display: flex; align-items: center; gap: 8px;
+      }
+      .eh-card-branch .code {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800; font-size: 12px;
+        color: #fff; background: var(--brand);
+        padding: 2px 8px; border-radius: 6px;
+      }
+      .eh-card-meta {
+        font-size: 12.5px; color: var(--txt2);
+        display: flex; flex-wrap: wrap; gap: 4px 12px;
+      }
+      .eh-card-meta b { color: var(--txt); font-weight: 700; }
+      .eh-card-time {
+        font-size: 11.5px; color: var(--txt2);
+        padding-top: 4px;
+        border-top: 1px dashed #e2e8f0;
+        margin-top: 2px;
+      }
+      .eh-card-actions {
+        padding: 10px 12px 12px; border-top: 1px solid #f1f5f9;
+      }
+      .eh-card-actions button {
+        width: 100%; min-height: 40px;
+        font-size: 13px; font-weight: 700;
+        background: #eef2ff !important; color: #4338ca !important;
+        border: 1px solid #c7d2fe !important; border-radius: 10px !important;
+      }
+      .eh-empty {
+        padding: 32px 16px; text-align: center; color: var(--txt2);
+        background: #fff; border: 1px dashed var(--bd); border-radius: 14px;
+      }
+
       /* Manpower period pill — ขยับมาบรรทัดใหม่ + เต็มจอ */
       body.is-touch .mp-period-pill {
         width: 100%;
@@ -5505,7 +5579,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <h2 id="histTitle">📊 ประวัติ</h2>
           <select id="histBranchFilter" onchange="loadHistory()" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;min-width:180px"></select>
           <button class="btn btn-sm btn-outline" onclick="showForm()">← ส่งยอด</button>
-          <button class="btn btn-sm btn-brand" onclick="loadHistory()">🔄 รีเฟรช</button>
         </div>
         <!-- Date range — จาก / ถึง (จำกัด 30 วันย้อนหลัง) -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
@@ -5886,7 +5959,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <span id="ehHint" style="font-size:12px;color:var(--txt2);margin-left:auto;font-weight:600">— รายการ</span>
         </div>
 
-        <div class="dash-card-wrap" style="padding:0;overflow:hidden">
+        <!-- Desktop table -->
+        <div class="dash-card-wrap eh-desk-wrap" style="padding:0;overflow:hidden">
           <table class="adm-tbl" style="width:100%;border-collapse:collapse;font-size:13px">
             <thead>
               <tr style="background:linear-gradient(135deg,#fafafa,#f1f5f9);border-bottom:2px solid #e2e8f0">
@@ -5903,6 +5977,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <tbody id="ehBody"><tr><td colspan="8" style="padding:40px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</td></tr></tbody>
           </table>
         </div>
+        <!-- Mobile cards -->
+        <div id="ehCards" class="eh-mob-wrap"></div>
       </div>
     </div>
 
@@ -8545,6 +8621,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       function renderEditHistory() {
         const body = document.getElementById("ehBody");
+        const cards = document.getElementById("ehCards");
         if (!body) return;
         const q = (document.getElementById("ehSearch")?.value || "").trim().toLowerCase();
         const list = _ehRows.filter(r => {
@@ -8557,6 +8634,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.getElementById("ehHint").textContent = `${list.length} รายการ`;
         if (!list.length) {
           body.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:var(--txt2)">ไม่พบรายการที่ถูกแก้ไขในช่วงนี้</td></tr>`;
+          if (cards) cards.innerHTML = `<div class="eh-empty">ไม่พบรายการที่ถูกแก้ไขในช่วงนี้</div>`;
           return;
         }
         const fmtDate = (s) => {
@@ -8570,20 +8648,52 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
           return `${parseInt(dd)} ${MONTH[parseInt(m)-1]} ${(parseInt(y)+543).toString().slice(-2)}`;
         };
+
+        // ── Desktop table rows ──
         body.innerHTML = list.map(r => {
           const slotCol = r.submit_time_slot === "สิ้นวัน" ? "#7c3aed" : "#0ea5e9";
           const slotBg  = r.submit_time_slot === "สิ้นวัน" ? "#faf5ff" : "#f0f9ff";
           return `<tr style="border-bottom:1px solid #f1f5f9">
-            <td data-label="วันที่" style="padding:10px 12px;font-weight:700">${fmtSubDate(r.submit_date)}</td>
-            <td data-label="รอบ" style="padding:10px 10px;text-align:center"><span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:${slotBg};color:${slotCol}">${escHtml(r.submit_time_slot || "—")}</span></td>
-            <td data-label="สาขา" style="padding:10px 12px"><span style="color:#64748b;font-variant-numeric:tabular-nums;font-weight:700">${escHtml(r.branch_code || "")}</span> ${escHtml(r.branch_name || "—")}</td>
-            <td data-label="BZM" style="padding:10px 12px;color:var(--txt2)">${escHtml(r.district_manager || "—")}</td>
-            <td data-label="ผู้ส่ง" style="padding:10px 12px">${escHtml(r.submitter_name || "—")}</td>
-            <td data-label="แก้ (ครั้ง)" style="padding:10px 10px;text-align:center"><span style="font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:3px 12px;border-radius:999px">${r.edit_count}</span></td>
-            <td data-label="แก้ล่าสุด" style="padding:10px 12px;color:var(--txt2);font-size:12px">${fmtDate(r.last_edited_at)}</td>
-            <td style="padding:8px 12px;text-align:right"><button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดูรายละเอียด</button></td>
+            <td style="padding:10px 12px;font-weight:700">${fmtSubDate(r.submit_date)}</td>
+            <td style="padding:10px 10px;text-align:center"><span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:${slotBg};color:${slotCol}">${escHtml(r.submit_time_slot || "—")}</span></td>
+            <td style="padding:10px 12px"><span style="color:#64748b;font-variant-numeric:tabular-nums;font-weight:700">${escHtml(r.branch_code || "")}</span> ${escHtml(r.branch_name || "—")}</td>
+            <td style="padding:10px 12px;color:var(--txt2)">${escHtml(r.district_manager || "—")}</td>
+            <td style="padding:10px 12px">${escHtml(r.submitter_name || "—")}</td>
+            <td style="padding:10px 10px;text-align:center"><span style="font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:3px 12px;border-radius:999px">${r.edit_count}</span></td>
+            <td style="padding:10px 12px;color:var(--txt2);font-size:12px">${fmtDate(r.last_edited_at)}</td>
+            <td style="padding:8px 12px;text-align:right"><button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดู</button></td>
           </tr>`;
         }).join("");
+
+        // ── Mobile/touch cards ──
+        if (cards) {
+          cards.innerHTML = list.map(r => {
+            const slotCol = r.submit_time_slot === "สิ้นวัน" ? "#7c3aed" : "#0ea5e9";
+            const slotBg  = r.submit_time_slot === "สิ้นวัน" ? "#faf5ff" : "#f0f9ff";
+            const slotIco = r.submit_time_slot === "สิ้นวัน" ? "🌙" : "🕓";
+            return `<div class="eh-card">
+              <div class="eh-card-hd">
+                <span class="eh-card-date">📅 ${fmtSubDate(r.submit_date)}</span>
+                <span class="eh-card-slot" style="background:${slotBg};color:${slotCol}">${slotIco} ${escHtml(r.submit_time_slot || "—")}</span>
+                <span class="eh-card-cnt">${r.edit_count}<span class="lbl">ครั้ง</span></span>
+              </div>
+              <div class="eh-card-body">
+                <div class="eh-card-branch">
+                  <span class="code">${escHtml(r.branch_code || "")}</span>
+                  <span>${escHtml(r.branch_name || "—")}</span>
+                </div>
+                <div class="eh-card-meta">
+                  <span>BZM: <b>${escHtml(r.district_manager || "—")}</b></span>
+                  <span>ผู้ส่ง: <b>${escHtml(r.submitter_name || "—")}</b></span>
+                </div>
+                <div class="eh-card-time">⏱️ แก้ล่าสุด: ${fmtDate(r.last_edited_at)}</div>
+              </div>
+              <div class="eh-card-actions">
+                <button onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')">👁️ ดูรายละเอียดการแก้ไข</button>
+              </div>
+            </div>`;
+          }).join("");
+        }
       }
 
       // map ของ key → ฉลากไทย (สำหรับแสดง diff)
