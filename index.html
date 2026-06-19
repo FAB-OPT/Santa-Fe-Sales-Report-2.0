@@ -971,12 +971,17 @@
         padding: 0 !important;
       }
       body.is-touch .adm-tbl,
+      body.is-touch #sAdmin .dash-tbl,
       body.is-touch #adminBranchBody, body.is-touch #adminBzmBody,
       body.is-touch #adminUserBody, body.is-touch #ehBody,
       body.is-touch #manpowerBody {
         display: block !important;
         min-width: 0 !important;
         width: 100% !important;
+      }
+      /* admin dash-card-wrap: ปิด overflow-x ที่ inline style บังคับไว้ — กัน viewport zoom-out */
+      body.is-touch #sAdmin .dash-card-wrap {
+        overflow-x: visible !important;
       }
       body.is-touch .adm-tbl thead,
       body.is-touch #sAdmin .dash-tbl thead {
