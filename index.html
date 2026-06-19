@@ -5194,7 +5194,7 @@ body { background: var(--bg); color: var(--txt); }
     <div id="sHistory" class="screen">
       <div class="hist-wrap">
         <div class="hist-hdr">
-          <h2 id="histTitle">📊 ประวัติ 30 วันล่าสุด</h2>
+          <h2 id="histTitle">📊 ประวัติ</h2>
           <select id="histBranchFilter" onchange="loadHistory()" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;min-width:180px"></select>
           <button class="btn btn-sm btn-outline" onclick="showForm()">← ส่งยอด</button>
           <button class="btn btn-sm btn-brand" onclick="loadHistory()">🔄 รีเฟรช</button>
@@ -11639,7 +11639,10 @@ body { background: var(--bg); color: var(--txt); }
 
       function renderHistory(rows) {
         if (!rows.length) {
-          const empty = `<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">ไม่พบข้อมูลใน 30 วันที่ผ่านมา</div></div>`;
+          const fr = (document.getElementById("histDateFrom") || {}).value;
+          const to = (document.getElementById("histDateTo")   || {}).value;
+          const lbl = (fr && to) ? `${fr} → ${to}` : "ช่วงที่เลือก";
+          const empty = `<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">ไม่พบข้อมูลในช่วงนี้<br><span style="font-size:11px;color:var(--txt2)">${escHtml(lbl)}</span></div></div>`;
           document.getElementById("histTableContent").innerHTML = empty;
           document.getElementById("histCardsContent").innerHTML = empty;
           return;
