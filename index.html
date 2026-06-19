@@ -6312,9 +6312,10 @@ body { background: var(--bg); color: var(--txt); }
         let msg;
         if (isBranch) {
           msg = `${u.branch_code || u.code} ${u.branch_name || u.name || ""}`.trim();
+        } else if (u.role === "bzm") {
+          msg = `${u.name || u.nick || u.code} (BZM)`;
         } else {
-          const lbl = _ROLE_LBL[u.role] || u.role;
-          msg = `${u.name || u.nick || u.code} (${lbl})`;
+          msg = u.name || u.nick || u.code;
         }
         showAlert('👋', 'ยินดีต้อนรับ!', msg, enterApp);
       }
@@ -6325,8 +6326,8 @@ body { background: var(--bg); color: var(--txt); }
           if (su) {
             S = _stateFromSpecialUser(code, su);
             localStorage.setItem(LS_CODE, code);
-            const lbl = _ROLE_LBL[su.role] || su.role || "TM";
-            showAlert('👋', 'ยินดีต้อนรับ!', `${su.name} (${lbl})`, enterApp);
+            const msg = (su.role === "bzm") ? `${su.name} (BZM)` : su.name;
+            showAlert('👋', 'ยินดีต้อนรับ!', msg, enterApp);
             return;
           }
           showAlert('❌', 'รหัสผ่านไม่ถูกต้อง', 'ไม่พบบัญชีนี้ในระบบ'); return;
