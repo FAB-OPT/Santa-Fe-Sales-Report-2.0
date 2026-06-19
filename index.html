@@ -4768,11 +4768,14 @@ body { background: var(--bg); color: var(--txt); }
 .mn-more-ico { font-size:18px; }
 .mn-more-lbl { display:flex; flex:1; align-items:center; gap:8px; }
 /* desktop: ซ่อนปุ่มรวม (ใช้ปุ่มแยกบน sidebar) */
-.mn-more-btn, .mn-manage-btn { display:none !important; }
+.mn-more-btn, .mn-manage-btn, .mn-hist-btn { display:none !important; }
 @media (max-width: 640px) {
-  /* mobile: ซ่อนปุ่มแยกในแถบ ย้ายไป popup; ปุ่มรวมโผล่เฉพาะ admin */
+  /* mobile: ซ่อนปุ่มแยกในแถบ ย้ายไป popup; ปุ่มรวมโผล่เฉพาะ role ที่เกี่ยว */
   .mn-more-item, .mn-manage-item { display:none !important; }
   body.is-admin .mn-more-btn, body.is-admin .mn-manage-btn { display:flex !important; }
+  /* ประวัติ: รวม 2 อันใน popup เมื่อเป็น admin/vp/bzm; branch ยังเห็น mnHistory ตรงๆ */
+  body.is-tm .mn-hist-item { display:none !important; }
+  body.is-tm .mn-hist-btn  { display:flex !important; }
 }
 .dd-table-channels { font-size:12px; }
   .dd-table-channels thead th { padding:8px 6px; font-size:11px; }
@@ -5994,7 +5997,7 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">📅</span>
           <span class="mob-nav-lbl">Plan Sale</span>
         </button>
-        <button class="mob-nav-btn" id="mnHistory" onclick="showHistory()">
+        <button class="mob-nav-btn mn-hist-item" id="mnHistory" onclick="showHistory()">
           <span class="mob-nav-ico">🗂️</span>
           <span class="mob-nav-lbl">ประวัติ</span>
         </button>
@@ -6003,9 +6006,14 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">👥</span>
           <span class="mob-nav-lbl">Manpower</span>
         </button>
-        <button class="mob-nav-btn tm-nav" id="mnEditHist" onclick="showEditHistory()" style="display:none">
+        <button class="mob-nav-btn tm-nav mn-hist-item" id="mnEditHist" onclick="showEditHistory()" style="display:none">
           <span class="mob-nav-ico">📝</span>
           <span class="mob-nav-lbl">ประวัติแก้ไข</span>
+        </button>
+        <!-- mobile-only: ปุ่ม "ประวัติ" รวม ประวัติ + ประวัติแก้ไข (admin/vp/bzm) -->
+        <button class="mob-nav-btn tm-nav mn-hist-btn" id="mnHistGroup" onclick="toggleMnHist()" style="display:none">
+          <span class="mob-nav-ico">🗂️</span>
+          <span class="mob-nav-lbl">ประวัติ</span>
         </button>
         <!-- mobile-only: ปุ่ม "จัดการ" รวม สาขา/BZM/โซน/ผู้ใช้ -->
         <button class="mob-nav-btn admin-only-nav mn-manage-btn" id="mnManage" onclick="toggleMnManage()" style="display:none">
@@ -6049,6 +6057,19 @@ body { background: var(--bg); color: var(--txt); }
         </button>
       </div>
     </nav>
+
+    <!-- Mobile "ประวัติ" popup — admin/vp/bzm -->
+    <div id="mnHistBg" class="mn-more-bg" onclick="closeMnHist()"></div>
+    <div id="mnHistPop" class="mn-more-pop">
+      <button class="mn-more-row" onclick="closeMnHist();showHistory()">
+        <span class="mn-more-ico">🗂️</span>
+        <span class="mn-more-lbl">ประวัติยอดขาย</span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnHist();showEditHistory()">
+        <span class="mn-more-ico">📝</span>
+        <span class="mn-more-lbl">ประวัติแก้ไข</span>
+      </button>
+    </div>
 
     <!-- Mobile "จัดการ" popup — admin เท่านั้น -->
     <div id="mnManageBg" class="mn-more-bg" onclick="closeMnManage()"></div>
@@ -6643,6 +6664,7 @@ body { background: var(--bg); color: var(--txt); }
           // ซ่อน admin-only buttons (กันเห็นค้าง)
           document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
           document.body.classList.remove("is-admin");
+          document.body.classList.remove("is-tm");
           const tmb = document.getElementById("testModeBtn"); if (tmb) tmb.style.display = "none";
           const mbBtn = document.getElementById("mobMenuBtn"); if (mbBtn) mbBtn.style.display = "none";
           // ปิด drawer ถ้าค้างอยู่
@@ -6776,6 +6798,7 @@ body { background: var(--bg); color: var(--txt); }
         });
         // body class สำหรับ CSS ที่ต้องอ้างอิง role
         document.body.classList.toggle("is-admin", isAdmin);
+        document.body.classList.toggle("is-tm", isMgmt);
         const mnAdminBtn = document.getElementById("mnAdmin");
         if (mnAdminBtn) mnAdminBtn.style.display = isAdmin ? "flex" : "none";
 
@@ -8489,7 +8512,7 @@ body { background: var(--bg); color: var(--txt); }
         const pop = document.getElementById("mnMorePop");
         const bg  = document.getElementById("mnMoreBg");
         if (!pop || !bg) return;
-        closeMnManage();
+        closeMnManage(); closeMnHist();
         const open = !pop.classList.contains("open");
         pop.classList.toggle("open", open);
         bg.classList.toggle("open", open);
@@ -8504,7 +8527,7 @@ body { background: var(--bg); color: var(--txt); }
         const pop = document.getElementById("mnManagePop");
         const bg  = document.getElementById("mnManageBg");
         if (!pop || !bg) return;
-        closeMnMore();
+        closeMnMore(); closeMnHist();
         const open = !pop.classList.contains("open");
         pop.classList.toggle("open", open);
         bg.classList.toggle("open", open);
@@ -8512,6 +8535,21 @@ body { background: var(--bg); color: var(--txt); }
       function closeMnManage() {
         const pop = document.getElementById("mnManagePop");
         const bg  = document.getElementById("mnManageBg");
+        if (pop) pop.classList.remove("open");
+        if (bg)  bg.classList.remove("open");
+      }
+      function toggleMnHist() {
+        const pop = document.getElementById("mnHistPop");
+        const bg  = document.getElementById("mnHistBg");
+        if (!pop || !bg) return;
+        closeMnMore(); closeMnManage();
+        const open = !pop.classList.contains("open");
+        pop.classList.toggle("open", open);
+        bg.classList.toggle("open", open);
+      }
+      function closeMnHist() {
+        const pop = document.getElementById("mnHistPop");
+        const bg  = document.getElementById("mnHistBg");
         if (pop) pop.classList.remove("open");
         if (bg)  bg.classList.remove("open");
       }
