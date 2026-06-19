@@ -6428,10 +6428,17 @@ body { background: var(--bg); color: var(--txt); }
         document.getElementById("hdrDivider").style.display = "";
         document.getElementById("hdrBranch").style.display = "";
         // hdrActions ย้ายไป sidebar แล้ว — ไม่ต้องแสดง
-        document.getElementById("hdrBranchName").textContent = S.branch;
-        document.getElementById("sidebarBranchName").textContent = S.branch;
+        // BZM/VP: ใช้ชื่อ-นามสกุล (จาก _USERS_DB) แทนชื่อเล่นที่เก็บใน S.branch
+        let displayName = S.branch;
+        if ((S.role === "bzm" || S.role === "vp") && Array.isArray(_USERS_DB)) {
+          const uId = String(S.code || "").replace(/^_[A-Z]+_/, "");
+          const dbU = _USERS_DB.find(u => u.code === uId);
+          if (dbU && dbU.name) displayName = dbU.name;
+        }
+        document.getElementById("hdrBranchName").textContent = displayName;
+        document.getElementById("sidebarBranchName").textContent = displayName;
         const mdName = document.getElementById("mdBranchName");
-        if (mdName) mdName.textContent = S.branch;
+        if (mdName) mdName.textContent = displayName;
 
         // hamburger button + drawer — ปิดใช้งาน (ใช้ scrollable bottom nav แทน)
         const mbBtn = document.getElementById("mobMenuBtn");
@@ -6452,10 +6459,10 @@ body { background: var(--bg); color: var(--txt); }
           if (sbDm)  sbDm.style.display  = "none";
           dmText = isAdmin ? "Admin" : "VP";
         } else if (isBZM) {
-          const label = "โซน BZM";
+          const label = "BZM";
           if (hdrDm) { hdrDm.style.display = ""; hdrDm.textContent = label; }
           if (sbDm)  { sbDm.style.display  = ""; sbDm.textContent  = label; }
-          dmText = "โซน BZM: " + S.dm;
+          dmText = "BZM";
         } else {
           if (hdrDm) { hdrDm.style.display = ""; hdrDm.textContent = "BZM: " + S.dm; }
           if (sbDm)  { sbDm.style.display  = ""; sbDm.textContent  = "BZM: " + S.dm; }
@@ -6548,8 +6555,8 @@ body { background: var(--bg); color: var(--txt); }
         } else {
           // ซ่อนป้าย role (ADMIN/VP/BZM/OVERVIEW) บนหัวข้อ — เลือกขอบเขตได้จาก dropdown แทน
           if (tag) tag.style.display = "none";
-          if (title) title.innerHTML = "📊 ภาพรวมทีม";
-          if (sub) { sub.style.display = ""; sub.textContent = "ผลรวมหลายสาขาในขอบเขตที่ดูแล"; }
+          if (title) title.innerHTML = "📊 ภาพรวมโซน";
+          if (sub) sub.style.display = "none";
         }
       }
 
