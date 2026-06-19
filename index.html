@@ -4759,7 +4759,6 @@ body { background: var(--bg); color: var(--txt); }
   .dd-donut-legend { display:none !important; }
   .dd-donut-table-wrap { margin-top: 8px; padding-top: 10px; }
   /* mobile "อื่นๆ" overflow menu */
-.mn-more-btn { display:none !important; }
 .mn-more-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); backdrop-filter:blur(2px); z-index:9990; }
 .mn-more-bg.open { display:block; }
 .mn-more-pop { display:none; position:fixed; right:12px; bottom:80px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 12px 28px -8px rgba(0,0,0,.25); padding:6px; min-width:220px; z-index:9991; }
@@ -4768,10 +4767,12 @@ body { background: var(--bg); color: var(--txt); }
 .mn-more-row:hover, .mn-more-row:active { background:#f1f5f9; }
 .mn-more-ico { font-size:18px; }
 .mn-more-lbl { display:flex; flex:1; align-items:center; gap:8px; }
+/* desktop: ซ่อนปุ่ม ⋯ (ใช้ปุ่มแยกบน sidebar) */
+.mn-more-btn { display:none !important; }
 @media (max-width: 640px) {
-  /* ซ่อนปุ่ม 3 อันใน nav แท่ง — ย้ายมาอยู่ใน "อื่นๆ" popup */
+  /* mobile: ซ่อน 3 ปุ่มในแถบ — ย้ายมาอยู่ใน popup; ปุ่ม ⋯ โผล่เฉพาะ admin (JS เป็นคนสั่ง) */
   .mn-more-item { display:none !important; }
-  .mn-more-btn  { display:flex !important; }
+  body.is-admin .mn-more-btn { display:flex !important; }
 }
 .dd-table-channels { font-size:12px; }
   .dd-table-channels thead th { padding:8px 6px; font-size:11px; }
@@ -6615,6 +6616,7 @@ body { background: var(--bg); color: var(--txt); }
           document.querySelectorAll(".mob-nav-btn, .desk-nav-btn").forEach(b => b.classList.remove("active"));
           // ซ่อน admin-only buttons (กันเห็นค้าง)
           document.querySelectorAll(".admin-only-nav").forEach(el => el.style.display = "none");
+          document.body.classList.remove("is-admin");
           const tmb = document.getElementById("testModeBtn"); if (tmb) tmb.style.display = "none";
           const mbBtn = document.getElementById("mobMenuBtn"); if (mbBtn) mbBtn.style.display = "none";
           // ปิด drawer ถ้าค้างอยู่
@@ -6746,6 +6748,8 @@ body { background: var(--bg); color: var(--txt); }
         document.querySelectorAll(".admin-only-nav").forEach(el => {
           el.style.display = isAdmin ? "flex" : "none";
         });
+        // body class สำหรับ CSS ที่ต้องอ้างอิง role
+        document.body.classList.toggle("is-admin", isAdmin);
         const mnAdminBtn = document.getElementById("mnAdmin");
         if (mnAdminBtn) mnAdminBtn.style.display = isAdmin ? "flex" : "none";
 
