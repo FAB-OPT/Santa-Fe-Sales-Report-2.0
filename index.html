@@ -868,8 +868,8 @@
         .dash3-seg { flex: 1; justify-content: space-between; }
         .dash3-seg-btn { flex: 1; padding: 7px 8px; font-size: 11.5px; }
       }
-      /* มือถือจริงๆ เท่านั้น (touch + แคบ) — ไม่ trigger ตอนย่อหน้าต่าง desktop */
-      @media (max-width: 640px) and (pointer: coarse) {
+      /* อุปกรณ์สัมผัส (มือถือ/tablet/iPad) — desktop ที่ใช้ mouse จะไม่ trigger */
+      @media (pointer: coarse) {
         .dash3-role-tag, .dash3-sub { display: none !important; }
         .dash3-hdr { flex-direction: column; align-items: stretch; gap: 10px; }
         .dash3-controls { width: 100%; margin-left: 0; justify-content: flex-start; }
@@ -877,6 +877,13 @@
         .dash3-branch { min-width: 0; width: 100%; }
         .dd-crumb { display: none !important; }
       }
+      /* body.is-touch — fallback ถ้า media query โดน override */
+      body.is-touch .dash3-role-tag, body.is-touch .dash3-sub { display: none !important; }
+      body.is-touch .dash3-hdr { flex-direction: column; align-items: stretch; gap: 10px; }
+      body.is-touch .dash3-controls { width: 100%; margin-left: 0; justify-content: flex-start; }
+      body.is-touch .dash3-icon-btn { display: none !important; }
+      body.is-touch .dash3-branch { min-width: 0; width: 100%; }
+      body.is-touch .dd-crumb { display: none !important; }
       @media (max-width: 560px) {
         .dash3-hero { padding: 14px; }
         .dash3-kpis { gap: 10px; }
@@ -909,9 +916,16 @@
       .dd-bar-name { font-size:13.5px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; display:inline-flex; align-items:center; gap:8px; min-width:0; }
       .dd-bar-name-text { overflow:hidden; text-overflow:ellipsis; }
       .dd-bar-name-short { display:none; }
-      @media (max-width: 640px) {
+      @media (max-width: 640px), (pointer: coarse) {
         .dd-bar-name-full  { display:none; }
         .dd-bar-name-short { display:inline; }
+        /* แถวที่ถึง 100% → พื้นเขียวอ่อน ขอบเขียวเข้ม ตัวอักษรเขียวเข้ม */
+        .dd-bar.is-hit-100 { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-color: #16a34a; box-shadow: 0 0 0 1.5px rgba(22,163,74,.18); }
+        .dd-bar.is-hit-100 .dd-bar-name-text, .dd-bar.is-hit-100 .dd-bar-val { color:#15803d; }
+        .dd-bar.is-hit-100 .dd-bar-val b { color:#15803d; }
+        /* 80-99% → พื้น amber */
+        .dd-bar.is-warn-80 { background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #f59e0b; }
+        .dd-bar.is-warn-80 .dd-bar-name-text, .dd-bar.is-warn-80 .dd-bar-val b { color:#92400e; }
       }
       .dd-bar-chip { flex-shrink:0; display:inline-block; padding:1px 8px; background:rgba(15,23,42,.06); color:var(--txt2); font-size:11px; font-weight:700; border-radius:999px; font-variant-numeric:tabular-nums; }
       .dd-bar-track { display:block; height:14px; background:#f1f5f9; border-radius:7px; overflow:hidden; box-shadow:inset 0 1px 2px rgba(15,23,42,.05); }
@@ -6797,6 +6811,11 @@ body { background: var(--bg); color: var(--txt); }
         // body class สำหรับ CSS ที่ต้องอ้างอิง role
         document.body.classList.toggle("is-admin", isAdmin);
         document.body.classList.toggle("is-tm", isMgmt);
+        // อุปกรณ์สัมผัส (iPad/tablet/มือถือ) → บังคับ "mobile look"
+        try {
+          const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+          document.body.classList.toggle("is-touch", !!isTouch);
+        } catch (_) {}
         const mnAdminBtn = document.getElementById("mnAdmin");
         if (mnAdminBtn) mnAdminBtn.style.display = isAdmin ? "flex" : "none";
 
@@ -9137,7 +9156,8 @@ body { background: var(--bg); color: var(--txt); }
             ? `<span class="dd-bar-name-text"><span class="dd-bar-name-full">${escHtml(i.label)}</span><span class="dd-bar-name-short">${escHtml(i.labelShort)}</span></span>`
             : `<span class="dd-bar-name-text">${escHtml(i.label)}</span>`;
           const nChip    = i.n ? `<span class="dd-bar-chip">${i.n} สาขา</span>` : "";
-          return `<button class="dd-bar" onclick="${onClick}('${sec}',${idx})">
+          const hitCls = (i.pct >= 1) ? " is-hit-100" : (i.pct >= 0.80 ? " is-warn-80" : "");
+          return `<button class="dd-bar${hitCls}" onclick="${onClick}('${sec}',${idx})">
             <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}</span>
             <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%;background:${fillBg}"></span></span>
             <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${base}">${pctTxt}</i></span>
