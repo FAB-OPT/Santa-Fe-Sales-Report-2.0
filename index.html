@@ -4728,10 +4728,6 @@ body { background: var(--bg); color: var(--txt); }
         <span style="font-size:14px">🧪</span>
         <span id="hdrTestModeStatus" style="font-weight:700">ทดสอบ</span>
       </button>
-      <button class="btn btn-sm btn-hub hdr-logout-btn" id="hdrHubBtn" onclick="goBackToHub()" style="display:none" title="กลับเมนูหลัก Hub">
-        <span style="font-size:16px;font-weight:900;">←</span>
-        เมนูหลัก
-      </button>
       <button class="btn btn-sm btn-danger hdr-logout-btn" id="hdrLogoutBtn" onclick="doLogout()" style="display:none">ออกจากระบบ</button>
     </header>
 
@@ -4803,10 +4799,6 @@ body { background: var(--bg); color: var(--txt); }
 
 
       <!-- Back to Hub menu + Logout -->
-      <button class="desk-hub-btn" onclick="goBackToHub()" title="กลับเมนูหลัก Hub (ไม่ logout)">
-        <span class="hub-ico">←</span>
-        <span>กลับเมนูหลัก</span>
-      </button>
       <button class="desk-logout-btn-pretty" onclick="doLogout()">
         <span class="hub-ico">⎋</span>
         <span>ออกจากระบบ</span>
@@ -4888,10 +4880,6 @@ body { background: var(--bg); color: var(--txt); }
         <button class="md-test-btn admin-only-nav" id="mdBypassOrderBtn" onclick="toggleBypassOrderAdmin()" style="display:none;background:#fee2e2;border-color:#fecaca">
           <span class="md-nav-ico">🚫</span>
           <span>ข้ามกฎลำดับ: <span id="mdBypassOrderStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
-        </button>
-        <button class="md-hub-btn" onclick="goBackToHub()" title="กลับเมนูหลัก Hub (ไม่ logout)">
-          <span class="hub-ico">←</span>
-          <span>กลับเมนูหลัก</span>
         </button>
         <button class="md-logout-pretty" onclick="doLogout()">
           <span class="hub-ico">⎋</span>
