@@ -907,6 +907,33 @@
         scrollbar-width: none; width: 100%;
       }
       body.is-touch .mob-nav.visible .mob-nav-inner::-webkit-scrollbar { display: none; }
+      /* iPad: hdr-actions ซ่อน (ปุ่มย้ายไปแท็บล่าง) — logout บน header ใช้สไตล์เดียวกับมือถือ */
+      body.is-touch .hdr-actions { display: none !important; }
+      body.is-touch .hdr-sep, body.is-touch .hdr-divider { display: none !important; }
+      body.is-touch .hdr-logout-btn {
+        display: inline-flex !important;
+        background: transparent !important;
+        color: var(--red) !important;
+        border: none !important;
+        font-weight: 700 !important;
+        padding: 5px 10px !important;
+        box-shadow: none !important;
+        margin-left: auto;
+      }
+      body.is-touch .hdr-logout-btn:hover { background: rgba(220,38,38,.08) !important; }
+      /* iPad: styling ปุ่มแท็บล่างให้เหมือนมือถือ (icon บน + label ใต้, ไม่มี border/bg) */
+      body.is-touch .mob-nav.visible .mob-nav-btn {
+        background: none !important;
+        border: none !important;
+        color: var(--txt2) !important;
+        font-family: inherit !important;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color .15s;
+      }
+      body.is-touch .mob-nav.visible .mob-nav-btn.active { color: var(--brand) !important; }
+      body.is-touch .mob-nav.visible .mob-nav-ico { font-size: 20px !important; line-height: 1 !important; }
+      body.is-touch .mob-nav.visible .mob-nav-lbl { font-size: 11px !important; font-weight: 700 !important; white-space: nowrap !important; }
       @media (max-width: 560px) {
         .dash3-hero { padding: 14px; }
         .dash3-kpis { gap: 10px; }
