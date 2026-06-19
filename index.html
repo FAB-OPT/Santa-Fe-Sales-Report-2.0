@@ -4518,7 +4518,7 @@ body { background: var(--bg); color: var(--txt); }
   .dd-chan-stat-name b { font-size: 14.5px; }
   .dd-chan-stat-dot { width: 11px; height: 11px; }
   /* บรรทัด 1 ขวา: amount + pct */
-  .dd-chan-stat-cell:nth-of-type(1) { grid-column: 2; grid-row: 1; justify-self: end; }
+  .dd-chan-stat-amount { grid-column: 2; grid-row: 1; justify-self: end; }
   .dd-chan-stat-pct  {
     grid-column: 3; grid-row: 1;
     border-right: none; padding: 4px 11px;
@@ -4529,8 +4529,8 @@ body { background: var(--bg); color: var(--txt); }
     justify-self: end;
   }
   /* บรรทัด 2 ขวา: bills + avg */
-  .dd-chan-stat-cell:nth-of-type(2) { grid-column: 2; grid-row: 2; justify-self: end; }
-  .dd-chan-stat-cell:nth-of-type(3) { grid-column: 3; grid-row: 2; justify-self: end; }
+  .dd-chan-stat-bills { grid-column: 2; grid-row: 2; justify-self: end; }
+  .dd-chan-stat-avg   { grid-column: 3; grid-row: 2; justify-self: end; }
   .dd-chan-stat-amount .dd-chan-stat-val { font-size: 18px; color: var(--c, var(--txt)); }
   .dd-chan-stat-val { font-size: 14px; }
   .dd-chan-stat-lbl { font-size: 11px; }
@@ -9382,11 +9382,11 @@ body { background: var(--bg); color: var(--txt); }
           const avg = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
           const isEmpty = t.value <= 0 && (!t.trans || t.trans <= 0);
           const billCell = t._unspec
-            ? `<span class="dd-chan-stat-cell"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
-            : `<span class="dd-chan-stat-cell"><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span><span class="dd-chan-stat-lbl">บิล</span></span>`;
+            ? `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
+            : `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span><span class="dd-chan-stat-lbl">บิล</span></span>`;
           const avgCell  = t._unspec
-            ? `<span class="dd-chan-stat-cell"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
-            : `<span class="dd-chan-stat-cell"><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span><span class="dd-chan-stat-lbl">/บิล</span></span>`;
+            ? `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
+            : `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span><span class="dd-chan-stat-lbl">/บิล</span></span>`;
           return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}${t._unspec ? ' is-unspec' : ''}" style="--c:${t.color}">
             <span class="dd-chan-stat-name"><span class="dd-chan-stat-dot" style="background:${t.color}"></span><b>${escHtml(t.label)}</b></span>
             <span class="dd-chan-stat-cell dd-chan-stat-amount"><span class="dd-chan-stat-val">฿${fmt(Math.round(t.value))}</span></span>
