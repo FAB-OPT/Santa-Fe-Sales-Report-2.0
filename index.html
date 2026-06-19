@@ -4767,12 +4767,12 @@ body { background: var(--bg); color: var(--txt); }
 .mn-more-row:hover, .mn-more-row:active { background:#f1f5f9; }
 .mn-more-ico { font-size:18px; }
 .mn-more-lbl { display:flex; flex:1; align-items:center; gap:8px; }
-/* desktop: ซ่อนปุ่ม ⋯ (ใช้ปุ่มแยกบน sidebar) */
-.mn-more-btn { display:none !important; }
+/* desktop: ซ่อนปุ่มรวม (ใช้ปุ่มแยกบน sidebar) */
+.mn-more-btn, .mn-manage-btn { display:none !important; }
 @media (max-width: 640px) {
-  /* mobile: ซ่อน 3 ปุ่มในแถบ — ย้ายมาอยู่ใน popup; ปุ่ม ⋯ โผล่เฉพาะ admin (JS เป็นคนสั่ง) */
-  .mn-more-item { display:none !important; }
-  body.is-admin .mn-more-btn { display:flex !important; }
+  /* mobile: ซ่อนปุ่มแยกในแถบ ย้ายไป popup; ปุ่มรวมโผล่เฉพาะ admin */
+  .mn-more-item, .mn-manage-item { display:none !important; }
+  body.is-admin .mn-more-btn, body.is-admin .mn-manage-btn { display:flex !important; }
 }
 .dd-table-channels { font-size:12px; }
   .dd-table-channels thead th { padding:8px 6px; font-size:11px; }
@@ -6007,20 +6007,25 @@ body { background: var(--bg); color: var(--txt); }
           <span class="mob-nav-ico">📝</span>
           <span class="mob-nav-lbl">ประวัติแก้ไข</span>
         </button>
-        <!-- Admin sub-tabs -->
-        <button class="mob-nav-btn admin-only-nav" id="mnAdminBranches" onclick="showAdmin('branches')" style="display:none">
+        <!-- mobile-only: ปุ่ม "จัดการ" รวม สาขา/BZM/โซน/ผู้ใช้ -->
+        <button class="mob-nav-btn admin-only-nav mn-manage-btn" id="mnManage" onclick="toggleMnManage()" style="display:none">
+          <span class="mob-nav-ico">⚙️</span>
+          <span class="mob-nav-lbl">จัดการ</span>
+        </button>
+        <!-- desktop: ยังเห็นตรงๆ — ซ่อนบนมือถือ -->
+        <button class="mob-nav-btn admin-only-nav mn-manage-item" id="mnAdminBranches" onclick="showAdmin('branches')" style="display:none">
           <span class="mob-nav-ico">🏢</span>
           <span class="mob-nav-lbl">สาขา</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnAdminBzms" onclick="showAdmin('bzms')" style="display:none">
+        <button class="mob-nav-btn admin-only-nav mn-manage-item" id="mnAdminBzms" onclick="showAdmin('bzms')" style="display:none">
           <span class="mob-nav-ico">👤</span>
           <span class="mob-nav-lbl">BZM</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnAdminZones" onclick="showAdmin('zones')" style="display:none">
+        <button class="mob-nav-btn admin-only-nav mn-manage-item" id="mnAdminZones" onclick="showAdmin('zones')" style="display:none">
           <span class="mob-nav-ico">🗺️</span>
           <span class="mob-nav-lbl">โซน</span>
         </button>
-        <button class="mob-nav-btn admin-only-nav" id="mnAdminUsers" onclick="showAdmin('users')" style="display:none">
+        <button class="mob-nav-btn admin-only-nav mn-manage-item" id="mnAdminUsers" onclick="showAdmin('users')" style="display:none">
           <span class="mob-nav-ico">🔐</span>
           <span class="mob-nav-lbl">ผู้ใช้</span>
         </button>
@@ -6044,6 +6049,27 @@ body { background: var(--bg); color: var(--txt); }
         </button>
       </div>
     </nav>
+
+    <!-- Mobile "จัดการ" popup — admin เท่านั้น -->
+    <div id="mnManageBg" class="mn-more-bg" onclick="closeMnManage()"></div>
+    <div id="mnManagePop" class="mn-more-pop">
+      <button class="mn-more-row" onclick="closeMnManage();showAdmin('branches')">
+        <span class="mn-more-ico">🏢</span>
+        <span class="mn-more-lbl">จัดการสาขา</span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnManage();showAdmin('bzms')">
+        <span class="mn-more-ico">👤</span>
+        <span class="mn-more-lbl">จัดการ BZM</span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnManage();showAdmin('zones')">
+        <span class="mn-more-ico">🗺️</span>
+        <span class="mn-more-lbl">โซน BZM</span>
+      </button>
+      <button class="mn-more-row" onclick="closeMnManage();showAdmin('users')">
+        <span class="mn-more-ico">🔐</span>
+        <span class="mn-more-lbl">จัดการผู้ใช้</span>
+      </button>
+    </div>
 
     <!-- Mobile "อื่นๆ" popup — admin เท่านั้น -->
     <div id="mnMoreBg" class="mn-more-bg" onclick="closeMnMore()"></div>
@@ -8463,6 +8489,7 @@ body { background: var(--bg); color: var(--txt); }
         const pop = document.getElementById("mnMorePop");
         const bg  = document.getElementById("mnMoreBg");
         if (!pop || !bg) return;
+        closeMnManage();
         const open = !pop.classList.contains("open");
         pop.classList.toggle("open", open);
         bg.classList.toggle("open", open);
@@ -8470,6 +8497,21 @@ body { background: var(--bg); color: var(--txt); }
       function closeMnMore() {
         const pop = document.getElementById("mnMorePop");
         const bg  = document.getElementById("mnMoreBg");
+        if (pop) pop.classList.remove("open");
+        if (bg)  bg.classList.remove("open");
+      }
+      function toggleMnManage() {
+        const pop = document.getElementById("mnManagePop");
+        const bg  = document.getElementById("mnManageBg");
+        if (!pop || !bg) return;
+        closeMnMore();
+        const open = !pop.classList.contains("open");
+        pop.classList.toggle("open", open);
+        bg.classList.toggle("open", open);
+      }
+      function closeMnManage() {
+        const pop = document.getElementById("mnManagePop");
+        const bg  = document.getElementById("mnManageBg");
         if (pop) pop.classList.remove("open");
         if (bg)  bg.classList.remove("open");
       }
