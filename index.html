@@ -1252,13 +1252,15 @@
       .mp-bulk-tbl thead th.sub.sub-end, .mp-bulk-tbl tbody td.sub-end { border-right: 1px dashed #cbd5e1 !important; }
       /* body */
       .mp-bulk-tbl tbody td {
-        padding: 5px 3px;
+        padding: 6px 6px;
         border-bottom: 1px solid #f1f5f9;
         text-align: center;
         font-variant-numeric: tabular-nums;
+        min-width: 56px;
       }
-      .mp-bulk-tbl thead th { padding: 6px 4px !important; }
+      .mp-bulk-tbl thead th { padding: 6px 4px !important; min-width: 56px; }
       .mp-bulk-tbl thead .mp-bulk-grp { padding: 7px 6px !important; font-size: 12px !important; }
+      .mp-bulk-tbl thead th.branch-cell, .mp-bulk-tbl thead th.status-cell { min-width: 0; }
       /* สีพื้นอ่อนๆในเซลล์ body ตามกลุ่ม → แยกชัดเจน */
       .mp-bulk-tbl tbody td.g-mgr  { background: #faf5ff; }
       .mp-bulk-tbl tbody td.g-kit  { background: #fff8ef; }
@@ -1288,11 +1290,11 @@
         vertical-align:middle;
       }
       .mp-bulk-tbl tbody td input {
-        width: 100%; min-width: 0; max-width: none;
-        padding: 5px 3px;
+        width: 100%; min-width: 44px; max-width: none;
+        padding: 6px 6px;
         text-align: center;
-        border: 1px solid var(--bd); border-radius: 6px;
-        font-family: inherit; font-size: 13px; font-weight: 700;
+        border: 1px solid var(--bd); border-radius: 7px;
+        font-family: inherit; font-size: 14px; font-weight: 700;
         font-variant-numeric: tabular-nums;
         background: #fff; outline: none;
         -moz-appearance: textfield;
@@ -6247,7 +6249,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </div>
           </div>
           <div class="dash-card-wrap" style="padding:0;overflow:auto;max-height:75vh">
-            <table id="mpBulkTbl" class="mp-bulk-tbl" style="border-collapse:separate;border-spacing:0;font-size:12.5px;width:100%;min-width:1100px"></table>
+            <table id="mpBulkTbl" class="mp-bulk-tbl" style="border-collapse:separate;border-spacing:0;font-size:12.5px;width:100%;min-width:1600px"></table>
           </div>
           <div id="mpBulkSummary" style="margin-top:12px;font-size:13px;color:var(--txt2)"></div>
         </div>
