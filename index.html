@@ -1306,10 +1306,22 @@
       .mp-bulk-tbl tbody td.status-cell {
         position: sticky; right: 0; background: #fff;
         border-left: 3px solid #cbd5e1;
-        font-size: 18px; font-weight: 800;
-        min-width: 44px;
+        font-size: 12px; font-weight: 800;
+        min-width: 92px;
         z-index: 1;
+        padding: 6px 8px !important;
+        text-align: center;
       }
+      .mp-bulk-tbl tbody td.status-cell .stat-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 999px;
+        font-size: 12px; font-weight: 800;
+        white-space: nowrap;
+      }
+      .mp-bulk-tbl tbody td.status-cell .stat-chip.blank { background: #f1f5f9; color: #94a3b8; }
+      .mp-bulk-tbl tbody td.status-cell .stat-chip.ok    { background: #dcfce7; color: #166534; }
+      .mp-bulk-tbl tbody td.status-cell .stat-chip.bad   { background: #fee2e2; color: #991b1b; cursor: help; }
+      .mp-bulk-tbl tbody td.status-cell .stat-chip.saved { background: #dbeafe; color: #1e40af; }
       .mp-bulk-tbl tbody tr:nth-child(even) td.status-cell { background: #fafbfc; }
       .mp-bulk-tbl tbody tr.ok  td.status-cell { color: #16a34a; background: #f0fdf4 !important; }
       .mp-bulk-tbl tbody tr.bad td.status-cell { color: #dc2626; background: #fef2f2 !important; }
@@ -9008,7 +9020,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             const cls = `g-${f.g}` + (isGroupStart(idx) ? ` gstart ${f.g}` : "") + (isSubEnd(idx) ? " sub-end" : "");
             row += `<td class="${cls}"><input id="mpb_${code}_${f.k}" type="number" min="0" inputmode="numeric" placeholder="0" ${valAttr} oninput="_mpBulkRowRecalc('${code}')"></td>`;
           });
-          row += `<td class="status-cell" id="mpbstat_${code}">—</td></tr>`;
+          row += `<td class="status-cell" id="mpbstat_${code}"><span class="stat-chip blank">— รอกรอก</span></td></tr>`;
           return row;
         }).join("");
         tbl.innerHTML = `<thead>${h1}${h2}</thead><tbody>${rows}</tbody>`;
@@ -9045,21 +9057,20 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const v = _mpBulkRowValidate(p);
         const row = document.getElementById("mpbrow_" + code);
         const stat = document.getElementById("mpbstat_" + code);
-        // เช็คว่า row นี้ถูกแตะ (ค่ารวมทั้งหมด > 0) — ไม่งั้นแสดง — (รอกรอก)
         const anyFilled = _MP_BULK_FIELDS.some(f => p[f.k] > 0);
         if (!anyFilled) {
           row && row.classList.remove("ok", "bad");
-          if (stat) { stat.textContent = "—"; stat.title = "รอกรอก"; stat.style.color = "#94a3b8"; }
+          if (stat) stat.innerHTML = `<span class="stat-chip blank" title="ยังไม่ได้กรอก">— รอกรอก</span>`;
           return;
         }
         if (v.ok) {
           row && row.classList.remove("bad");
           row && row.classList.add("ok");
-          if (stat) { stat.textContent = "✓"; stat.title = ""; stat.style.color = ""; }
+          if (stat) stat.innerHTML = `<span class="stat-chip ok" title="ตรวจสอบแล้ว">✓ พร้อม</span>`;
         } else {
           row && row.classList.add("bad");
           row && row.classList.remove("ok");
-          if (stat) { stat.textContent = "⚠"; stat.title = v.err; stat.style.color = ""; }
+          if (stat) stat.innerHTML = `<span class="stat-chip bad" title="${escHtml(v.err || '')}">⚠ ต้องแก้</span>`;
         }
       }
       function _mpBulkIsFilled(p) {
@@ -9120,11 +9131,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             if (!res || !res.ok) {
               fail++;
               const stat = document.getElementById("mpbstat_" + p.branch_code);
-              if (stat) { stat.textContent = "✗"; stat.title = res && res.error || "บันทึกไม่สำเร็จ"; stat.style.color = "#dc2626"; }
+              if (stat) stat.innerHTML = `<span class="stat-chip bad" title="${escHtml((res && res.error) || 'บันทึกไม่สำเร็จ')}">✗ ผิดพลาด</span>`;
             } else {
               _mpData[p.branch_code] = { ...(_mpData[p.branch_code] || {}), ...p };
               const stat = document.getElementById("mpbstat_" + p.branch_code);
-              if (stat) { stat.textContent = "💾"; stat.style.color = "#16a34a"; }
+              if (stat) stat.innerHTML = `<span class="stat-chip saved" title="บันทึกสำเร็จ">💾 บันทึกแล้ว</span>`;
               const bInfo = BRANCH_DM_MAP[p.branch_code] || {};
               pushToSheet("save_manpower", {
                 ...p, branch_name: bInfo.branch || "", district_manager: bInfo.dm || "",
