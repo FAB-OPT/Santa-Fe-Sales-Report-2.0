@@ -8460,6 +8460,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       function showManpower() {
         showScreen("sManpower");
+        // ปรับ active state — sidebar / drawer / bottom nav
+        document.querySelectorAll(".mob-nav-btn, .desk-nav-btn, .md-nav-btn").forEach(b => b.classList.remove("active"));
+        ["dnManpower", "mdManpower", "mnManpower"].forEach(id => {
+          const el = document.getElementById(id); if (el) el.classList.add("active");
+        });
         _ensureManpowerYearMonth();
         _populateManpowerBzm();
         const isBzm = (S.role === "bzm");
@@ -9312,6 +9317,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       var _ehRows = [];
       function showEditHistory() {
         showScreen("sEditHist");
+        // ปรับ active state — sidebar / drawer / bottom nav
+        document.querySelectorAll(".mob-nav-btn, .desk-nav-btn, .md-nav-btn").forEach(b => b.classList.remove("active"));
+        ["dnEditHist", "mdEditHist", "mnEditHist"].forEach(id => {
+          const el = document.getElementById(id); if (el) el.classList.add("active");
+        });
         const isBzm = (S.role === "bzm");
         const hint = document.getElementById("ehScopeHint");
         // BZM โชว์ "โซน: ..." · admin/vp ไม่โชว์ (เอาคำว่า ดูได้ทั้งระบบ ออก)
