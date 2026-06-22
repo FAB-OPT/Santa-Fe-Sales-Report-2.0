@@ -1250,6 +1250,36 @@
       .mp-bulk-tbl thead th.gstart.dual, .mp-bulk-tbl tbody td.gstart.dual { border-left-color: #c026d3 !important; }
       /* แบ่ง sub-group ภายในครัว/บริการ (ทุก 2 คอลัมน์ = B/S/G) */
       .mp-bulk-tbl thead th.sub.sub-end, .mp-bulk-tbl tbody td.sub-end { border-right: 1px dashed #cbd5e1 !important; }
+
+      /* คอลัมน์ตามไซด์พีริยด (FT/PT) + ตัวรวม (read-only calc) */
+      .mp-bulk-tbl tbody td.c-pt    { background: #f5edff !important; }
+      .mp-bulk-tbl tbody td.c-ft    { background: #ffe4ec !important; }
+      .mp-bulk-tbl tbody td.c-pt-tot{ background: #e9d5ff !important; }
+      .mp-bulk-tbl tbody td.c-ft-tot{ background: #fbcfe8 !important; }
+      .mp-bulk-tbl tbody td.c-tot-team { background: #d1fae5 !important; }
+      .mp-bulk-tbl tbody td.c-tot-kit  { background: #cffafe !important; }
+      .mp-bulk-tbl tbody td.c-tot-srv  { background: #fed7aa !important; }
+      .mp-bulk-tbl thead th.sub.h-pt    { background: #ede9fe !important; color: #6d28d9 !important; }
+      .mp-bulk-tbl thead th.sub.h-ft    { background: #fce7f3 !important; color: #be185d !important; }
+      .mp-bulk-tbl thead th.sub.h-pt-tot{ background: #c4b5fd !important; color: #4c1d95 !important; }
+      .mp-bulk-tbl thead th.sub.h-ft-tot{ background: #f9a8d4 !important; color: #831843 !important; }
+      .mp-bulk-tbl thead th.sub.h-tot-team{ background: #86efac !important; color: #14532d !important; }
+      .mp-bulk-tbl thead th.sub.h-tot-kit { background: #67e8f9 !important; color: #155e75 !important; }
+      .mp-bulk-tbl thead th.sub.h-tot-srv { background: #fdba74 !important; color: #9a3412 !important; }
+      /* sub-tier label (Basic/Silver/Gold) ที่หัวคอลัมน์ */
+      .mp-bulk-tbl thead th.sub .sub-tier {
+        display:block; font-size:9.5px; font-weight:700;
+        color:#64748b; letter-spacing:.04em; text-transform:uppercase;
+        margin-bottom:2px;
+      }
+      /* read-only calc cells — ตัวเลขใหญ่ ตัวหนา ไม่มีช่อง input */
+      .mp-bulk-tbl tbody td .calc-val {
+        display:inline-block; min-width:36px;
+        font-weight:800; font-size:14.5px;
+        font-variant-numeric: tabular-nums;
+        color: #0f172a;
+      }
+      .mp-bulk-tbl tbody td .calc-val.zero { color: #cbd5e1; }
       /* body */
       .mp-bulk-tbl tbody td {
         padding: 6px 6px;
@@ -6249,7 +6279,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </div>
           </div>
           <div class="dash-card-wrap" style="padding:0;overflow:auto;max-height:75vh">
-            <table id="mpBulkTbl" class="mp-bulk-tbl" style="border-collapse:separate;border-spacing:0;font-size:12.5px;width:100%;min-width:1600px"></table>
+            <table id="mpBulkTbl" class="mp-bulk-tbl" style="border-collapse:separate;border-spacing:0;font-size:12.5px;width:100%;min-width:2000px"></table>
           </div>
           <div id="mpBulkSummary" style="margin-top:12px;font-size:13px;color:var(--txt2)"></div>
         </div>
@@ -8966,59 +8996,72 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         renderManpowerList();
       }
       var _MP_BULK_FIELDS = [
-        // {key, group, label, color}
-        { k: "rgm",         g: "mgr",  l: "RGM" },
-        { k: "sam",         g: "mgr",  l: "SAM" },
-        { k: "am",          g: "mgr",  l: "AM" },
-        { k: "ss",          g: "mgr",  l: "SS" },
-        { k: "k_basic_pt",  g: "kit",  l: "B-PT" },
-        { k: "k_basic_ft",  g: "kit",  l: "B-FT" },
-        { k: "k_silver_pt", g: "kit",  l: "S-PT" },
-        { k: "k_silver_ft", g: "kit",  l: "S-FT" },
-        { k: "k_gold_pt",   g: "kit",  l: "G-PT" },
-        { k: "k_gold_ft",   g: "kit",  l: "G-FT" },
-        { k: "s_basic_pt",  g: "srv",  l: "B-PT" },
-        { k: "s_basic_ft",  g: "srv",  l: "B-FT" },
-        { k: "s_silver_pt", g: "srv",  l: "S-PT" },
-        { k: "s_silver_ft", g: "srv",  l: "S-FT" },
-        { k: "s_gold_pt",   g: "srv",  l: "G-PT" },
-        { k: "s_gold_ft",   g: "srv",  l: "G-FT" },
-        { k: "pt_8h",       g: "pt",   l: "8h" },
-        { k: "pt_dual40",   g: "pt",   l: "ทวิภาคี 40h" },
-        { k: "pt_45h",      g: "pt",   l: "4-5h" },
-        { k: "dual_ft",     g: "dual", l: "FT" },
-        { k: "dual_pt",     g: "dual", l: "PT" }
+        // type:input = ช่องกรอก · type:calc = สรุปอัตโนมัติ (read-only)
+        // color: ft (ชมพู) / pt (ม่วง) / tot-team (เขียว) / tot-kit (ฟ้า) / tot-srv (ส้ม) / tot-tier (เทา)
+        { type:"input", k:"rgm",         g:"mgr",  l:"RGM" },
+        { type:"input", k:"sam",         g:"mgr",  l:"SAM" },
+        { type:"input", k:"am",          g:"mgr",  l:"AM" },
+        { type:"input", k:"ss",          g:"mgr",  l:"SS" },
+        { type:"calc",  k:"actTeam",     g:"mgr",  l:"Actual Team", color:"tot-team",
+          calc:["rgm","sam","am","ss"] },
+
+        { type:"input", k:"k_basic_pt",  g:"kit",  l:"PT",     color:"pt", sub:"Basic" },
+        { type:"input", k:"k_basic_ft",  g:"kit",  l:"FT",     color:"ft", sub:"Basic", subEnd:true },
+        { type:"input", k:"k_silver_pt", g:"kit",  l:"PT",     color:"pt", sub:"Silver" },
+        { type:"input", k:"k_silver_ft", g:"kit",  l:"FT",     color:"ft", sub:"Silver", subEnd:true },
+        { type:"input", k:"k_gold_pt",   g:"kit",  l:"PT",     color:"pt", sub:"Gold" },
+        { type:"input", k:"k_gold_ft",   g:"kit",  l:"FT",     color:"ft", sub:"Gold", subEnd:true },
+        { type:"calc",  k:"kitPT",       g:"kit",  l:"PT รวม", color:"pt-tot",
+          calc:["k_basic_pt","k_silver_pt","k_gold_pt"] },
+        { type:"calc",  k:"kitFT",       g:"kit",  l:"FT รวม", color:"ft-tot",
+          calc:["k_basic_ft","k_silver_ft","k_gold_ft"] },
+        { type:"calc",  k:"totKit",      g:"kit",  l:"Total Kitchen", color:"tot-kit",
+          calc:["k_basic_pt","k_basic_ft","k_silver_pt","k_silver_ft","k_gold_pt","k_gold_ft"] },
+
+        { type:"input", k:"s_basic_pt",  g:"srv",  l:"PT",     color:"pt", sub:"Basic" },
+        { type:"input", k:"s_basic_ft",  g:"srv",  l:"FT",     color:"ft", sub:"Basic", subEnd:true },
+        { type:"input", k:"s_silver_pt", g:"srv",  l:"PT",     color:"pt", sub:"Silver" },
+        { type:"input", k:"s_silver_ft", g:"srv",  l:"FT",     color:"ft", sub:"Silver", subEnd:true },
+        { type:"input", k:"s_gold_pt",   g:"srv",  l:"PT",     color:"pt", sub:"Gold" },
+        { type:"input", k:"s_gold_ft",   g:"srv",  l:"FT",     color:"ft", sub:"Gold", subEnd:true },
+        { type:"calc",  k:"srvPT",       g:"srv",  l:"PT รวม", color:"pt-tot",
+          calc:["s_basic_pt","s_silver_pt","s_gold_pt"] },
+        { type:"calc",  k:"srvFT",       g:"srv",  l:"FT รวม", color:"ft-tot",
+          calc:["s_basic_ft","s_silver_ft","s_gold_ft"] },
+        { type:"calc",  k:"totSrv",      g:"srv",  l:"Total Service", color:"tot-srv",
+          calc:["s_basic_pt","s_basic_ft","s_silver_pt","s_silver_ft","s_gold_pt","s_gold_ft"] },
+
+        { type:"input", k:"pt_8h",       g:"pt",   l:"8 ชม." },
+        { type:"input", k:"pt_dual40",   g:"pt",   l:"ทวิ 40h" },
+        { type:"input", k:"pt_45h",      g:"pt",   l:"4-5 ชม." },
+        { type:"input", k:"dual_ft",     g:"dual", l:"ทวิ FT" },
+        { type:"input", k:"dual_pt",     g:"dual", l:"ทวิ PT" }
       ];
       function _mpBulkRender() {
         const tbl = document.getElementById("mpBulkTbl");
         if (!tbl) return;
-        // group counts
         const grpCount = { mgr:0, kit:0, srv:0, pt:0, dual:0 };
         _MP_BULK_FIELDS.forEach(f => { grpCount[f.g]++; });
-        // คอลัมน์แรกของแต่ละกลุ่ม (เพื่อทาเส้นซ้ายหนาๆ)
         const isGroupStart = (idx) => {
           if (idx === 0) return true;
           return _MP_BULK_FIELDS[idx].g !== _MP_BULK_FIELDS[idx-1].g;
         };
-        // sub-end: end ของแต่ละทีร์ (B/S/G) ภายในครัว/บริการ — index 5,7,9 (kit), 11,13,15 (srv) เป็น "end"
-        // คอลัมน์ที่เป็น *_ft = end ของคู่ PT-FT
-        const isSubEnd = (idx) => {
-          const f = _MP_BULK_FIELDS[idx];
-          if (f.g !== "kit" && f.g !== "srv") return false;
-          return /_ft$/.test(f.k);
-        };
         // header rows
         let h1 = `<tr><th rowspan="2" class="branch-cell">สาขา</th>`;
         h1 += `<th colspan="${grpCount.mgr}"  class="mp-bulk-grp mgr  gstart mgr">👔 ทีมผู้จัดการสาขา</th>`;
-        h1 += `<th colspan="${grpCount.kit}"  class="mp-bulk-grp kit  gstart kit">🍳 พนักงานครัว · Basic | Silver | Gold</th>`;
-        h1 += `<th colspan="${grpCount.srv}"  class="mp-bulk-grp srv  gstart srv">🍽️ พนักงานบริการ · Basic | Silver | Gold</th>`;
+        h1 += `<th colspan="${grpCount.kit}"  class="mp-bulk-grp kit  gstart kit">🍳 พนักงานครัว · Basic | Silver | Gold + รวม</th>`;
+        h1 += `<th colspan="${grpCount.srv}"  class="mp-bulk-grp srv  gstart srv">🍽️ พนักงานบริการ · Basic | Silver | Gold + รวม</th>`;
         h1 += `<th colspan="${grpCount.pt}"   class="mp-bulk-grp pt   gstart pt">⏱️ รายละเอียด Part-time</th>`;
         h1 += `<th colspan="${grpCount.dual}" class="mp-bulk-grp dual gstart dual">🎓 ทวิภาคี</th>`;
         h1 += `<th rowspan="2" class="status-cell">สถานะ</th></tr>`;
         let h2 = `<tr>`;
         _MP_BULK_FIELDS.forEach((f, idx) => {
-          const cls = `sub ${f.g}` + (isGroupStart(idx) ? ` gstart ${f.g}` : "") + (isSubEnd(idx) ? " sub-end" : "");
-          h2 += `<th class="${cls}">${f.l}</th>`;
+          let cls = `sub ${f.g}`;
+          if (isGroupStart(idx)) cls += ` gstart ${f.g}`;
+          if (f.subEnd) cls += " sub-end";
+          if (f.color) cls += " h-" + f.color;
+          const tier = f.sub ? `<span class="sub-tier">${escHtml(f.sub)}</span>` : "";
+          h2 += `<th class="${cls}">${tier}${escHtml(f.l)}</th>`;
         });
         h2 += `</tr>`;
         // body rows
@@ -9027,29 +9070,50 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const bInfo = BRANCH_DM_MAP[code] || {};
           let row = `<tr id="mpbrow_${code}"><td class="branch-cell"><span class="code">${escHtml(code)}</span>${escHtml(bInfo.branch || "-")}</td>`;
           _MP_BULK_FIELDS.forEach((f, idx) => {
-            const rawVal = r[f.k];
-            // โชว์ค่าเฉพาะเมื่อมีค่าจริงๆ (ไม่ใช่ 0 default) — 0 → placeholder
-            const valAttr = (rawVal != null && rawVal !== 0) ? `value="${rawVal}"` : `value=""`;
-            const cls = `g-${f.g}` + (isGroupStart(idx) ? ` gstart ${f.g}` : "") + (isSubEnd(idx) ? " sub-end" : "");
-            row += `<td class="${cls}"><input id="mpb_${code}_${f.k}" type="number" min="0" inputmode="numeric" placeholder="0" ${valAttr} oninput="_mpBulkRowRecalc('${code}')"></td>`;
+            let cls = `g-${f.g}`;
+            if (isGroupStart(idx)) cls += ` gstart ${f.g}`;
+            if (f.subEnd) cls += " sub-end";
+            if (f.color) cls += " c-" + f.color;
+            if (f.type === "calc") {
+              row += `<td class="${cls}"><span class="calc-val zero" id="mpb_${code}_${f.k}">0</span></td>`;
+            } else {
+              const rawVal = r[f.k];
+              const valAttr = (rawVal != null && rawVal !== 0) ? `value="${rawVal}"` : `value=""`;
+              row += `<td class="${cls}"><input id="mpb_${code}_${f.k}" type="number" min="0" inputmode="numeric" placeholder="0" ${valAttr} oninput="_mpBulkRowRecalc('${code}')"></td>`;
+            }
           });
           row += `<td class="status-cell" id="mpbstat_${code}"><span class="stat-chip blank">— รอกรอก</span></td></tr>`;
           return row;
         }).join("");
         tbl.innerHTML = `<thead>${h1}${h2}</thead><tbody>${rows}</tbody>`;
-        // initial recalc → แสดงสถานะ แต่ไม่ทำเส้นแดงในช่อง
         _mpBulkCodes.forEach(c => _mpBulkRowRecalc(c));
       }
       function _mpBulkGet(code, field) {
         const el = document.getElementById(`mpb_${code}_${field}`);
-        return el ? (parseInt(el.value, 10) || 0) : 0;
+        if (!el) return 0;
+        // input → value · span (calc) → textContent
+        if (el.tagName === "INPUT") return parseInt(el.value, 10) || 0;
+        return parseInt(el.textContent, 10) || 0;
       }
       function _mpBulkRowPayload(code) {
         const y = parseInt(document.getElementById("manpowerYear").value, 10);
         const m = parseInt(document.getElementById("manpowerMonth").value, 10);
         const p = { mode: "saveManpower", branch_code: code, year: y, month: m };
-        _MP_BULK_FIELDS.forEach(f => { p[f.k] = _mpBulkGet(code, f.k); });
+        // เก็บเฉพาะ input fields (calc fields ไม่ต้องส่งไป backend)
+        _MP_BULK_FIELDS.forEach(f => {
+          if (f.type === "input") p[f.k] = _mpBulkGet(code, f.k);
+        });
         return p;
+      }
+      function _mpBulkUpdateCalcs(code) {
+        _MP_BULK_FIELDS.filter(f => f.type === "calc").forEach(f => {
+          const sum = (f.calc || []).reduce((t, k) => t + _mpBulkGet(code, k), 0);
+          const el = document.getElementById(`mpb_${code}_${f.k}`);
+          if (el) {
+            el.textContent = sum;
+            el.classList.toggle("zero", sum === 0);
+          }
+        });
       }
       function _mpBulkRowValidate(p) {
         const totMgr = p.rgm + p.sam + p.am + p.ss;
@@ -9071,11 +9135,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         showAlert("⚠️", "เหตุผลที่ต้องแก้", `${bName}\n\n${err || "—"}`);
       }
       function _mpBulkRowRecalc(code) {
+        // อัปเดต calc cells (Actual Team / Total Kitchen / Total Service / PT/FT รวม) ก่อน
+        _mpBulkUpdateCalcs(code);
         const p = _mpBulkRowPayload(code);
         const v = _mpBulkRowValidate(p);
         const row = document.getElementById("mpbrow_" + code);
         const stat = document.getElementById("mpbstat_" + code);
-        const anyFilled = _MP_BULK_FIELDS.some(f => p[f.k] > 0);
+        const anyFilled = _MP_BULK_FIELDS.some(f => f.type === "input" && p[f.k] > 0);
         if (!anyFilled) {
           row && row.classList.remove("ok", "bad");
           if (stat) stat.innerHTML = `<span class="stat-chip blank" title="ยังไม่ได้กรอก">— รอกรอก</span>`;
@@ -9094,7 +9160,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
       }
       function _mpBulkIsFilled(p) {
-        return _MP_BULK_FIELDS.some(f => p[f.k] > 0);
+        return _MP_BULK_FIELDS.some(f => f.type === "input" && p[f.k] > 0);
       }
       function _mpBulkValidate() {
         let ok = 0, bad = 0, blank = 0;
