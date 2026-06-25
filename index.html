@@ -1287,15 +1287,32 @@
       .mp-bulk-tbl tbody td .pct-val.low  { color: #b91c1c; }
       .mp-bulk-tbl tbody td .pct-val.ok   { color: #14532d; }
       .mp-bulk-tbl tbody td .pct-val.zero { color: #94a3b8; }
-      /* readonly input — เทาขีดทับ */
-      .mp-bulk-tbl tbody td input[readonly] { background: rgba(255,255,255,.5) !important; cursor: not-allowed; color: #475569; }
+      /* readonly input — ล็อกชัด: เทา + กรอบเส้นประ + ห้ามคลิก */
+      .mp-bulk-tbl tbody td input[readonly] {
+        background: #f1f5f9 !important;
+        cursor: not-allowed;
+        color: #64748b !important;
+        border: 1px dashed #cbd5e1 !important;
+        pointer-events: none;
+        font-weight: 700;
+      }
       /* Input cells (กรอกได้) — น้ำเงินอ่อนเหมือน Excel · override c-* tints */
       .mp-bulk-tbl tbody td.is-input { background: #cfe2f3 !important; }
       .mp-bulk-tbl tbody td.is-input input { background: transparent !important; }
-      /* Plan input (admin only) — ใช้สีเทา + ขอบส้ม */
+      /* Plan input (admin only) — สีเทาทั้งเซลล์ → BZM/VP เห็นเป็น read-only ชัดเจน */
       .mp-bulk-tbl tbody td.is-input.c-plan { background: #ededed !important; }
       .mp-bulk-tbl tbody td.is-input.c-plan input:not([readonly]) {
         background: #fff !important; border: 1.5px solid #c2410c !important;
+      }
+      /* Plan readonly — แสดง 🔒 ก่อนค่า + ไม่มีกรอบ input */
+      .mp-bulk-tbl tbody td.is-input.c-plan input[readonly] {
+        background: transparent !important;
+        border: none !important;
+        color: #475569 !important;
+      }
+      .mp-bulk-tbl tbody td.is-input.c-plan:has(input[readonly])::before {
+        content: "🔒";
+        font-size: 11px; margin-right: 4px; opacity: .55;
       }
       /* sub-tier label (Basic/Silver/Gold) ที่หัวคอลัมน์ */
       .mp-bulk-tbl thead th.sub .sub-tier {
