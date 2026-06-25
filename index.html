@@ -1077,8 +1077,11 @@
       body.is-touch #sHistory .hist-filter > #histDateTo { flex: 1; min-width: 0; }
       body.is-touch #sHistory .hist-filter > .hist-slot-group {
         flex: 1 1 100%; margin-left: 0 !important;
+        display: flex !important; flex-wrap: nowrap !important;
+        align-items: center !important; gap: 8px !important;
       }
-      body.is-touch #sHistory .hist-filter > .hist-slot-group select { flex: 1; min-width: 0; }
+      body.is-touch #sHistory .hist-filter > .hist-slot-group label { flex-shrink: 0; }
+      body.is-touch #sHistory .hist-filter > .hist-slot-group select { flex: 1 1 auto; min-width: 0; }
 
       /* Manpower BZM select — ขยายเต็มจอ */
       body.is-touch #mpBzmSel { min-width: 0 !important; flex: 1; }
@@ -1320,15 +1323,20 @@
         border-color: var(--brand) !important;
         box-shadow: 0 0 0 3px rgba(242,108,28,.18) !important;
       }
-      /* Plan readonly — แสดง 🔒 + กรอบเส้นประดำ */
+      /* Plan readonly — กรอบเส้นประ + 🔒 ภายในขอบช่อง (ไม่ใช่ก่อน input) */
+      .mp-bulk-tbl tbody td.is-input.c-plan {
+        position: relative; min-width: 70px;
+      }
       .mp-bulk-tbl tbody td.is-input.c-plan input[readonly] {
         background: transparent !important;
         border: 1px dashed #000 !important;
         color: #000 !important;
+        padding-left: 16px !important;
       }
       .mp-bulk-tbl tbody td.is-input.c-plan:has(input[readonly])::before {
         content: "🔒";
-        font-size: 11px; margin-right: 4px; opacity: .7;
+        position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+        font-size: 9px; opacity: .6; pointer-events: none;
       }
       /* sub-tier label (Basic/Silver/Gold) ที่หัวคอลัมน์ */
       .mp-bulk-tbl thead th.sub .sub-tier {
@@ -5064,7 +5072,7 @@ body { background: var(--bg); color: var(--txt); }
 .dd-chan-donut-val {
   font-weight: 800; letter-spacing: -.02em;
   color: #f26c1c;
-  font-size: clamp(12px, 2vw, 20px);  /* initial — JS auto-shrink ทับให้พอดี */
+  font-size: clamp(11px, 1.5vw, 15px);
   font-variant-numeric: tabular-nums;
   max-width: 84%;
   white-space: nowrap;
@@ -10921,13 +10929,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!centerEl) return;
         const val = centerEl.querySelector(".dd-chan-donut-val");
         if (!val) return;
-        const maxW = centerEl.clientWidth * 0.74;
+        const maxW = centerEl.clientWidth * 0.7;
         if (maxW <= 0) return;
-        // เริ่ม 20px แล้วลดทีละ 1px จนกว่าจะพอดี (ขั้นต่ำ 9px)
-        let fs = 20;
+        // เริ่ม 15px แล้วลดทีละ 1px จนกว่าจะพอดี (ขั้นต่ำ 8px)
+        let fs = 15;
         val.style.fontSize = fs + "px";
         let guard = 0;
-        while (val.scrollWidth > maxW && fs > 9 && guard < 20) {
+        while (val.scrollWidth > maxW && fs > 8 && guard < 15) {
           fs -= 1;
           val.style.fontSize = fs + "px";
           guard++;
