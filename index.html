@@ -1072,6 +1072,147 @@
         min-width: 0 !important;
       }
       /* ══════════════════════════════════════════════════════
+         Zone BZM page — global (ใช้ทั้ง desktop และมือถือ)
+      ══════════════════════════════════════════════════════ */
+      .adm-zone-hero {
+        background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      }
+      .adm-zone-hero-row { display: flex; align-items: center; gap: 14px; }
+      .adm-zone-hero-ico {
+        width: 44px; height: 44px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; background: #fff; border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      }
+      .adm-zone-hero-body { flex: 1; min-width: 0; }
+      .adm-zone-hero-lbl {
+        font-size: 11px; font-weight: 800; color: #9a3412;
+        text-transform: uppercase; letter-spacing: .04em;
+        margin-bottom: 4px;
+      }
+      .adm-zone-hero-sel {
+        width: 100%;
+        background: #fff; border: 1.5px solid #fed7aa;
+        border-radius: 9px; padding: 9px 12px;
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        color: var(--txt); outline: none;
+        appearance: none; -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a3412' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+        background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+        padding-right: 32px;
+      }
+      .adm-zone-hero-cnt {
+        flex-shrink: 0; text-align: center; padding: 6px 14px;
+        background: #fff; border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      }
+      .adm-zone-hero-cnt b {
+        display: block; font-size: 22px; font-weight: 800;
+        color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1;
+      }
+      .adm-zone-hero-cnt span {
+        font-size: 10.5px; font-weight: 700;
+        color: var(--txt2); letter-spacing: .04em;
+      }
+      .adm-zone-secttl {
+        font-weight: 800; font-size: 14px;
+        color: var(--brand); margin-bottom: 10px;
+        display: flex; align-items: center; gap: 6px;
+      }
+      .adm-zone-pane[data-zone-pane="out"] .adm-zone-secttl { color: var(--txt2); }
+      .adm-zone-list { max-height: 420px; overflow-y: auto; }
+      .adm-zone-search {
+        width: 100%; box-sizing: border-box;
+        background: var(--bg-2); border: 1px solid var(--bd);
+        border-radius: 8px; padding: 8px 12px;
+        font-family: inherit; font-size: 13px;
+        margin-bottom: 10px; outline: none;
+      }
+      .adm-zone-search:focus { border-color: var(--brand); background: #fff; }
+      .admin-zone-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; border-radius: 10px;
+        margin-bottom: 6px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        transition: border-color .12s, background .12s;
+      }
+      .admin-zone-item:hover { border-color: #fed7aa; background: #fffbf5; }
+      .admin-zone-item-code {
+        display: inline-block; font-size: 11px; font-weight: 800;
+        padding: 3px 8px; border-radius: 6px;
+        background: var(--brand); color: #fff;
+        font-variant-numeric: tabular-nums; flex-shrink: 0;
+      }
+      .admin-zone-item-body {
+        flex: 1; min-width: 0;
+        display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+      }
+      .admin-zone-item-name {
+        font-weight: 700; font-size: 13.5px; color: var(--txt);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .admin-zone-item-bzm {
+        font-size: 11px; color: var(--txt2);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .admin-zone-btn {
+        background: var(--brand); color: #fff;
+        border: none; border-radius: 8px;
+        padding: 7px 14px; font-size: 12.5px; font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0; min-height: 36px; white-space: nowrap;
+      }
+      .admin-zone-btn-remove { background: #dc2626; }
+      .adm-zone-tabs { display: none; }
+      .adm-zone-tab {
+        flex: 1; padding: 10px 12px;
+        background: transparent; border: none;
+        font-family: inherit; font-size: 13px; font-weight: 700;
+        color: var(--txt2); cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        border-bottom: 2px solid transparent;
+        transition: color .15s, border-color .15s;
+      }
+      .adm-zone-tab .ico { font-size: 16px; }
+      .adm-zone-tab .cnt {
+        font-size: 11px; font-weight: 800;
+        background: var(--bg-2); color: var(--txt2);
+        padding: 1px 7px; border-radius: 999px;
+        min-width: 20px; text-align: center;
+      }
+      .adm-zone-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+      .adm-zone-tab.active .cnt { background: var(--brand); color: #fff; }
+
+      /* Mobile-only: tabs + 1-pane-at-a-time + bigger touch targets */
+      @media (max-width: 640px) {
+        .adm-zone-tabs {
+          display: flex !important;
+          background: #fff; border: 1px solid var(--bd);
+          border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+        }
+        .adm-zone-pane { display: none !important; padding: 12px !important; }
+        .adm-zone-pane.active { display: block !important; }
+        .admin-zone-item { padding: 12px 14px; }
+        .admin-zone-btn  { padding: 9px 16px; min-height: 40px; }
+        .adm-zone-list { max-height: none; }
+      }
+      body.is-touch .adm-zone-tabs {
+        display: flex !important;
+        background: #fff; border: 1px solid var(--bd);
+        border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+      }
+      body.is-touch .adm-zone-pane { display: none !important; padding: 12px !important; }
+      body.is-touch .adm-zone-pane.active { display: block !important; }
+      body.is-touch .admin-zone-item { padding: 12px 14px; }
+      body.is-touch .admin-zone-btn  { padding: 9px 16px; min-height: 40px; }
+      body.is-touch .adm-zone-list { max-height: none; }
+
+      /* ══════════════════════════════════════════════════════
          Admin mobile compact rows — branches / bzms / users / zones
       ══════════════════════════════════════════════════════ */
       .adm-mob-wrap { display: none; }
@@ -4423,137 +4564,7 @@ body { background: var(--bg); color: var(--txt); }
     font-size: 1.25rem !important;
     font-weight: 800 !important;
   }
-  /* ── Zone hero card (BZM picker) ── */
-  .adm-zone-hero {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-    border: 1px solid #fed7aa;
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-  }
-  .adm-zone-hero-row { display: flex; align-items: center; gap: 14px; }
-  .adm-zone-hero-ico {
-    width: 44px; height: 44px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; background: #fff; border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .adm-zone-hero-body { flex: 1; min-width: 0; }
-  .adm-zone-hero-lbl {
-    font-size: 11px; font-weight: 800; color: #9a3412;
-    text-transform: uppercase; letter-spacing: .04em;
-    margin-bottom: 4px;
-  }
-  .adm-zone-hero-sel {
-    width: 100%;
-    background: #fff; border: 1.5px solid #fed7aa;
-    border-radius: 9px; padding: 9px 12px;
-    font-family: inherit; font-size: 14px; font-weight: 700;
-    color: var(--txt); outline: none;
-    appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a3412' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
-    background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
-    padding-right: 32px;
-  }
-  .adm-zone-hero-cnt {
-    flex-shrink: 0; text-align: center; padding: 6px 14px;
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .adm-zone-hero-cnt b {
-    display: block; font-size: 22px; font-weight: 800;
-    color: var(--brand); font-variant-numeric: tabular-nums; line-height: 1;
-  }
-  .adm-zone-hero-cnt span {
-    font-size: 10.5px; font-weight: 700;
-    color: var(--txt2); letter-spacing: .04em;
-  }
-
-  .adm-zone-secttl {
-    font-weight: 800; font-size: 14px;
-    color: var(--brand); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .adm-zone-pane[data-zone-pane="out"] .adm-zone-secttl { color: var(--txt2); }
-  .adm-zone-list { max-height: 420px; overflow-y: auto; }
-
-  .adm-zone-search {
-    width: 100%; box-sizing: border-box;
-    background: var(--bg-2); border: 1px solid var(--bd);
-    border-radius: 8px; padding: 8px 12px;
-    font-family: inherit; font-size: 13px;
-    margin-bottom: 10px; outline: none;
-  }
-  .adm-zone-search:focus { border-color: var(--brand); background: #fff; }
-
-  /* ── Zone item card ── */
-  .admin-zone-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; border-radius: 10px;
-    margin-bottom: 6px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    transition: border-color .12s, background .12s;
-  }
-  .admin-zone-item:hover { border-color: #fed7aa; background: #fffbf5; }
-  .admin-zone-item-code {
-    display: inline-block; font-size: 11px; font-weight: 800;
-    padding: 3px 8px; border-radius: 6px;
-    background: var(--brand); color: #fff;
-    font-variant-numeric: tabular-nums; flex-shrink: 0;
-  }
-  .admin-zone-item-body {
-    flex: 1; min-width: 0;
-    display: flex; flex-direction: column; gap: 2px; overflow: hidden;
-  }
-  .admin-zone-item-name {
-    font-weight: 700; font-size: 13.5px; color: var(--txt);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .admin-zone-item-bzm {
-    font-size: 11px; color: var(--txt2);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .admin-zone-btn {
-    background: var(--brand); color: #fff;
-    border: none; border-radius: 8px;
-    padding: 7px 14px; font-size: 12.5px; font-weight: 700;
-    cursor: pointer;
-    flex-shrink: 0; min-height: 36px; white-space: nowrap;
-  }
-  .admin-zone-btn-remove { background: #dc2626; }
-
-  /* ── Tabs (mobile only) ── */
-  .adm-zone-tabs { display: none; }
-  .adm-zone-tab {
-    flex: 1; padding: 10px 12px;
-    background: transparent; border: none;
-    font-family: inherit; font-size: 13px; font-weight: 700;
-    color: var(--txt2); cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    border-bottom: 2px solid transparent;
-    transition: color .15s, border-color .15s;
-  }
-  .adm-zone-tab .ico { font-size: 16px; }
-  .adm-zone-tab .cnt {
-    font-size: 11px; font-weight: 800;
-    background: var(--bg-2); color: var(--txt2);
-    padding: 1px 7px; border-radius: 999px;
-    min-width: 20px; text-align: center;
-  }
-  .adm-zone-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
-  .adm-zone-tab.active .cnt { background: var(--brand); color: #fff; }
-
-  body.is-touch .adm-zone-tabs {
-    display: flex !important;
-    background: #fff; border: 1px solid var(--bd);
-    border-radius: 10px; margin-bottom: 12px; overflow: hidden;
-  }
-  body.is-touch .adm-zone-pane { display: none !important; padding: 12px !important; }
-  body.is-touch .adm-zone-pane.active { display: block !important; }
-  body.is-touch .admin-zone-item { padding: 12px 14px; }
-  body.is-touch .admin-zone-btn  { padding: 9px 16px; min-height: 40px; }
-  body.is-touch .adm-zone-list { max-height: none; }
+  /* (Zone styles ย้ายไปไว้ noวน @media ด้านล่าง) */
 
   /* ─ Page header (consistent) ─ */
   .dash-page-hdr {
