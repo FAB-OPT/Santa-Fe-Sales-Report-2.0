@@ -1284,11 +1284,14 @@
       .mp-bulk-tbl thead th.sub.h-tier-basic { background: #fb923c !important; }
       .mp-bulk-tbl thead th.sub.h-tier-silver{ background: #94a3b8 !important; }
       .mp-bulk-tbl thead th.sub.h-tier-gold  { background: #fbbf24 !important; }
-      /* pct — เก็บสีเฉพาะตัว % เพื่อบอกสถานะ ok/low */
+      /* pct — สีบอกสถานะ: <65% แดงเตือน · 65-99% ส้ม · ≥100% เขียว */
       .mp-bulk-tbl tbody td .pct-val      { color: #000; }
-      .mp-bulk-tbl tbody td .pct-val.low  { color: #b91c1c; }
+      .mp-bulk-tbl tbody td .pct-val.low  { color: #fff; background: #dc2626; padding: 2px 8px; border-radius: 6px; font-weight: 800; }
+      .mp-bulk-tbl tbody td .pct-val.mid  { color: #92400e; }
       .mp-bulk-tbl tbody td .pct-val.ok   { color: #15803d; }
       .mp-bulk-tbl tbody td .pct-val.zero { color: #94a3b8; }
+      /* แถวที่ vs Plan < 65% → กรอบแดงเตือน */
+      .mp-bulk-tbl tbody td.c-vs-plan:has(.pct-val.low) { background: #fee2e2 !important; }
       /* readonly input — ล็อกชัด: เทา + กรอบเส้นประ + ห้ามคลิก */
       .mp-bulk-tbl tbody td input[readonly] {
         background: #f1f5f9 !important;
@@ -9390,7 +9393,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           } else {
             const pct = Math.round((actualStaff / planStaff) * 1000) / 10;
             pctEl.textContent = pct + "%";
-            pctEl.className = "calc-val pct-val " + (pct >= 100 ? "ok" : "low");
+            let cls = "ok";
+            if (pct < 65)        cls = "low";   // เตือน
+            else if (pct < 100)  cls = "mid";   // ต่ำกว่า plan แต่ไม่วิกฤต
+            pctEl.className = "calc-val pct-val " + cls;
           }
         }
       }
