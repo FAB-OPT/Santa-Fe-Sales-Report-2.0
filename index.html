@@ -1902,6 +1902,13 @@
         .dd-donut-canvas, .dd-chan-donut-canvas { max-width: 100%; }
         /* trend chart wrapper */
         [id^="sec"][id$="TrendBox"] { max-width: 100%; overflow: hidden; }
+        /* card ที่ห่อกราฟแนวโน้ม → ลด padding ซ้าย-ขวาให้กราฟยืดได้ */
+        .dash3-card:has(> .dash2-cardhdr) [id^="sec"][id$="TrendBox"] {
+          margin-left: -8px; margin-right: -8px;
+        }
+        .dash3-row > .dash3-card { padding: 14px 10px !important; }
+        /* บาร์ chart ในการ์ดเด้งซ้ายเพื่อให้แกน Y ติดขอบ */
+        .dash3-card canvas { margin-left: -4px; }
       }
 
       /* ─────────────────────────────────────────
@@ -12013,7 +12020,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const _isBranchRole = (role === 'branch' || role === 'franchise');
         const _isMobile = (typeof window !== "undefined") &&
           window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
-        // มือถือ + w/m/y → เพิ่ม channel panel แบบ daily (ใช้ id เฉพาะ "ChanBox" ไม่ชน TrendBox ใน hero)
         const addMobileChannelPanel = _isMobile && !isDayMode;
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
         if (isDayMode) {
@@ -12022,7 +12028,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <div class="dash3-row">${topPanel}</div>
             <div class="dash3-row">${channelMega}</div>`;
         } else {
-          // donut + legend + ตาราง (desktop)
+          // donut + legend + ตาราง (desktop wraps content; .desk-only-row hides on mobile)
           const channelCombined = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่ายอดขายแยกตามช่องทาง",
             `<div class="dd-donut-row">
               <div class="dd-donut-canvas">
@@ -12033,17 +12039,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </div>
             <div class="dd-donut-table-wrap">${_ddChannelTable(rows)}</div>`);
           const _weekBranchSkipTrend = (sec === 'week' && _isBranchRole);
-          // ─ มือถือ: เพิ่ม channel panel เป็นการ์ดเดี่ยวแบบ daily ─
+          // มือถือ: เพิ่ม channel panel แบบ daily (id "ChanBox") ใต้ topPanel
           const mobileChannelPanel = addMobileChannelPanel
             ? `<div class="dash3-row mob-only-row">
                  ${_ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่า · บิล · เฉลี่ย/บิล", `<div id="sec${C}ChanBox"></div>`)}
                </div>` : '';
+          // topPanel เดียว · channelCombined ห่อด้วย desk-only เพื่อซ่อนบนมือถือ
           bodyEl.innerHTML = `
-            <div class="dash3-row dd-grid2 desk-only-row">
+            <div class="dash3-row dd-grid2">
               ${topPanel}
-              ${channelCombined}
+              <div class="desk-only-row">${channelCombined}</div>
             </div>
-            <div class="dash3-row mob-only-row">${topPanel}</div>
             ${mobileChannelPanel}
             ` + (_weekBranchSkipTrend ? '' : `
             <div class="dash3-row">
