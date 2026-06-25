@@ -1883,6 +1883,20 @@
         .dd-bar-head span:last-child { text-align:right; min-width:100px; }
       }
 
+      /* มือถือ — กัน week/month/year section ดันความกว้างทะลุจอ → ป้องกัน iOS auto zoom-out */
+      @media (max-width: 640px) {
+        #sDash { overflow-x: hidden; }
+        .dash3-section { overflow-x: hidden; max-width: 100%; }
+        .dash3-row { min-width: 0; max-width: 100%; }
+        .dash3-card, .dash2-card { max-width: 100%; min-width: 0; overflow: hidden; }
+        .dd-bar-name, .dd-bar-val { min-width: 0; }
+        .dd-bar-name { overflow: hidden; }
+        .dd-bar-name .dd-bar-name-text { overflow: hidden; text-overflow: ellipsis; }
+        .dd-donut-canvas, .dd-chan-donut-canvas { max-width: 100%; }
+        /* trend chart wrapper */
+        [id^="sec"][id$="TrendBox"] { max-width: 100%; overflow: hidden; }
+      }
+
       /* ─────────────────────────────────────────
    HUB BUTTON (กลับเมนูหลัก) — solid green + arrow icon
 ───────────────────────────────────────── */
