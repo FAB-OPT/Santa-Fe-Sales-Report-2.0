@@ -5553,6 +5553,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <span>นำเข้าข้อมูล</span>
       </button>
 
+      <!-- Test mode toggle (admin only) -->
+      <button class="desk-nav-btn admin-only-nav" id="testModeBtn" onclick="toggleTestModeAdmin()" style="display:none;margin:0 10px 8px">
+        <span class="desk-nav-ico">🧪</span>
+        <span>โหมดทดสอบ: <span id="testModeStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
+      </button>
+
       <!-- Bypass order toggle (admin only) -->
       <button class="desk-nav-btn admin-only-nav" id="bypassOrderBtn" onclick="toggleBypassOrderAdmin()" style="display:none;margin:0 10px 8px">
         <span class="desk-nav-ico">🚫</span>
