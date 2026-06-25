@@ -5072,7 +5072,7 @@ body { background: var(--bg); color: var(--txt); }
 .dd-chan-donut-val {
   font-weight: 800; letter-spacing: -.02em;
   color: #f26c1c;
-  font-size: clamp(11px, 1.5vw, 15px);
+  font-size: clamp(12px, 1.7vw, 17px);
   font-variant-numeric: tabular-nums;
   max-width: 84%;
   white-space: nowrap;
@@ -10929,13 +10929,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!centerEl) return;
         const val = centerEl.querySelector(".dd-chan-donut-val");
         if (!val) return;
-        const maxW = centerEl.clientWidth * 0.7;
+        const maxW = centerEl.clientWidth * 0.72;
         if (maxW <= 0) return;
-        // เริ่ม 15px แล้วลดทีละ 1px จนกว่าจะพอดี (ขั้นต่ำ 8px)
-        let fs = 15;
+        // เริ่ม 17px แล้วลดทีละ 1px จนกว่าจะพอดี (ขั้นต่ำ 9px)
+        let fs = 17;
         val.style.fontSize = fs + "px";
         let guard = 0;
-        while (val.scrollWidth > maxW && fs > 8 && guard < 15) {
+        while (val.scrollWidth > maxW && fs > 9 && guard < 15) {
           fs -= 1;
           val.style.fontSize = fs + "px";
           guard++;
