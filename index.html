@@ -1071,6 +1071,100 @@
         flex: 1 1 100%;
         min-width: 0 !important;
       }
+      /* ══════════════════════════════════════════════════════
+         Admin mobile compact rows — branches / bzms / users / zones
+      ══════════════════════════════════════════════════════ */
+      .adm-mob-wrap { display: none; }
+      .adm-zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+
+      body.is-touch .adm-desk-wrap { display: none !important; }
+      body.is-touch .adm-mob-wrap  { display: flex !important; flex-direction: column; gap: 8px; }
+      body.is-touch .adm-zone-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+      /* Mobile compact row — single line */
+      .adm-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        border: 1px solid var(--bd);
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.04);
+      }
+      .adm-row-main {
+        flex: 1; min-width: 0;
+        display: flex; flex-direction: column; gap: 2px;
+      }
+      .adm-row-top {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 14px; font-weight: 700; color: var(--txt);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .adm-row-code {
+        display: inline-block; font-size: 11px; font-weight: 800;
+        padding: 2px 8px; border-radius: 6px;
+        background: var(--brand); color: #fff;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+      }
+      .adm-row-name { overflow: hidden; text-overflow: ellipsis; }
+      .adm-row-sub {
+        font-size: 11.5px; color: var(--txt2); font-weight: 600;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .adm-row-actions {
+        display: flex; gap: 6px; flex-shrink: 0;
+      }
+      .adm-row-btn {
+        width: 34px; height: 34px; padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #fff; border: 1px solid var(--bd); border-radius: 8px;
+        font-size: 14px; cursor: pointer;
+      }
+      .adm-row-btn.del { color: #dc2626; background: #fee2e2; border-color: #fecaca; }
+      .adm-row-btn:hover { filter: brightness(.95); }
+
+      /* Dropdown menu (กดปุ่ม ⋯ แล้วโชว์) */
+      .adm-row-menu-wrap { position: relative; flex-shrink: 0; }
+      .adm-row-menu {
+        position: absolute; right: 0; top: calc(100% + 4px);
+        background: #fff; border: 1px solid var(--bd); border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        padding: 6px; min-width: 140px;
+        z-index: 50;
+        display: none;
+      }
+      .adm-row-menu.open { display: block; }
+      .adm-row-menu button {
+        display: flex; align-items: center; gap: 8px; width: 100%;
+        background: none; border: none; padding: 9px 12px;
+        font-size: 13px; font-weight: 700; color: var(--txt);
+        text-align: left; cursor: pointer; border-radius: 7px;
+        font-family: inherit;
+      }
+      .adm-row-menu button:hover { background: #f1f5f9; }
+      .adm-row-menu button.del { color: #dc2626; }
+      .adm-row-menu button.del:hover { background: #fee2e2; }
+
+      /* Role badge (users) */
+      .adm-role-badge {
+        font-size: 10.5px; font-weight: 800;
+        padding: 2px 8px; border-radius: 999px;
+        flex-shrink: 0;
+      }
+      .adm-status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .adm-status-dot.on  { background: #16a34a; box-shadow: 0 0 0 2px #dcfce7; }
+      .adm-status-dot.off { background: #94a3b8; }
+
+      /* Empty state */
+      .adm-mob-empty {
+        padding: 28px 16px; text-align: center;
+        color: var(--txt2); font-size: 13px;
+        background: #fff; border: 1px dashed var(--bd); border-radius: 12px;
+      }
+
       /* History (sHistory) — มือถือ: บรรทัด 1 = จาก+ถึง · บรรทัด 2 = 🕓 รอบ + select ติดกัน */
       body.is-touch #sHistory .hist-filter { row-gap: 8px; }
       body.is-touch #sHistory .hist-filter > #histDateFrom,
@@ -4331,18 +4425,28 @@ body { background: var(--bg); color: var(--txt); }
   }
   .admin-zone-item {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 10px; border-radius: 6px;
-    margin-bottom: 4px; font-size: 13px;
+    gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    margin-bottom: 6px; font-size: 13.5px;
     background: var(--bg-2);
+    border: 1px solid transparent;
+    transition: background .12s, border-color .12s;
   }
-  .admin-zone-item:hover { background: #fff7ed; }
+  .admin-zone-item:hover { background: #fff7ed; border-color: #fed7aa; }
+  .admin-zone-item > span:first-child {
+    flex: 1; min-width: 0; line-height: 1.4;
+    overflow: hidden; text-overflow: ellipsis;
+  }
   .admin-zone-btn {
     background: var(--brand); color: #fff;
-    border: none; border-radius: 6px;
-    padding: 4px 10px; font-size: 12px; font-weight: 600;
+    border: none; border-radius: 8px;
+    padding: 7px 14px; font-size: 12.5px; font-weight: 700;
     cursor: pointer;
+    flex-shrink: 0; min-height: 34px;
   }
   .admin-zone-btn-remove { background: var(--red); }
+  body.is-touch .admin-zone-item { padding: 12px 14px; font-size: 14px; }
+  body.is-touch .admin-zone-btn  { padding: 9px 16px; min-height: 38px; }
 
   /* ─ Page header (consistent) ─ */
   .dash-page-hdr {
@@ -6129,7 +6233,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                    style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
             <span id="adminBranchCount" style="font-size:12px;color:var(--txt2);font-weight:600">— สาขา</span>
           </div>
-          <div class="dash-card-wrap" style="overflow-x:auto">
+          <div class="dash-card-wrap adm-desk-wrap" style="overflow-x:auto">
             <table class="dash-tbl" style="min-width:600px">
               <thead><tr>
                 <th>รหัสสาขา</th>
@@ -6142,6 +6246,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </tbody>
             </table>
           </div>
+          <div id="adminBranchMob" class="adm-mob-wrap"></div>
         </div>
 
         <!-- ── Tab: BZMs ── -->
@@ -6152,7 +6257,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                    style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
             <span id="adminBzmCount" style="font-size:12px;color:var(--txt2);font-weight:600">— BZM</span>
           </div>
-          <div class="dash-card-wrap" style="overflow-x:auto">
+          <div class="dash-card-wrap adm-desk-wrap" style="overflow-x:auto">
             <table class="dash-tbl" style="min-width:500px">
               <thead><tr>
                 <th>ชื่อ BZM</th>
@@ -6164,28 +6269,31 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </tbody>
             </table>
           </div>
+          <div id="adminBzmMob" class="adm-mob-wrap"></div>
         </div>
 
         <!-- ── Tab: Zones ── -->
         <div class="admin-tab-pane" data-tab="zones" style="display:none">
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-            <label style="font-size:13px;font-weight:600">เลือก BZM:</label>
+          <!-- BZM selector — full width on mobile -->
+          <div class="adm-zone-pick" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
+            <label style="font-size:13px;font-weight:700;color:var(--txt2)">🗺️ เลือก BZM</label>
             <select id="adminZoneBzm" onchange="renderAdminZone()"
-                    style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;min-width:240px"></select>
-            <span id="adminZoneCount" style="font-size:12px;color:var(--txt2);font-weight:600;margin-left:auto">— สาขาในโซน</span>
+                    style="flex:1;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13.5px;font-weight:700;min-width:0"></select>
+            <span id="adminZoneCount" style="font-size:12px;color:var(--brand);font-weight:800">— สาขา</span>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" id="adminZoneGrid">
-            <!-- LEFT: branches in this BZM zone -->
+          <div class="adm-zone-grid" id="adminZoneGrid">
+            <!-- IN-zone -->
             <div class="dash-card-wrap" style="padding:14px">
-              <div style="font-weight:700;margin-bottom:10px;color:var(--brand)">✅ สาขาในโซนนี้</div>
+              <div class="adm-zone-secttl" style="font-weight:800;margin-bottom:10px;color:var(--brand);display:flex;align-items:center;gap:6px;font-size:14px">✅ สาขาในโซนนี้</div>
               <div id="adminZoneIn" style="max-height:420px;overflow-y:auto"></div>
             </div>
-            <!-- RIGHT: other branches (not in this zone) -->
+            <!-- OTHER branches -->
             <div class="dash-card-wrap" style="padding:14px">
-              <div style="font-weight:700;margin-bottom:10px;color:var(--txt2)">📋 สาขาอื่น (คลิก ⇆ เพื่อย้ายมาโซนนี้)</div>
+              <div class="adm-zone-secttl" style="font-weight:800;margin-bottom:8px;color:var(--txt2);display:flex;align-items:center;gap:6px;font-size:14px">📋 สาขาอื่น</div>
+              <div style="font-size:11.5px;color:var(--txt2);margin-bottom:8px">แตะ ⇆ เพื่อย้ายมาโซนนี้</div>
               <input type="text" id="adminZoneOutSearch" placeholder="🔍 ค้นหา..." oninput="renderAdminZone()"
-                     style="width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:12px;margin-bottom:8px;outline:none">
+                     style="width:100%;background:var(--bg-2);border:1px solid var(--bd);border-radius:6px;padding:7px 12px;font-family:inherit;font-size:13px;margin-bottom:10px;outline:none;box-sizing:border-box">
               <div id="adminZoneOut" style="max-height:380px;overflow-y:auto"></div>
             </div>
           </div>
@@ -6207,7 +6315,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </select>
             <span id="adminUserCount" style="font-size:12px;color:var(--txt2);font-weight:600">— ผู้ใช้</span>
           </div>
-          <div class="dash-card-wrap" style="overflow-x:auto">
+          <div class="dash-card-wrap adm-desk-wrap" style="overflow-x:auto">
             <table class="dash-tbl" style="min-width:680px">
               <thead><tr>
                 <th>รหัส (PIN)</th>
@@ -6222,6 +6330,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </tbody>
             </table>
           </div>
+          <div id="adminUserMob" class="adm-mob-wrap"></div>
         </div>
 
         <!-- ── Tab: Import Excel → sales_data ── -->
@@ -7922,11 +8031,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                  (u.nick || "").toLowerCase().includes(qq) ||
                  (u.role || "").toLowerCase().includes(qq);
         });
+        const mob = document.getElementById("adminUserMob");
         if (cntEl) cntEl.textContent = `${list.length} ผู้ใช้`;
         if (!list.length) {
           body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:18px;text-align:center">— ไม่พบผู้ใช้ —</td></tr>`;
+          if (mob) mob.innerHTML = `<div class="adm-mob-empty">ไม่พบผู้ใช้</div>`;
           return;
         }
+        // Desktop
         body.innerHTML = list.map(u => {
           const roleLbl = _ROLE_LABEL[u.role] || u.role || "-";
           const roleCol = _ROLE_COLOR[u.role] || "#64748b";
@@ -7937,17 +8049,47 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             : '<span style="color:#16a34a;font-weight:700">●</span>';
           const isAdminPrime = u.code === "601183";
           return `<tr>
-            <td data-label="PIN" style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${escHtml(u.code)}</td>
-            <td data-label="ชื่อ" style="font-weight:600">${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
-            <td data-label="Role"><span style="font-size:11px;padding:2px 8px;background:${roleCol}22;color:${roleCol};border-radius:999px;font-weight:800">${roleLbl}</span></td>
-            <td data-label="Brand">${brandLbl}${crossTag}</td>
-            <td data-label="สถานะ">${status}</td>
+            <td style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${escHtml(u.code)}</td>
+            <td style="font-weight:600">${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
+            <td><span style="font-size:11px;padding:2px 8px;background:${roleCol}22;color:${roleCol};border-radius:999px;font-weight:800">${roleLbl}</span></td>
+            <td>${brandLbl}${crossTag}</td>
+            <td>${status}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick='openAdminUserModal(${JSON.stringify(u).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
               ${isAdminPrime ? "" : `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px" onclick="adminDeleteUser('${escHtml(u.code)}','${escHtml((u.nick || u.name || "").replace(/'/g, "\\'"))}')">🗑️ ลบ</button>`}
             </td>
           </tr>`;
         }).join("");
+        // Mobile compact rows
+        if (mob) {
+          mob.innerHTML = list.map(u => {
+            const roleLbl = _ROLE_LABEL[u.role] || u.role || "-";
+            const roleCol = _ROLE_COLOR[u.role] || "#64748b";
+            const isAdminPrime = u.code === "601183";
+            const json = JSON.stringify(u).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const dispName = escHtml((u.nick || u.name || "").replace(/'/g, "\\'"));
+            const menuId = `umenu_${u.code}`;
+            return `<div class="adm-row">
+              <span class="adm-status-dot ${u.active === false ? 'off' : 'on'}" title="${u.active === false ? 'ปิด' : 'เปิด'}"></span>
+              <div class="adm-row-main">
+                <div class="adm-row-top">
+                  <span class="adm-row-code">${escHtml(u.code)}</span>
+                  <span class="adm-row-name">${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:500">(${escHtml(u.nick)})</span>` : ""}</span>
+                </div>
+                <div class="adm-row-sub">
+                  <span class="adm-role-badge" style="background:${roleCol}22;color:${roleCol}">${roleLbl}</span>
+                </div>
+              </div>
+              <div class="adm-row-menu-wrap">
+                <button class="adm-row-btn" onclick="_admMenuToggle('${menuId}', event)" aria-label="เมนู">⋯</button>
+                <div class="adm-row-menu" id="${menuId}">
+                  <button onclick='openAdminUserModal(${json})'>✏️ แก้ไข</button>
+                  ${isAdminPrime ? "" : `<button class="del" onclick="adminDeleteUser('${escHtml(u.code)}','${dispName}')">🗑️ ลบ</button>`}
+                </div>
+              </div>
+            </div>`;
+          }).join("");
+        }
       }
 
       function adminDeleteUser(code, displayName) {
@@ -8485,6 +8627,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         renderAdminBranches();
       }
 
+      /* ── Mobile action menu (3-dot) — close any open menu on outside click ── */
+      function _admMenuToggle(id, e) {
+        if (e) { e.stopPropagation(); e.preventDefault(); }
+        document.querySelectorAll(".adm-row-menu.open").forEach(m => { if (m.id !== id) m.classList.remove("open"); });
+        const m = document.getElementById(id);
+        if (m) m.classList.toggle("open");
+      }
+      document.addEventListener("click", function(e) {
+        if (e.target.closest(".adm-row-menu-wrap")) return;
+        document.querySelectorAll(".adm-row-menu.open").forEach(m => m.classList.remove("open"));
+      });
+
       function renderAdminBranches() {
         const q = (document.getElementById("adminBranchSearch").value || "").toLowerCase().trim();
         const list = _adminBranches.filter(b => {
@@ -8497,15 +8651,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.getElementById("adminBranchCount").textContent = `${list.length} / ${_adminBranches.length} สาขา`;
 
         const body = document.getElementById("adminBranchBody");
+        const mob  = document.getElementById("adminBranchMob");
         if (!list.length) {
           body.innerHTML = `<tr><td colspan="4" style="color:#94a3b8;padding:24px;text-align:center">ไม่พบสาขา</td></tr>`;
+          if (mob) mob.innerHTML = `<div class="adm-mob-empty">ไม่พบสาขา</div>`;
           return;
         }
+        // Desktop table
         body.innerHTML = list.map(b => `
           <tr>
-            <td data-label="รหัส" style="font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand)">${escHtml(b.branch_code)}</td>
-            <td data-label="ชื่อสาขา" style="font-weight:600">${escHtml(b.branch_name)}</td>
-            <td data-label="BZM" style="color:var(--txt2)">${escHtml(b.district_manager || "—")}</td>
+            <td style="font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand)">${escHtml(b.branch_code)}</td>
+            <td style="font-weight:600">${escHtml(b.branch_name)}</td>
+            <td style="color:var(--txt2)">${escHtml(b.district_manager || "—")}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick='adminEditBranch(${JSON.stringify(b).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
               <button class="btn btn-sm" onclick="adminDeleteBranch('${escHtml(b.branch_code)}', '${escHtml(b.branch_name).replace(/'/g, "\\'")}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px">🗑️ ลบ</button>
@@ -8513,7 +8670,32 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </tr>
         `).join("");
 
-        // populate DM datalist (unique values)
+        // Mobile compact rows + dropdown action menu
+        if (mob) {
+          mob.innerHTML = list.map((b, i) => {
+            const menuId = `bmenu_${b.branch_code}`;
+            const json = JSON.stringify(b).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const nameSafe = escHtml(b.branch_name).replace(/'/g, "\\'");
+            return `<div class="adm-row">
+              <div class="adm-row-main">
+                <div class="adm-row-top">
+                  <span class="adm-row-code">${escHtml(b.branch_code)}</span>
+                  <span class="adm-row-name">${escHtml(b.branch_name)}</span>
+                </div>
+                <div class="adm-row-sub">BZM: ${escHtml(b.district_manager || "—")}</div>
+              </div>
+              <div class="adm-row-menu-wrap">
+                <button class="adm-row-btn" onclick="_admMenuToggle('${menuId}', event)" aria-label="เมนู">⋯</button>
+                <div class="adm-row-menu" id="${menuId}">
+                  <button onclick='adminEditBranch(${json})'>✏️ แก้ไข</button>
+                  <button class="del" onclick="adminDeleteBranch('${escHtml(b.branch_code)}', '${nameSafe}')">🗑️ ลบ</button>
+                </div>
+              </div>
+            </div>`;
+          }).join("");
+        }
+
+        // populate DM datalist
         const dms = [...new Set(_adminBranches.map(b => b.district_manager).filter(Boolean))].sort();
         document.getElementById("ab_dm_list").innerHTML = dms.map(d => `<option value="${escHtml(d)}">`).join("");
       }
@@ -8643,14 +8825,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const list = _adminBzmList.filter(b => !q || b.name.toLowerCase().includes(q));
         document.getElementById("adminBzmCount").textContent = `${list.length} / ${_adminBzmList.length} BZM`;
         const body = document.getElementById("adminBzmBody");
+        const mob  = document.getElementById("adminBzmMob");
         if (!list.length) {
           body.innerHTML = `<tr><td colspan="3" style="color:#94a3b8;padding:24px;text-align:center">ไม่พบ BZM</td></tr>`;
+          if (mob) mob.innerHTML = `<div class="adm-mob-empty">ไม่พบ BZM</div>`;
           return;
         }
+        // Desktop
         body.innerHTML = list.map(b => `
           <tr>
-            <td data-label="ชื่อ BZM" style="font-weight:700">${escHtml(b.name)}</td>
-            <td data-label="จำนวนสาขา" style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${b.count}</td>
+            <td style="font-weight:700">${escHtml(b.name)}</td>
+            <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${b.count}</td>
             <td style="text-align:right;white-space:nowrap">
               <button class="btn-edit-row btn btn-sm" onclick="openAdminBzmModal('${escHtml(b.name).replace(/'/g, "\\'")}')">✏️ แก้ไข</button>
               <button class="btn btn-sm" onclick="adminDeleteBzm('${escHtml(b.name).replace(/'/g, "\\'")}')"
@@ -8658,6 +8843,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </td>
           </tr>
         `).join("");
+        // Mobile compact rows
+        if (mob) {
+          mob.innerHTML = list.map(b => {
+            const nameSafe = escHtml(b.name).replace(/'/g, "\\'");
+            return `<div class="adm-row">
+              <div class="adm-row-main">
+                <div class="adm-row-top">
+                  <span class="adm-row-name">${escHtml(b.name)}</span>
+                  <span style="font-size:11px;font-weight:800;color:var(--brand);background:#fff7ed;padding:2px 8px;border-radius:999px;flex-shrink:0">${b.count} สาขา</span>
+                </div>
+              </div>
+              <div class="adm-row-actions">
+                <button class="adm-row-btn" onclick="openAdminBzmModal('${nameSafe}')" title="แก้ไข">✏️</button>
+                <button class="adm-row-btn del" onclick="adminDeleteBzm('${nameSafe}')" title="ลบ">🗑️</button>
+              </div>
+            </div>`;
+          }).join("");
+        }
       }
 
       function openAdminBzmModal(oldName) {
