@@ -1910,22 +1910,22 @@
         .dd-bar-name { overflow: hidden; }
         .dd-bar-name .dd-bar-name-text { overflow: hidden; text-overflow: ellipsis; }
         .dd-donut-canvas, .dd-chan-donut-canvas { max-width: 100%; }
-        /* trend chart wrapper — เลิก margin ติดลบที่ทำให้กราฟล้น/แกน Y โดนตัด */
+        /* trend chart wrapper — ไม่ overflow:hidden กัน y-axis label โดนตัด */
         [id^="sec"][id$="TrendBox"] {
-          max-width: 100%; overflow: hidden;
-          margin: 0 !important;
+          max-width: 100%; margin: 0 !important;
         }
-        .dash3-row > .dash3-card { padding: 14px 12px !important; }
+        .dash3-row > .dash3-card { padding: 14px 12px !important; overflow: visible !important; }
+        .dash3-card { overflow: visible !important; }
         .dash3-card canvas { margin: 0 !important; }
-        /* ช่องทางการขาย daily — donut + stats ชิดซ้าย ไม่ center */
+        /* ช่องทางการขาย — donut กึ่งกลาง · per-channel stats ชิดซ้าย */
         .dd-chan-donut-wrap {
           flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 10px !important;
+          align-items: center !important;
+          gap: 12px !important;
         }
         .dd-chan-donut-side {
-          align-self: flex-start !important;
-          width: 100%; max-width: 200px;
+          align-self: center !important;
+          width: 100%; max-width: 220px;
         }
         .dd-chan-stats {
           align-items: stretch !important;
