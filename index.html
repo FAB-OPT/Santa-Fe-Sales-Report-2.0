@@ -6215,6 +6215,44 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </table>
             </div>
           </div>
+
+          <!-- ════════════════ Plan Manpower upload ════════════════ -->
+          <div style="height:1px;background:var(--bd);margin:28px 0 20px"></div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.6">
+            <strong>👥 อัพโหลด Plan Manpower</strong> (Plan Team / Plan staff รายสาขา รายเดือน)<br>
+            • <strong>โครงสร้างไฟล์:</strong> row 1 = หัวคอลัมน์, row 2+ = ข้อมูล<br>
+            • คอลัมน์: <code>branch_code · year · month · plan_team · plan_staff</code><br>
+            • รหัส 4 หลัก · year พ.ศ. หรือ ค.ศ. (ระบบแปลงให้) · month 1-12<br>
+            • Import <strong>upsert</strong> (ถ้ามี branch+year+month ซ้ำ → อัปเดต plan_team/plan_staff)
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+            <button class="btn btn-outline" onclick="adminPlanMpDownloadTemplate()" style="font-size:13px">📋 ดาวน์โหลดเทมเพลต</button>
+            <input type="file" id="adminPlanMpFile" accept=".xlsx,.xls" onchange="adminPlanMpPreview()"
+                   style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px">
+            <button class="btn btn-brand" id="adminPlanMpConfirmBtn" onclick="adminPlanMpConfirm()" disabled
+                    style="font-size:13px;opacity:.5;cursor:not-allowed">🚀 เริ่มอัพโหลด</button>
+            <button class="btn btn-outline" onclick="adminPlanMpReset()" style="font-size:13px">ยกเลิก/เริ่มใหม่</button>
+          </div>
+          <div id="adminPlanMpSummary" style="display:none;background:#f1f5f9;border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.7"></div>
+          <div id="adminPlanMpProgress" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+            <div style="font-weight:700;margin-bottom:8px;font-size:13px">⏳ กำลังอัพโหลด...</div>
+            <div style="background:#f1f5f9;border-radius:6px;height:18px;overflow:hidden">
+              <div id="adminPlanMpBar" style="background:linear-gradient(90deg,#3b82f6,#06b6d4);height:100%;width:0%;transition:width .2s"></div>
+            </div>
+            <div id="adminPlanMpProgressText" style="margin-top:6px;font-size:12px;color:var(--txt2);text-align:center">0 / 0</div>
+          </div>
+          <div id="adminPlanMpPreviewWrap" style="display:none">
+            <div style="font-weight:700;margin-bottom:8px;font-size:13px">ตัวอย่าง 10 แถวแรก</div>
+            <div class="dash-card-wrap" style="overflow-x:auto">
+              <table class="dash-tbl" style="min-width:600px;font-size:12px">
+                <thead><tr>
+                  <th>รหัส</th><th>สาขา</th><th>ปี</th><th>เดือน</th>
+                  <th style="text-align:right">Plan Team</th><th style="text-align:right">Plan staff</th>
+                </tr></thead>
+                <tbody id="adminPlanMpPreviewBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -8009,6 +8047,160 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           labour_hour: _impNum(r[26]),
           labour_baht: _impNum(r[27])
         };
+      }
+
+      /* ════════════════════════════════════════════
+         ADMIN — Plan Manpower (Excel upload)
+         ════════════════════════════════════════════ */
+      var _adminPlanMpRows = [];  // parsed valid rows
+
+      function adminPlanMpDownloadTemplate() {
+        // headers: branch_code | branch_name (optional) | year | month | plan_team | plan_staff
+        const headerRow = ["branch_code", "branch_name", "year", "month", "plan_team", "plan_staff"];
+        // Sample rows: ใส่ branches ทั้งหมดที่มี + เดือนปัจจุบัน + plan = 0 (admin กรอกตัวเลขจริงเอง)
+        const now = new Date();
+        const y = now.getFullYear() + 543; // ค.ศ. → พ.ศ. ในเทมเพลต (user แก้ได้)
+        const m = now.getMonth() + 1;
+        const sampleRows = Object.keys(BRANCH_DM_MAP).sort().map(code => {
+          const bi = BRANCH_DM_MAP[code] || {};
+          return [code, bi.branch || "", y, m, 0, 0];
+        });
+        const ws = XLSX.utils.aoa_to_sheet([headerRow, ...sampleRows]);
+        ws["!cols"] = [
+          { wch: 14 }, { wch: 32 }, { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 12 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Plan Manpower");
+        XLSX.writeFile(wb, "santafe-plan-manpower-template.xlsx");
+      }
+
+      function adminPlanMpReset() {
+        _adminPlanMpRows = [];
+        const f = document.getElementById("adminPlanMpFile");
+        if (f) f.value = "";
+        ["adminPlanMpSummary", "adminPlanMpPreviewWrap", "adminPlanMpProgress"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = "none";
+        });
+        const btn = document.getElementById("adminPlanMpConfirmBtn");
+        if (btn) { btn.disabled = true; btn.style.opacity = ".5"; btn.style.cursor = "not-allowed"; }
+      }
+
+      function adminPlanMpPreview() {
+        const file = document.getElementById("adminPlanMpFile").files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: "array" });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+            if (!rows.length) { showAlert("⚠️", "ไฟล์ว่าง", "ไม่พบข้อมูลในไฟล์"); return; }
+            // หา index ของแต่ละ column จาก header row
+            const header = (rows[0] || []).map(c => String(c || "").trim().toLowerCase());
+            const idx = {
+              branch_code: header.findIndex(h => h === "branch_code" || h === "รหัส" || h === "รหัสสาขา"),
+              year:        header.findIndex(h => h === "year" || h === "ปี"),
+              month:       header.findIndex(h => h === "month" || h === "เดือน"),
+              plan_team:   header.findIndex(h => h === "plan_team" || h === "plan team"),
+              plan_staff:  header.findIndex(h => h === "plan_staff" || h === "plan staff")
+            };
+            const missing = Object.keys(idx).filter(k => idx[k] < 0);
+            if (missing.length) {
+              showAlert("⚠️", "header ไม่ครบ", "ขาดคอลัมน์: " + missing.join(", ") + "\nกรุณาดาวน์โหลดเทมเพลตและกรอกตามรูปแบบ");
+              return;
+            }
+            const parsed = [];
+            const errors = [];
+            for (let i = 1; i < rows.length; i++) {
+              const r = rows[i] || [];
+              const bc = String(r[idx.branch_code] || "").trim();
+              if (!bc) continue;  // ข้ามแถวว่าง
+              let y  = parseInt(r[idx.year], 10);
+              const m  = parseInt(r[idx.month], 10);
+              const pt = parseInt(r[idx.plan_team], 10);
+              const ps = parseInt(r[idx.plan_staff], 10);
+              if (!BRANCH_DM_MAP[bc]) { errors.push(`แถว ${i+1}: ไม่พบรหัสสาขา ${bc}`); continue; }
+              if (isNaN(y) || y < 2000) { errors.push(`แถว ${i+1}: ปีไม่ถูกต้อง (${r[idx.year]})`); continue; }
+              // พ.ศ. → ค.ศ.
+              if (y >= 2500) y -= 543;
+              if (isNaN(m) || m < 1 || m > 12) { errors.push(`แถว ${i+1}: เดือนไม่ถูกต้อง (${r[idx.month]})`); continue; }
+              if (isNaN(pt) || pt < 0) { errors.push(`แถว ${i+1}: plan_team ต้องเป็นจำนวนเต็ม ≥ 0`); continue; }
+              if (isNaN(ps) || ps < 0) { errors.push(`แถว ${i+1}: plan_staff ต้องเป็นจำนวนเต็ม ≥ 0`); continue; }
+              parsed.push({ branch_code: bc, year: y, month: m, plan_team: pt, plan_staff: ps });
+            }
+            _adminPlanMpRows = parsed;
+            // summary
+            const sum = document.getElementById("adminPlanMpSummary");
+            const errLines = errors.slice(0, 8).map(e => "• " + e).join("<br>") + (errors.length > 8 ? `<br>…และอีก ${errors.length - 8} แถว` : "");
+            sum.innerHTML = `<strong>📊 สรุปการพรีวิว</strong><br>
+              ✅ แถวพร้อมอัพโหลด: <b>${parsed.length}</b> แถว<br>
+              ${errors.length ? `⚠️ แถวที่ข้าม: <b>${errors.length}</b> แถว<br><div style="margin-top:6px;color:#92400e;font-size:12px;line-height:1.5">${errLines}</div>` : ""}`;
+            sum.style.display = "block";
+            // preview body (top 10)
+            const pb = document.getElementById("adminPlanMpPreviewBody");
+            pb.innerHTML = parsed.slice(0, 10).map(p => {
+              const bi = BRANCH_DM_MAP[p.branch_code] || {};
+              return `<tr>
+                <td style="font-weight:700;color:var(--brand)">${escHtml(p.branch_code)}</td>
+                <td>${escHtml(bi.branch || "-")}</td>
+                <td style="text-align:center">${p.year}</td>
+                <td style="text-align:center">${p.month}</td>
+                <td style="text-align:right;font-weight:700">${p.plan_team}</td>
+                <td style="text-align:right;font-weight:700">${p.plan_staff}</td>
+              </tr>`;
+            }).join("");
+            document.getElementById("adminPlanMpPreviewWrap").style.display = "block";
+            // enable confirm
+            const btn = document.getElementById("adminPlanMpConfirmBtn");
+            if (parsed.length) {
+              btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
+            } else {
+              btn.disabled = true; btn.style.opacity = ".5"; btn.style.cursor = "not-allowed";
+            }
+          } catch (err) {
+            showAlert("❌", "อ่านไฟล์ไม่สำเร็จ", err.message || String(err));
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      async function adminPlanMpConfirm() {
+        if (!_adminPlanMpRows.length) return;
+        const total = _adminPlanMpRows.length;
+        const prog = document.getElementById("adminPlanMpProgress");
+        const bar  = document.getElementById("adminPlanMpBar");
+        const txt  = document.getElementById("adminPlanMpProgressText");
+        prog.style.display = "block";
+        const btn = document.getElementById("adminPlanMpConfirmBtn");
+        btn.disabled = true; btn.style.opacity = ".5"; btn.style.cursor = "not-allowed";
+        let done = 0, fail = 0, failMsgs = [];
+        for (const p of _adminPlanMpRows) {
+          try {
+            // Upsert — ถ้ามี row อยู่ → อัปเดต plan_*; ถ้าไม่มี → insert ใหม่ + ค่าอื่น default 0
+            const { error } = await sb.from("manpower")
+              .upsert({
+                branch_code: p.branch_code, year: p.year, month: p.month,
+                plan_team: p.plan_team, plan_staff: p.plan_staff
+              }, { onConflict: "branch_code,year,month" });
+            if (error) { fail++; failMsgs.push(`${p.branch_code} ${p.year}-${p.month}: ${error.message}`); }
+          } catch (e) {
+            fail++; failMsgs.push(`${p.branch_code} ${p.year}-${p.month}: ${e.message || e}`);
+          }
+          done++;
+          const pct = Math.round((done / total) * 100);
+          bar.style.width = pct + "%";
+          txt.textContent = `${done} / ${total}`;
+        }
+        btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
+        if (fail === 0) {
+          showAlert("✅", "อัพโหลด Plan สำเร็จ", `อัปเดต Plan Team / Plan staff ${done} แถว`,
+            function() { adminPlanMpReset(); });
+        } else {
+          const lines = failMsgs.slice(0, 6).join("\n") + (failMsgs.length > 6 ? `\n…และอีก ${failMsgs.length - 6} แถว` : "");
+          showAlert("⚠️", `สำเร็จ ${done - fail} · ล้มเหลว ${fail}`, lines);
+        }
       }
 
       function adminImportDownloadTemplate() {
