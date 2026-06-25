@@ -11999,17 +11999,26 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         // โหมดรายวัน → รวม donut + bars + table เป็นการ์ดเดียว · สรุปผลสาขาเต็มแถว
         const isDayMode = (sec === 'day');
+        // มือถือ — w/m/y ใช้ "ช่องทางการขาย" แบบเดียวกับ daily
+        const _isMobile = (typeof window !== "undefined") &&
+          window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+        const useDayChannels = isDayMode || _isMobile;
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
-        if (isDayMode) {
-          // 1) สรุปยอดขาย = เต็มความกว้าง
-          // 2) ช่องทางการขาย = แท่งช่องทาง (ในแท่งมียอด/สัดส่วน · บิลเฉลี่ยอยู่หน้าชื่อช่องทาง) — ไม่มีตาราง
-          const channelMega = _ddPanel(trendTitle, trendSub,
+        if (useDayChannels) {
+          // ช่องทางการขาย = donut + ตารางสถิติช่องทาง (_ddRenderDayChannels)
+          const channelMega = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่า · บิล · เฉลี่ย/บิล",
             `<div id="sec${C}TrendBox"></div>`);
+          // ถ้าเป็น w/m/y บนมือถือ → ต่อด้วย panel แนวโน้ม (อีก TrendBox)
+          const extraTrendPanel = !isDayMode
+            ? `<div class="dash3-row">
+                 ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox2" style="position:relative;min-height:240px"></div>`)}
+               </div>` : '';
           bodyEl.innerHTML = `
             <div class="dash3-row">${topPanel}</div>
-            <div class="dash3-row">${channelMega}</div>`;
+            <div class="dash3-row">${channelMega}</div>
+            ${extraTrendPanel}`;
         } else {
-          // รวม donut + legend + ตารางรายละเอียดช่องทาง ในการ์ดเดียว (กันการ์ดขวาว่าง)
+          // Desktop week/month/year — donut + legend + ตาราง
           const channelCombined = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่ายอดขายแยกตามช่องทาง",
             `<div class="dd-donut-row">
               <div class="dd-donut-canvas">
@@ -12019,7 +12028,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <div id="sec${C}DonutLeg" class="dash2-chan-legend dd-donut-legend"></div>
             </div>
             <div class="dd-donut-table-wrap">${_ddChannelTable(rows)}</div>`);
-          // โหมดสัปดาห์ของสาขา trend chart ถูกฝังในการ์ดสรุปยอดขายแล้ว → ไม่ต้องโชว์ row 2
           const _weekBranchSkipTrend = (sec === 'week' && (role === 'branch' || role === 'franchise'));
           bodyEl.innerHTML = `
             <div class="dash3-row dd-grid2">
@@ -12030,12 +12038,35 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
             </div>`);
         }
-        _ddRenderDonut(rows, sec);
-        if (sec === 'day') _ddRenderDayChannels(rows, sec);
-        else if (sec === 'week') _ddRenderBranchTrend(rows, codes, sec, d);
-        else if (sec === 'year') _ddRenderTrend(rows, sec, d);
-        else if (isBranch) _ddRenderBranchTrend(rows, codes, sec, d);
-        else _ddRenderTrend(rows, sec, d);
+        // ── Charts ──
+        if (useDayChannels) {
+          _ddRenderDayChannels(rows, sec);
+          // มือถือ w/m/y — render trend chart ลง TrendBox2 (rename id ชั่วคราว)
+          if (!isDayMode) {
+            const t1 = document.getElementById("sec" + C + "TrendBox");
+            const t2 = document.getElementById("sec" + C + "TrendBox2");
+            if (t1 && t2) {
+              const oldId = t1.id;
+              t1.id = oldId + "_used";
+              t2.id = oldId;
+              try {
+                if (sec === 'week') _ddRenderBranchTrend(rows, codes, sec, d);
+                else if (sec === 'year') _ddRenderTrend(rows, sec, d);
+                else if (isBranch) _ddRenderBranchTrend(rows, codes, sec, d);
+                else _ddRenderTrend(rows, sec, d);
+              } finally {
+                t2.id = "sec" + C + "TrendBox2";
+                t1.id = oldId;
+              }
+            }
+          }
+        } else {
+          _ddRenderDonut(rows, sec);
+          if (sec === 'week') _ddRenderBranchTrend(rows, codes, sec, d);
+          else if (sec === 'year') _ddRenderTrend(rows, sec, d);
+          else if (isBranch) _ddRenderBranchTrend(rows, codes, sec, d);
+          else _ddRenderTrend(rows, sec, d);
+        }
       }
 
       let _secResetPending = false;
