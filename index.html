@@ -14361,13 +14361,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               q = q.gte("submit_date", since);
             }
             q = q.order("submit_date", { ascending: false })
-                 .order("submit_time_slot", { ascending: false })
-                 .range(0, 49999); // เผื่อข้อมูลย้อนหลังที่มีหลายพันแถว (default 1000)
+                 .order("submit_time_slot", { ascending: false });
 
-            const { data, error } = await q;
-            if (error) { console.error("[history query]", error); cb({ ok: false, error: error.message }); return; }
-            console.log(`[history] table=${"sales_data"} rows=${(data||[]).length} dates=${params.start_date}→${params.end_date}`);
-            const rows = (data || []).map(r => ({ ...r, _row: r.id }));
+            // ── PAGINATION: Supabase/PostgREST cap ที่ ~1000 rows ต่อ request
+            //    ดึงเป็นหน้าๆ จน hit ขอบ — ปลอดภัยทั้ง year range (~46k rows max)
+            const PAGE = 1000;
+            let allData = [];
+            let offset = 0;
+            while (true) {
+              const { data: pageData, error } = await q.range(offset, offset + PAGE - 1);
+              if (error) { console.error("[history query]", error); cb({ ok: false, error: error.message }); return; }
+              const got = (pageData || []).length;
+              allData = allData.concat(pageData || []);
+              if (got < PAGE) break;            // หน้านี้ไม่เต็ม → จบ
+              offset += PAGE;
+              if (offset > 200000) break;        // safety cap
+            }
+            console.log(`[history] table=sales_data rows=${allData.length} dates=${params.start_date}→${params.end_date} (paged)`);
+            const rows = allData.map(r => ({ ...r, _row: r.id }));
             cb({ ok: true, rows });
             return;
           }
@@ -14475,10 +14486,22 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               q = q.eq("plan_date", params.date);
             }
 
-            q = q.range(0, 49999); // เผื่อ admin ดูทุกสาขา (default 1000)
-            const { data, error } = await q;
-            if (error) { console.error("[getPlan query]", error); cb({ ok: false, error: error.message }); return; }
-            console.log(`[getPlan] table=${"plan_sale"} rows=${(data||[]).length}`);
+            // ── PAGINATION (เหมือน history) ──
+            const PLAN_PAGE = 1000;
+            let allPlan = [];
+            let planOffset = 0;
+            while (true) {
+              const { data: pageData, error } = await q.range(planOffset, planOffset + PLAN_PAGE - 1);
+              if (error) { console.error("[getPlan query]", error); cb({ ok: false, error: error.message }); return; }
+              const got = (pageData || []).length;
+              allPlan = allPlan.concat(pageData || []);
+              if (got < PLAN_PAGE) break;
+              planOffset += PLAN_PAGE;
+              if (planOffset > 200000) break;
+            }
+            const data = allPlan;
+            const error = null;
+            console.log(`[getPlan] table=plan_sale rows=${allPlan.length} (paged)`);
             // raw=true → คืนแถวเดิม (มี branch_code) สำหรับ aggregate ต่อสาขา
             if (params.raw) {
               cb({ ok: true, rows: data || [] });
