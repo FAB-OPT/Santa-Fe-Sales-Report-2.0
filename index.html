@@ -11936,7 +11936,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           let _heroSlots = null;
           let _heroSubBars = null;
           const _isBranchUser = (role === 'branch' || role === 'franchise');
-          if (sec === 'week' && _isBranchUser) {
+          if (sec === 'week') {
             // สัปดาห์ → สรุปรอบ 16:00 / สิ้นวัน ของทั้งสัปดาห์
             const _periodPlan = _ddPlan(codes, map);
             if (_periodPlan > 0) {
@@ -11944,7 +11944,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               const _sumEod = rows.filter(r => r.submit_time_slot === "สิ้นวัน").reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0);
               _heroSlots = { act16: _sum16, actEod: _sumEod, plan: _periodPlan, bills16: 0, billsEod: 0 };
             }
-          } else if (sec === 'month' && _isBranchUser) {
+          } else if (sec === 'month') {
             // เดือน → 4-5 แท่งรายอาทิตย์
             const _first = new Date(d.range.startDate + 'T00:00:00');
             const _Y = _first.getFullYear(); const _M = _first.getMonth();
@@ -11970,7 +11970,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               });
             }
             _heroSubBars = _bars;
-          } else if (sec === 'year' && _isBranchUser) {
+          } else if (sec === 'year') {
             // ปี → 12 แท่งรายเดือน (ชื่อเต็ม + ป้ายช่วงวันที่)
             const _Y = new Date(d.range.startDate + 'T00:00:00').getFullYear();
             const _TH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -12054,21 +12054,107 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const isDayMode = (sec === 'day');
         const _isBranchRole = (role === 'branch' || role === 'franchise');
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
+
+        // ── สำหรับ company/zone view บน month/year → เพิ่ม "สรุปยอดขายช่วง" (สัปดาห์ที่ 1-5 / มกราคม-ธันวาคม) ──
+        let _periodPanel = '';
+        if (!isBranch && (sec === 'month' || sec === 'year')) {
+          const _periodBars = (function() {
+            if (sec === 'month') {
+              const _first = new Date(d.range.startDate + 'T00:00:00');
+              const _Y = _first.getFullYear(); const _M = _first.getMonth();
+              const _lastDay = new Date(_Y, _M + 1, 0).getDate();
+              const _bars = [];
+              const _TH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+              const _ms = _TH_SHORT[_M];
+              for (let w = 0; w < 5; w++) {
+                const sDay = w * 7 + 1;
+                if (sDay > _lastDay) break;
+                const eDay = Math.min(sDay + 6, _lastDay);
+                let wAct = 0, wPlan = 0;
+                for (let day = sDay; day <= eDay; day++) {
+                  const key = `${_Y}-${String(_M + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                  rows.filter(r => r.submit_date === key && r.submit_time_slot === "สิ้นวัน")
+                        .forEach(r => { wAct += parseFloat(r.actual_sale) || 0; });
+                  wPlan += (d.planByDate && d.planByDate[key]) || 0;
+                }
+                _bars.push({ label: `สัปดาห์ที่ ${w + 1}`, sub: `${sDay}–${eDay} ${_ms}`, val: wAct, plan: wPlan });
+              }
+              return _bars;
+            }
+            if (sec === 'year') {
+              const _Y = new Date(d.range.startDate + 'T00:00:00').getFullYear();
+              const _TH_FULL = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+              const _bars = [];
+              for (let m = 0; m < 12; m++) {
+                const mPad = String(m + 1).padStart(2, '0');
+                const mStart = `${_Y}-${mPad}-01`;
+                const mLast = new Date(_Y, m + 1, 0).getDate();
+                const mEnd = `${_Y}-${mPad}-${String(mLast).padStart(2,'0')}`;
+                let mAct = 0, mPlan = 0;
+                rows.forEach(r => {
+                  if (r.submit_date >= mStart && r.submit_date <= mEnd && r.submit_time_slot === "สิ้นวัน") {
+                    mAct += parseFloat(r.actual_sale) || 0;
+                  }
+                });
+                Object.keys(d.planByDate || {}).forEach(k => {
+                  if (k >= mStart && k <= mEnd) mPlan += d.planByDate[k];
+                });
+                _bars.push({ label: _TH_FULL[m], val: mAct, plan: mPlan });
+              }
+              return _bars;
+            }
+            return [];
+          })();
+          if (_periodBars.length) {
+            const _maxRefVal = _periodBars.reduce((m, b) => Math.max(m, b.val || 0, b.plan || 0), 0);
+            const _hasAnySub = _periodBars.some(b => b && b.sub);
+            const _compactVar = _hasAnySub ? 'dd-rounds-bars-with-chip' : 'dd-rounds-bars-narrow';
+            const rowsHtml = _periodBars.map(b => {
+              const pctV  = b.plan > 0 ? (b.val / b.plan) * 100 : 0;
+              const fillW = _maxRefVal > 0 ? (b.val / _maxRefVal) * 100 : 0;
+              const sent = b.val > 0;
+              const overshoot = pctV >= 100;
+              const fillColor = overshoot ? '#16a34a' : (pctV >= 80 ? '#f59e0b' : (b.val > 0 ? '#fb923c' : '#cbd5e1'));
+              const pctTxt = b.plan > 0
+                ? (overshoot
+                    ? `<span style="color:#15803d;font-weight:800">${pctV.toFixed(1)}%</span>`
+                    : `<span style="color:var(--txt2);font-weight:600">${pctV.toFixed(0)}%</span>`)
+                : '';
+              const valHtml = sent
+                ? `<b style="color:${fillColor}">฿${fmt(Math.round(b.val))}</b>${pctTxt ? ' ' + pctTxt : ''}`
+                : `<span style="color:var(--txt3)">ยังไม่มียอด</span>`;
+              const sub = b.sub ? `<span class="dd-rb-sub">${escHtml(b.sub)}</span>` : '';
+              return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}">
+                <span class="dd-rb-label">${escHtml(b.label)}${sub}</span>
+                <div class="dd-rb-track">
+                  <div class="dd-rb-fill" style="width:${fillW.toFixed(2)}%;background:${fillColor}"></div>
+                </div>
+                <span class="dd-rb-val">${valHtml}</span>
+              </div>`;
+            }).join('');
+            const periodTitle = sec === 'month' ? "🗓️ สรุปรายสัปดาห์" : "📆 สรุปรายเดือน";
+            const periodSub   = sec === 'month' ? "ยอดขาย vs เป้า แต่ละสัปดาห์ของเดือนนี้" : "ยอดขาย vs เป้า แต่ละเดือนของปีนี้";
+            _periodPanel = _ddPanel(periodTitle, periodSub,
+              `<div class="dd-rounds-bars dd-rounds-bars-compact ${_compactVar}">${rowsHtml}</div>`);
+          }
+        }
         if (isDayMode) {
           const channelMega = _ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox"></div>`);
           bodyEl.innerHTML = `
             <div class="dash3-row">${topPanel}</div>
             <div class="dash3-row">${channelMega}</div>`;
         } else {
-          // w/m/y → สรุปยอดขาย · สัดส่วนช่องทางการขาย · กราฟแนวโน้ม (3 row เต็มจอเรียงแนวตั้ง)
+          // w/m/y → สรุปยอดขาย · (สรุปรายสัปดาห์/รายเดือน · admin) · สัดส่วนช่องทางการขาย · กราฟแนวโน้ม
           const channelPanel = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่า · บิล · เฉลี่ย/บิล",
             `<div id="sec${C}ChanBox"></div>`);
           const trendRow =
             `<div class="dash3-row dash3-row-full">
               ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
             </div>`;
+          const periodRow = _periodPanel ? `<div class="dash3-row dash3-row-full">${_periodPanel}</div>` : '';
           bodyEl.innerHTML =
             `<div class="dash3-row dash3-row-full">${topPanel}</div>
+             ${periodRow}
              <div class="dash3-row dash3-row-full">${channelPanel}</div>
              ${trendRow}`;
         }
