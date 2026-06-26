@@ -1228,16 +1228,25 @@
       body.is-touch .adm-mob-wrap  { display: flex !important; flex-direction: column; gap: 8px; }
       body.is-touch .adm-zone-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
 
-      /* มือถือ — toolbar เพิ่ม (สาขา/BZM/ผู้ใช้): ปุ่ม "+ เพิ่ม…" กึ่งกลาง · search/count อยู่บรรทัดของตัวเอง */
-      body.is-touch .adm-add-toolbar { justify-content: center !important; }
-      body.is-touch .adm-add-toolbar > .btn-brand {
-        order: -1;
-        flex: 0 0 auto !important;
-        min-width: 140px;
-        padding: 9px 18px !important;
-        font-size: 13.5px !important;
+      /* มือถือ — toolbar เพิ่ม (สาขา/BZM/ผู้ใช้): ปุ่ม "+ เพิ่ม…" + ช่องค้นหา อยู่บรรทัดเดียวกัน */
+      body.is-touch .adm-add-toolbar {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        align-items: center;
       }
-      body.is-touch .adm-add-toolbar > input[type="text"] { flex: 1 1 100% !important; }
+      body.is-touch .adm-add-toolbar > .btn-brand {
+        flex: 0 0 auto !important;
+        padding: 9px 14px !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+      }
+      body.is-touch .adm-add-toolbar > input[type="text"] {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        font-size: 13px !important;
+      }
+      /* ตัวนับสาขา/BZM/ผู้ใช้ — ขึ้นบรรทัดใหม่ ชิดขวา */
+      body.is-touch .adm-add-toolbar > span { flex: 1 1 100%; text-align: right; margin-top: -2px; }
 
       /* Mobile compact row — single line */
       .adm-row {
