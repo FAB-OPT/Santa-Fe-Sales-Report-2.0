@@ -1228,6 +1228,17 @@
       body.is-touch .adm-mob-wrap  { display: flex !important; flex-direction: column; gap: 8px; }
       body.is-touch .adm-zone-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
 
+      /* มือถือ — toolbar เพิ่ม (สาขา/BZM/ผู้ใช้): ปุ่ม "+ เพิ่ม…" กึ่งกลาง · search/count อยู่บรรทัดของตัวเอง */
+      body.is-touch .adm-add-toolbar { justify-content: center !important; }
+      body.is-touch .adm-add-toolbar > .btn-brand {
+        order: -1;
+        flex: 0 0 auto !important;
+        min-width: 140px;
+        padding: 9px 18px !important;
+        font-size: 13.5px !important;
+      }
+      body.is-touch .adm-add-toolbar > input[type="text"] { flex: 1 1 100% !important; }
+
       /* Mobile compact row — single line */
       .adm-row {
         display: flex; align-items: center; gap: 10px;
@@ -6409,7 +6420,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         <!-- ── Tab: Branches ── -->
         <div class="admin-tab-pane" data-tab="branches">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+          <div class="adm-add-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
             <button class="btn btn-brand" onclick="openAdminBranchModal()" style="font-size:13px">+ เพิ่มสาขา</button>
             <input type="text" id="adminBranchSearch" placeholder="🔍 ค้นหา รหัส/ชื่อ/BZM..." oninput="renderAdminBranches()"
                    style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
@@ -6433,7 +6444,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         <!-- ── Tab: BZMs ── -->
         <div class="admin-tab-pane" data-tab="bzms" style="display:none">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+          <div class="adm-add-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
             <button class="btn btn-brand" onclick="openAdminBzmModal()" style="font-size:13px">+ เพิ่ม BZM</button>
             <input type="text" id="adminBzmSearch" placeholder="🔍 ค้นหา BZM..." oninput="renderAdminBzms()"
                    style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
@@ -6497,7 +6508,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         <!-- ── Tab: Users (admin only) ── -->
         <div class="admin-tab-pane" data-tab="users" style="display:none">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+          <div class="adm-add-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
             <button class="btn btn-brand" onclick="openAdminUserModal()" style="font-size:13px">+ เพิ่มผู้ใช้</button>
             <input type="text" id="adminUserSearch" placeholder="🔍 ค้นหา รหัส/ชื่อ/role..." oninput="renderAdminUsers()"
                    style="flex:1;min-width:200px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
