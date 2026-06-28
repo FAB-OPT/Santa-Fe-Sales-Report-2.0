@@ -6671,7 +6671,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
     </div>
 
 
-    <header class="hdr" id="appHdr" style="display:none">
+    <header class="hdr" id="appHdr" style="display:none !important">
       <!-- Mobile hamburger menu (ซ่อนบน desktop) -->
       <button id="mobMenuBtn" class="mob-menu-btn" onclick="openMobDrawer()" aria-label="เมนู" style="display:none">
         <span class="mob-menu-ico">☰</span>
@@ -9007,6 +9007,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.body.classList.toggle("on-login", id === "sLogin");
         if (id === "sLogin") {
           _forceHideLoginChrome();
+          // บังคับซ่อน banners ใหม่ — เผื่อ _testMode/admin-state ค้างทำให้แสดง
+          try { if (typeof _recomputeBanners === "function") _recomputeBanners(); } catch (_) {}
           try {
             if (sessionStorage.getItem("idleTimeoutMsg") === "1") {
               sessionStorage.removeItem("idleTimeoutMsg");
@@ -12068,8 +12070,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         applyTestModeUI();
       }
       function _recomputeBanners() {
-        const t = !!(_testMode && S.code);
-        const b = !!(_bypassOrder && S.code);
+        // ถ้าอยู่หน้า login → บังคับซ่อนทั้งคู่ ไม่สนใจ flag (กัน banner เห็นบน login)
+        const onLogin = document.body.classList.contains('on-login');
+        const t = !onLogin && !!(_testMode && S.code);
+        const b = !onLogin && !!(_bypassOrder && S.code);
         const bnT = document.getElementById("testModeBanner");
         const bnB = document.getElementById("bypassOrderBanner");
         const both = t && b;
