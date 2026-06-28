@@ -6784,15 +6784,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>
           <div class="mp-period-pill">
             <span>📅</span>
-            <select id="manpowerMonth" onchange="renderManpowerList()"></select>
-            <select id="manpowerYear"  onchange="renderManpowerList()"></select>
+            <select id="manpowerMonth" onchange="_mpBzmChanged()"></select>
+            <select id="manpowerYear"  onchange="_mpBzmChanged()"></select>
           </div>
         </div>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
           <div id="mpBzmWrap" style="display:flex;gap:8px;align-items:center">
             <label style="font-size:13px;font-weight:700;color:var(--txt2)">BZM:</label>
-            <select id="mpBzmSel" onchange="renderManpowerList()"
+            <select id="mpBzmSel" onchange="_mpBzmChanged()"
                     style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;min-width:240px"></select>
           </div>
           <button id="mpBulkBtn" class="btn btn-brand" onclick="_mpBulkOpen()" disabled
@@ -10114,6 +10114,39 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.getElementById("mpBulkPeriod").textContent = `${_MP_MONTHS_TH[m-1]} ${y+543}`;
         document.getElementById("mpBulkRowCnt").textContent = codes.length;
         _mpBulkRender();
+      }
+      // เปลี่ยน BZM ใน dropdown
+      //   - ถ้าอยู่ใน list view → refresh list ปกติ
+      //   - ถ้าอยู่ใน bulk view → reload สาขาของ BZM ใหม่ + reload manpower data ของช่วงเดือนนั้น
+      function _mpBzmChanged() {
+        const bulkView = document.getElementById("mpBulkView");
+        const inBulk = bulkView && bulkView.style.display !== "none";
+        if (!inBulk) { renderManpowerList(); return; }
+        // อยู่ใน bulk view → switch สาขาตาม BZM ใหม่
+        const targetBzm = (document.getElementById("mpBzmSel") || {}).value || "";
+        const codes = Object.keys(BRANCH_DM_MAP)
+          .filter(c => BRANCH_DM_MAP[c] && BRANCH_DM_MAP[c].dm === targetBzm)
+          .sort();
+        if (!codes.length) {
+          _mpBulkClose();
+          showAlert("⚠️", "ไม่พบสาขา", "BZM นี้ไม่มีสาขา กลับสู่หน้ารายการ");
+          return;
+        }
+        const y = parseInt(document.getElementById("manpowerYear").value, 10);
+        const m = parseInt(document.getElementById("manpowerMonth").value, 10);
+        _mpBulkCodes = codes;
+        document.getElementById("mpBulkPeriod").textContent = `${_MP_MONTHS_TH[m-1]} ${y+543}`;
+        document.getElementById("mpBulkRowCnt").textContent = codes.length;
+        // โหลด manpower data ใหม่ (เพื่อให้ Plan ปัจจุบันแสดงในช่อง input)
+        const tbl = document.getElementById("mpBulkTbl");
+        if (tbl) tbl.innerHTML = `<thead><tr><th style="padding:40px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</th></tr></thead>`;
+        apiCall({ mode: "listManpower", year: y, month: m, branch_codes: codes }, function(res) {
+          _mpData = {};
+          if (res && res.ok && Array.isArray(res.rows)) {
+            res.rows.forEach(r => { _mpData[r.branch_code] = r; });
+          }
+          _mpBulkRender();
+        });
       }
       function _mpBulkClose() {
         document.getElementById("mpBulkView").style.display = "none";
