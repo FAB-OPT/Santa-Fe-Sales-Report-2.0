@@ -922,6 +922,15 @@
       body.is-touch .desk-sidebar { display: none !important; }
       body.is-touch:not(.on-login) #appHdr { display: flex !important; }
       body.is-touch.on-login #appHdr { display: none !important; }
+      /* บนหน้า login → ซ่อนทุกอย่างที่ไม่เกี่ยว: logout / hub / test banners / sidebar */
+      body.on-login #hdrLogoutBtn,
+      body.on-login #hdrHubBtn,
+      body.on-login #testModeBanner,
+      body.on-login #bypassOrderBanner,
+      body.on-login #deskSidebar,
+      body.on-login #mobNav { display: none !important; }
+      /* แถบสีพื้นหลัง (border-top สีเขียวบางๆ) บนหน้า login → ตัดทิ้ง */
+      body.on-login #appHdr { border-bottom: none; }
       body.is-touch .screen.active:not(#sLogin) { margin-left: 0 !important; padding-bottom: 80px; }
       body.is-touch .mob-nav.visible {
         display: block !important;
@@ -8294,8 +8303,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       ══════════════════════════════════════════════ */
       const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 นาที
       const IDLE_WARN_MS    =  2 * 60 * 1000; // เตือน 2 นาทีก่อนเด้ง
-      let _idleTimer = null, _idleWarnTimer = null, _idleWarnEl = null;
-      let _idleCountdownInt = null;
+      // ใช้ var (hoisted) แทน let → กัน TDZ error เมื่อ init() IIFE ด้านบน
+      // เรียก enterApp() → _idleStart() ก่อนถึง let-declaration
+      var _idleTimer = null, _idleWarnTimer = null, _idleWarnEl = null;
+      var _idleCountdownInt = null;
 
       function _idleClose() {
         if (_idleWarnEl) { _idleWarnEl.remove(); _idleWarnEl = null; }
@@ -8371,7 +8382,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         _idleResetTimer();
       }
       // throttle: reset ไม่ถี่กว่าทุก 5 วินาที (กัน mousemove ลั่นทุก ms)
-      let _idleLastReset = 0;
+      var _idleLastReset = 0;
       function _idleOnActivity() {
         const now = Date.now();
         if (now - _idleLastReset < 5000) return;
@@ -8877,22 +8888,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function showAdmin(tab) {
         if (S.code !== "ADMIN") { showAlert("⛔", "ต้องเป็น Admin", "เฉพาะ admin เท่านั้นที่เข้าได้"); return; }
         showScreen("sAdmin");
-        // Active sidebar item
+        // Active sidebar item — รวม users + logins ที่ขาดไป
         const tabMap = {
           branches: "dnAdminBranches",
           bzms:     "dnAdminBzms",
           zones:    "dnAdminZones",
+          users:    "dnAdminUsers",
+          logins:   "dnAdminLogins",
           import:   "dnAdminImport"
         };
         document.querySelectorAll(".mob-nav-btn, .desk-nav-btn, .md-nav-btn").forEach(b => b.classList.remove("active"));
         const dn = document.getElementById(tabMap[tab] || "dnAdminBranches");
         if (dn) dn.classList.add("active");
         // sync bottom nav (mn-*)
-        const mnMap = { branches: "mnAdminBranches", bzms: "mnAdminBzms", zones: "mnAdminZones", import: "mnAdminImport" };
+        const mnMap = { branches: "mnAdminBranches", bzms: "mnAdminBzms", zones: "mnAdminZones", users: "mnAdminUsers", logins: "mnAdminLogins", import: "mnAdminImport" };
         const mn = document.getElementById(mnMap[tab] || "mnAdminBranches");
         if (mn) mn.classList.add("active");
         // sync drawer (md-*)
-        const mdMap = { branches: "mdAdminBranches", bzms: "mdAdminBzms", zones: "mdAdminZones", import: "mdAdminImport" };
+        const mdMap = { branches: "mdAdminBranches", bzms: "mdAdminBzms", zones: "mdAdminZones", users: "mdAdminUsers", logins: "mdAdminLogins", import: "mdAdminImport" };
         const md = document.getElementById(mdMap[tab] || "mdAdminBranches");
         if (md) md.classList.add("active");
         adminSwitchTab(tab || _adminCurrentTab || "branches");
