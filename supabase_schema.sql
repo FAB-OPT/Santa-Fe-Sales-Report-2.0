@@ -317,4 +317,21 @@ create index if not exists idx_login_logs_user on public.login_logs(user_code, l
 
 alter table public.login_logs disable row level security;
 
+-- ──────────────────────────────────────────────
+-- 10. USER_ACTIONS — บันทึก action ที่ user ทำในแต่ละ session
+--     (admin ดูในหน้าประวัติเข้าใช้: "เมนูที่เข้า" ของแต่ละ session)
+-- ──────────────────────────────────────────────
+create table if not exists public.user_actions (
+  id          bigserial primary key,
+  user_code   text not null,
+  action      text not null,      -- 'submit_sales_16', 'submit_sales_eod', 'edit_sales', 'save_plan', 'save_manpower' etc
+  detail      text,               -- เช่น "แฟชั่น ไอส์แลนด์ · 28/06/2026"
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists idx_user_actions_time on public.user_actions(created_at desc);
+create index if not exists idx_user_actions_user on public.user_actions(user_code, created_at desc);
+
+alter table public.user_actions disable row level security;
+
 -- ✅ DONE — ตรวจดูได้ที่ Database → Tables

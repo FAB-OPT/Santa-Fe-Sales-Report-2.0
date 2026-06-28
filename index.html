@@ -3362,6 +3362,28 @@
         font-size: 12.5px; color: #94a3b8;
         font-style: italic;
       }
+      .alh-action-list {
+        display: flex; flex-direction: column;
+        gap: 6px; margin-top: 8px;
+      }
+      .alh-action-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 7px 10px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 12.5px;
+      }
+      .alh-action-time {
+        font-size: 11px; font-weight: 800;
+        color: #64748b; font-variant-numeric: tabular-nums;
+        background: #f1f5f9; padding: 2px 6px; border-radius: 6px;
+        flex-shrink: 0; min-width: 38px; text-align: center;
+      }
+      .alh-action-ico { font-size: 14px; flex-shrink: 0; }
+      .alh-action-text { color: #0f172a; flex: 1; min-width: 0; }
+      .alh-action-text b { font-weight: 700; }
+      .alh-action-detail { color: #64748b; font-weight: 500; }
 
       /* Footer */
       .alh-footer {
@@ -8769,6 +8791,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         _idleResetTimer();
       }
 
+      // บันทึก user action (ส่งยอด/แก้ไข/Plan/Manpower) ลง user_actions
+      // ใช้ keepalive เผื่อ user navigate ออกหลัง submit
+      function _logUserAction(action, detail) {
+        try {
+          if (!S || !S.code) return;
+          fetch(SUPABASE_URL + "/rest/v1/user_actions", {
+            method: "POST",
+            headers: {
+              "Content-Type":  "application/json",
+              "apikey":        SUPABASE_KEY,
+              "Authorization": "Bearer " + SUPABASE_KEY,
+              "Prefer":        "return=minimal"
+            },
+            body: JSON.stringify([{
+              user_code: String(S.code),
+              action:    String(action),
+              detail:    String(detail || "")
+            }]),
+            keepalive: true
+          }).catch(e => console.warn("[user_actions]", e));
+        } catch (e) { console.warn("[user_actions]", e); }
+      }
+
       // Dedupe login event ภายใน 30 นาทีต่อ user (กัน refresh / new tab → log ซ้ำ)
       const _LOGIN_DEDUP_MS = 30 * 60 * 1000;
       function _logLoginEventDeduped(rec) {
@@ -9363,19 +9408,26 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           showAlert("❌", "เกิดข้อผิดพลาด", e.message || "");
         }
       }
+      let _adminActions = []; // user_actions cache
       async function loadAdminLogins(silent) {
         const list = document.getElementById("adminLoginList");
         if (!silent && list) list.innerHTML = `<div style="color:#94a3b8;padding:32px;text-align:center">⏳ กำลังโหลด...</div>`;
         const live = document.getElementById("adminLoginLive");
         if (live) live.classList.add("is-pulsing");
         try {
-          const { data, error } = await sb.from("login_logs")
-            .select("*").order("logged_at", { ascending: false }).range(0, 1999);
-          if (error) {
-            if (list) list.innerHTML = `<div style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(error.message)}</div>`;
+          // โหลด login_logs + user_actions พร้อมกัน
+          const [logsRes, actsRes] = await Promise.all([
+            sb.from("login_logs").select("*").order("logged_at", { ascending: false }).range(0, 1999),
+            sb.from("user_actions").select("*").order("created_at", { ascending: false }).range(0, 4999)
+          ]);
+          if (logsRes.error) {
+            if (list) list.innerHTML = `<div style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(logsRes.error.message)}</div>`;
             return;
           }
-          _adminLogins = data || [];
+          _adminLogins = logsRes.data || [];
+          // user_actions อาจ fail ถ้าตารางยังไม่ได้สร้าง → ปล่อยผ่าน
+          _adminActions = (actsRes && !actsRes.error) ? (actsRes.data || []) : [];
+          if (actsRes && actsRes.error) console.warn("[user_actions]", actsRes.error.message);
           renderAdminLogins();
           // อัปเดต timestamp "อัปเดตเมื่อ"
           const stamp = document.getElementById("adminLoginStamp");
@@ -9408,6 +9460,28 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (best === null || t < new Date(best.logged_at).getTime()) best = r;
         }
         return best;
+      }
+      // map action code → label icon
+      const _ACTION_LBL = {
+        submit_sales_16:    { ico: "🕓", text: "ส่งยอด รอบ 16:00" },
+        submit_sales_eod:   { ico: "🌙", text: "ส่งยอด รอบสิ้นวัน" },
+        edit_sales:         { ico: "✏️", text: "แก้ไขยอดขาย" },
+        save_plan:          { ico: "📅", text: "บันทึก Plan Sale" },
+        save_manpower_plan: { ico: "👥", text: "บันทึก Manpower (Plan)" },
+        save_manpower_bulk: { ico: "📝", text: "บันทึก Manpower หลายสาขา" },
+        save_manpower:      { ico: "👥", text: "บันทึก Manpower" }
+      };
+      // หา actions ที่ user ทำใน session: ระหว่าง login_at → logout_at (หรือถึงปัจจุบันถ้ายังออนไลน์)
+      function _findActionsInSession(loginRow, logoutRow) {
+        const t1 = new Date(loginRow.logged_at).getTime();
+        const t2 = logoutRow ? new Date(logoutRow.logged_at).getTime() : Infinity;
+        return _adminActions
+          .filter(a => a.user_code === loginRow.user_code)
+          .filter(a => {
+            const t = new Date(a.created_at).getTime();
+            return t >= t1 && t <= t2;
+          })
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       }
       function _fmtDuration(ms) {
         if (ms < 60000) return Math.round(ms / 1000) + " วิ";
@@ -9531,8 +9605,28 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
 
               <div class="alh-menus">
-                <div class="alh-menus-hdr">📝 <b>เมนูที่เข้า (0)</b></div>
-                <div class="alh-menus-empty">— ไม่ได้เข้าเมนูใด</div>
+                ${(() => {
+                  const acts = _findActionsInSession(r, lo);
+                  if (!acts.length) {
+                    return `<div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (0)</b></div>
+                            <div class="alh-menus-empty">— ไม่ได้ทำรายการใด</div>`;
+                  }
+                  const _t = (iso) => {
+                    const d = new Date(iso);
+                    return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+                  };
+                  return `<div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (${acts.length})</b></div>
+                          <div class="alh-action-list">
+                            ${acts.map(a => {
+                              const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
+                              return `<div class="alh-action-item">
+                                <span class="alh-action-time">${_t(a.created_at)}</span>
+                                <span class="alh-action-ico">${meta.ico}</span>
+                                <span class="alh-action-text"><b>${escHtml(meta.text)}</b>${a.detail ? `<span class="alh-action-detail"> · ${escHtml(a.detail)}</span>` : ''}</span>
+                              </div>`;
+                            }).join("")}
+                          </div>`;
+                })()}
               </div>
             </div>` : ''}
           </div>`;
@@ -11416,6 +11510,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             if (sum) sum.innerHTML = fail === 0
               ? `✅ บันทึกสำเร็จทุกสาขา: <b>${done}</b> สาขา`
               : `บันทึกเสร็จ — สำเร็จ <b style="color:#16a34a">${done}</b> · ล้มเหลว <b style="color:#dc2626">${fail}</b>`;
+            _logUserAction("save_manpower_bulk", `บันทึก ${done} สาขา` + (fail > 0 ? ` (ล้มเหลว ${fail})` : ""));
             if (fail === 0) {
               showAlert("✅", "บันทึกสำเร็จทุกสาขา", `บันทึก ${done} สาขา`, function(){ _mpBulkClose(); });
             } else {
@@ -11851,8 +11946,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           apiCall(adminPayload, function(res) {
             if (btn) { btn.disabled = false; btn.textContent = "บันทึก ✓"; }
             if (!res || !res.ok) { return fail((res && res.error) || "บันทึกไม่สำเร็จ"); }
+            const _bn = BRANCH_DM_MAP[adminPayload.branch_code]?.branch || adminPayload.branch_code;
+            _logUserAction("save_manpower_plan", `${_bn} · ${_MP_MONTHS_TH[adminPayload.month-1]} ${adminPayload.year+543}`);
             closeM("mManpower");
-            showAlert("✅", "บันทึก Plan สำเร็จ", `${BRANCH_DM_MAP[adminPayload.branch_code]?.branch || adminPayload.branch_code}`);
+            showAlert("✅", "บันทึก Plan สำเร็จ", _bn);
             renderManpowerList();
           });
           return;
@@ -15185,6 +15282,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             return;
           }
           if (res.ok) {
+            // log action: ส่งยอด รอบ 16:00 / สิ้นวัน
+            const _slot = _pendingPayload.submit_time_slot;
+            const _act = _slot === "16.00" ? "submit_sales_16" : "submit_sales_eod";
+            const _det = `${S.branch || ""} · ${_pendingPayload.submit_date}`;
+            _logUserAction(_act, _det);
             _showSubmitSuccess(S.branch || "", _pendingPayload.submit_date, _pendingPayload.submit_time_slot);
             _pendingPayload = null;
             clearForm();
@@ -15485,6 +15587,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               _planData[d] = v;
               _planCache[branchCode + "|" + d] = v;
             });
+            const _bName = BRANCH_DM_MAP[branchCode]?.branch || branchCode;
+            _logUserAction("save_plan", `${_bName} · ${res.saved} วัน`);
             showAlert("✅", "บันทึกสำเร็จ", "บันทึก Plan " + res.saved + " วันเรียบร้อยแล้ว");
           } else {
             showAlert("❌", "บันทึกไม่สำเร็จ", (res && res.error) || "กรุณาลองใหม่");
@@ -15870,6 +15974,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           closeM("mAlert");
           if (!res) { showAlert("❌", "ไม่ได้รับการตอบกลับ", "กรุณาลองใหม่"); return; }
           if (res.ok && res.edited) {
+            _logUserAction("edit_sales", `${payload.branch_name || S.branch || ""} · ${payload.submit_date} · ${payload.submit_time_slot}`);
             _editRow = null;
             // Refresh history ทันที — ไม่รอให้ user คลิก OK
             loadHistory();
