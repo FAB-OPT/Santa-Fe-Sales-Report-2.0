@@ -8048,6 +8048,19 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             if (subInput && S.role === "branch" && !subInput.value) {
               subInput.value = fab.nick || fab.name || '';
             }
+            // บันทึก login event (SSO เข้า) แค่ครั้งเดียวต่อ browser tab session
+            // (sessionStorage = clear เมื่อปิด tab → เปิดใหม่ = log อีก · refresh = ไม่ log ซ้ำ)
+            try {
+              if (!sessionStorage.getItem("_loginLogged")) {
+                _logLoginEvent({
+                  code: S.code, name: S.name || fab.name || fab.nick || "",
+                  role: S.role || "",
+                  branch_code: S.branch_code || S.code || "",
+                  branch_name: S.branch || "", dm: S.dm || ""
+                });
+                sessionStorage.setItem("_loginLogged", "1");
+              }
+            } catch (_) {}
             enterApp();
             return;
           }
@@ -8240,28 +8253,38 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           else if (/Windows/i.test(ua)) platform = "Windows";
           else if (/Macintosh|Mac OS/i.test(ua)) platform = "macOS";
           else if (/Linux/i.test(ua)) platform = "Linux";
-          const body = JSON.stringify({
-            user_code:   rec.code || "",
-            user_name:   rec.name || "",
-            role:        rec.role || "",
-            branch_code: rec.branch_code || "",
-            branch_name: rec.branch_name || "",
-            dm:          rec.dm || "",
+          const payload = {
+            user_code:   String(rec.code || ""),
+            user_name:   String(rec.name || ""),
+            role:        String(rec.role || ""),
+            branch_code: String(rec.branch_code || ""),
+            branch_name: String(rec.branch_name || ""),
+            dm:          String(rec.dm || ""),
             ua:          ua.slice(0, 300),
             platform:    platform,
             event_type:  rec.event_type || "login"
-          });
+          };
+          console.log("[login_logs] sending:", payload);
+          // ใช้ array wrap → standard PostgREST insert + explicit error log
           fetch(SUPABASE_URL + "/rest/v1/login_logs", {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":  "application/json",
               "apikey":        SUPABASE_KEY,
               "Authorization": "Bearer " + SUPABASE_KEY,
               "Prefer":        "return=minimal"
             },
-            body: body,
-            keepalive: true   // ⭐ สำคัญ: ให้ request วิ่งต่อแม้ page unload (logout)
-          }).catch(e => console.warn("[login_logs]", e));
+            body: JSON.stringify([payload]),
+            keepalive: true
+          })
+          .then(r => {
+            if (!r.ok) {
+              r.text().then(t => console.warn("[login_logs] HTTP", r.status, t));
+            } else {
+              console.log("[login_logs] ✓ inserted:", payload.event_type, payload.user_code);
+            }
+          })
+          .catch(e => console.warn("[login_logs] fetch error:", e));
         } catch (e) { console.warn("[login_logs]", e); }
       }
 
@@ -8367,6 +8390,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           code: u.code, name: u.name || u.nick || "", role: u.role || "",
           branch_code: u.branch_code || "", branch_name: u.branch_name || "", dm: u.dm || ""
         });
+        try { sessionStorage.setItem("_loginLogged", "1"); } catch (_) {}
         const isBranch = (u.role === "branch" || u.role === "franchise");
         let msg;
         if (isBranch) {
@@ -8386,6 +8410,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             S = _stateFromSpecialUser(code, su);
             localStorage.setItem(LS_CODE, code);
             _logLoginEvent({ code: code, name: su.name || "", role: su.role || "", dm: su.dm || "" });
+            try { sessionStorage.setItem("_loginLogged", "1"); } catch (_) {}
             const msg = (su.role === "bzm") ? `${su.name} (BZM)` : su.name;
             showAlert('👋', 'ยินดีต้อนรับ!', msg, enterApp);
             return;
@@ -8397,6 +8422,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         S = { code: code, branch: info.branch, dm: info.dm, role: "branch" };
         localStorage.setItem(LS_CODE, code);
         _logLoginEvent({ code: code, role: "branch", branch_code: code, branch_name: info.branch, dm: info.dm });
+        try { sessionStorage.setItem("_loginLogged", "1"); } catch (_) {}
         showAlert('👋', 'ยินดีต้อนรับ!', `${code} ${info.branch}`, enterApp);
       }
 
@@ -8424,6 +8450,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           // SSO: ล้าง shared session → Hub และแอปอื่นต้อง login ใหม่
           clearFabSession();
           try { localStorage.removeItem(LS_CODE); } catch (e) {}
+          try { sessionStorage.removeItem("_loginLogged"); } catch (e) {}
           S = { code: "", branch: "", dm: "", role: "" };
           const ah = document.getElementById("appHdr"); if (ah) ah.style.display = "none";
           const hl = document.getElementById("hdrLogoutBtn"); if (hl) hl.style.display = "none";
