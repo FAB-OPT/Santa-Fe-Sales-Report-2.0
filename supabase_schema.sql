@@ -224,7 +224,27 @@ create or replace function set_last_edited_at()
 returns trigger as $$
 begin
   new.last_edited_at = now();
-  new.edit_count = coalesce(old.edit_count, 0) + 1;
+  -- เพิ่ม edit_count เฉพาะเมื่อ user แก้จริง (field ที่ไม่ใช่ plan_sale)
+  -- กันเคส savePlan propagate plan_sale → sales_data → ขึ้น "แก้ไข 1 ครั้ง" ทั้งที่ user ไม่ได้แตะ
+  if (
+    old.actual_sale     is distinct from new.actual_sale     or
+    old.sale_dine_in    is distinct from new.sale_dine_in    or
+    old.sale_take_away  is distinct from new.sale_take_away  or
+    old.sale_grab       is distinct from new.sale_grab       or
+    old.sale_lineman    is distinct from new.sale_lineman    or
+    old.sale_shopeefood is distinct from new.sale_shopeefood or
+    old.total_trans     is distinct from new.total_trans     or
+    old.trans_dine_in   is distinct from new.trans_dine_in   or
+    old.trans_take_away is distinct from new.trans_take_away or
+    old.trans_grab      is distinct from new.trans_grab      or
+    old.trans_lineman   is distinct from new.trans_lineman   or
+    old.trans_shopeefood is distinct from new.trans_shopeefood or
+    old.customer        is distinct from new.customer        or
+    old.labour_hour     is distinct from new.labour_hour     or
+    old.labour_baht     is distinct from new.labour_baht
+  ) then
+    new.edit_count = coalesce(old.edit_count, 0) + 1;
+  end if;
   return new;
 end;
 $$ language plpgsql;

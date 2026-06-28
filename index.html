@@ -2842,6 +2842,23 @@
         background: #fff8f2;
       }
 
+      /* กระพริบช่อง Plan ที่เด้งมาจาก popup "ยังไม่มี Plan" */
+      @keyframes planFocusPulse {
+        0%, 100% { background-color: #fff7ed; box-shadow: 0 0 0 0 rgba(242,108,28,0); }
+        50%      { background-color: #ffedd5; box-shadow: 0 0 0 4px rgba(242,108,28,.35); }
+      }
+      .plan-row.plan-focus-blink {
+        animation: planFocusPulse 0.7s ease-in-out infinite;
+        border-radius: 10px;
+        z-index: 2;
+        position: relative;
+      }
+      .plan-row.plan-focus-blink .plan-inp {
+        border-color: #f26c1c !important;
+        background: #fff !important;
+        box-shadow: 0 0 0 2px rgba(242,108,28,.25) !important;
+      }
+
       .plan-row.sat {
         background: #eff6ff;
       }
@@ -14418,6 +14435,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         document.getElementById("planGridBody").innerHTML = html;
         updatePlanSummary(totalPlan, daysWithPlan);
+        _planFocusTargetRow();   // ถ้ามาจาก popup "ยังไม่มี Plan" → เด้งไปไฮไลต์ช่องนั้น
       }
 
       function onPlanInput(el) {
@@ -15395,19 +15413,40 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       /* ─ Jump to Plan Sale page for a specific date ─ */
+      let _planFocusDate = null;
       function showPlanForDate(dateStr) {
         if (dateStr) {
           const [y, m] = dateStr.split("-");
           _planYear  = parseInt(y);
           _planMonth = parseInt(m) - 1;
+          _planFocusDate = dateStr;   // เก็บไว้ → renderPlanGrid จะเด้งไปไฮไลต์หลังโหลดเสร็จ
         } else {
           const now = new Date();
           _planYear  = now.getFullYear();
           _planMonth = now.getMonth();
+          _planFocusDate = null;
         }
         showScreen("sPlan");
         setMobTab("mnPlan");
         loadPlanMonth();
+      }
+      // หลัง renderPlanGrid → scroll + กระพริบช่อง input ของวันที่เป้าหมาย
+      function _planFocusTargetRow() {
+        if (!_planFocusDate) return;
+        const inp = document.getElementById("pd_" + _planFocusDate);
+        if (!inp) { _planFocusDate = null; return; }
+        const row = inp.closest(".plan-row");
+        // scroll เข้ามาตรงกลาง
+        setTimeout(() => {
+          try { inp.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {}
+          // focus + คลาสกระพริบ (3 วินาที) แล้วลบทิ้ง
+          try { inp.focus(); } catch (_) {}
+          if (row) row.classList.add("plan-focus-blink");
+          setTimeout(() => {
+            if (row) row.classList.remove("plan-focus-blink");
+            _planFocusDate = null;
+          }, 3000);
+        }, 250);  // เผื่อ DOM render
       }
 
       // Close modal on backdrop click — เฉพาะ modal ที่ไม่มี form data หรือไม่ต้อง explicit action
