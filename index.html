@@ -9387,7 +9387,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             stamp.textContent = `อัปเดตเมื่อ ${hh}:${mm}:${ss}`;
           }
         } catch (e) {
-          if (!silent && body) body.innerHTML = `<tr><td colspan="6" style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(e.message || "")}</td></tr>`;
+          if (!silent && list) list.innerHTML = `<div style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(e.message || "")}</div>`;
         } finally {
           if (live) setTimeout(() => live.classList.remove("is-pulsing"), 600);
         }
