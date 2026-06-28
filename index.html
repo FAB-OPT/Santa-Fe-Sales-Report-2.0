@@ -6271,10 +6271,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
      SHARED HEADER (hidden until logged in)
 ════════════════════════════════════════ -->
     <!-- Test mode global banner (เห็นเมื่อเปิด test mode ใน DB) -->
-    <div id="bypassOrderBanner" style="display:none;background:linear-gradient(90deg,#fee2e2,#fecaca);color:#991b1b;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fca5a5;position:fixed;top:0;left:0;right:0;z-index:9998;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+    <div id="bypassOrderBanner" style="display:none !important;background:linear-gradient(90deg,#fee2e2,#fecaca);color:#991b1b;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fca5a5;position:fixed;top:0;left:0;right:0;z-index:9998;line-height:1.35;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
       🚫 ข้ามกฎลำดับ : ระบบจะไม่ตรวจลำดับการส่งยอด
     </div>
-    <div id="testModeBanner" style="display:none;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+    <div id="testModeBanner" style="display:none !important;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999;line-height:1.35;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
       🧪 โหมดทดสอบ — ระบบจะไม่บันทึกข้อมูลจริง
     </div>
 
@@ -8496,10 +8496,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const ds = document.getElementById("deskSidebar"); if (ds) ds.classList.add("hidden");
           const mn = document.getElementById("mobNav"); if (mn) mn.classList.remove("visible");
           // Hide test mode + bypass-order banners + reset body class (กัน layout offset ค้าง)
+          // ใช้ setProperty + important เพื่อ override inline display !important
           const banner = document.getElementById("testModeBanner");
-          if (banner) banner.style.display = "none";
+          if (banner) banner.style.setProperty('display', 'none', 'important');
           const banner2 = document.getElementById("bypassOrderBanner");
-          if (banner2) banner2.style.display = "none";
+          if (banner2) banner2.style.setProperty('display', 'none', 'important');
           document.body.classList.remove("test-mode-on");
           document.body.classList.remove("bypass-order-on");
           // Clear active state ทุก nav button
@@ -11529,14 +11530,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const bnT = document.getElementById("testModeBanner");
         const bnB = document.getElementById("bypassOrderBanner");
         const both = t && b;
+        // ใช้ setProperty + 'important' เพื่อ override inline display:none !important (default ใน HTML)
         if (bnB) {
-          bnB.style.display = b ? "block" : "none";
+          if (b) bnB.style.setProperty('display', 'block', 'important');
+          else   bnB.style.setProperty('display', 'none', 'important');
           bnB.style.top = "0";
           bnB.style.left = "0";
           bnB.style.right = both ? "50%" : "0";
         }
         if (bnT) {
-          bnT.style.display = t ? "block" : "none";
+          if (t) bnT.style.setProperty('display', 'block', 'important');
+          else   bnT.style.setProperty('display', 'none', 'important');
           bnT.style.top = "0";
           bnT.style.left = both ? "50%" : "0";
           bnT.style.right = "0";
