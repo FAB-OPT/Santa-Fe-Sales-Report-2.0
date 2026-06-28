@@ -6696,8 +6696,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </button>
         <button class="btn btn-sm btn-danger" onclick="doLogout()">ออกจากระบบ</button>
       </div>
-      <button class="btn btn-sm btn-danger hdr-logout-btn" id="hdrLogoutBtn" onclick="doLogout()" style="display:none">ออกจากระบบ</button>
+      <button class="btn btn-sm btn-danger hdr-logout-btn" id="hdrLogoutBtn" onclick="doLogout()" style="display:none !important">ออกจากระบบ</button>
     </header>
+
+    <!-- 🔒 BOOT-TIME CHROME LOCK (runs AFTER header is parsed)
+         ก่อนหน้าตัวก่อน paint รันก่อน DOM พร้อม → getElementById return null → ไม่ทำงาน
+         ตัวนี้รันหลัง header แล้ว lock element ได้แน่นอน -->
+    <script>(function(){try{
+      var fab = null;
+      try { fab = JSON.parse(localStorage.getItem('fab_session') || 'null'); } catch(_) {}
+      var local = null;
+      try { local = localStorage.getItem('sf2_code'); } catch(_) {}
+      if ((fab && fab.code) || local) return;  // มี session → enterApp จะแสดง chrome เอง
+      // ไม่มี session → lock chrome ทันที (display + visibility !important)
+      var lock = function(el){
+        if (!el) return;
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+      };
+      ['appHdr','hdrLogoutBtn','hdrHubBtn','testModeBanner','bypassOrderBanner'].forEach(function(id){
+        lock(document.getElementById(id));
+      });
+      document.querySelectorAll('.hdr-logout-btn, .hdr-hub-btn').forEach(lock);
+    }catch(e){}})();</script>
 
     <!-- ════════════════════════════════════════
      DESKTOP SIDEBAR (hidden until logged in)
@@ -8906,9 +8927,16 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               .forEach(k => localStorage.removeItem(k));
           } catch (e) {}
           S = { code: "", branch: "", dm: "", role: "" };
-          const ah = document.getElementById("appHdr"); if (ah) ah.style.display = "none";
-          const hl = document.getElementById("hdrLogoutBtn"); if (hl) hl.style.display = "none";
-          const hb = document.getElementById("hdrHubBtn"); if (hb) hb.style.display = "none";
+          // ใช้ setProperty(... 'important') เพื่อชนะ CSS rule .hdr-logout-btn { display:inline-flex !important }
+          const lockHide = (el) => {
+            if (!el) return;
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+          };
+          lockHide(document.getElementById("appHdr"));
+          lockHide(document.getElementById("hdrLogoutBtn"));
+          lockHide(document.getElementById("hdrHubBtn"));
+          document.querySelectorAll('.hdr-logout-btn').forEach(lockHide);
           const ds = document.getElementById("deskSidebar"); if (ds) ds.classList.add("hidden");
           const mn = document.getElementById("mobNav"); if (mn) mn.classList.remove("visible");
           // Hide test mode + bypass-order banners + reset body class (กัน layout offset ค้าง)
