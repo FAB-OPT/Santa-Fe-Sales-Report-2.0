@@ -7811,7 +7811,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       const _ROLE_LBL = { admin:"Admin", vp:"VP", bzm:"BZM", branch:"สาขา", franchise:"สาขา" };
 
-      // ── บันทึก login event ลง Supabase (fire-and-forget) ──
+      // ── บันทึก login/logout event ลง Supabase ──
+      // ใช้ fetch keepalive: true → guarantee delivery แม้ user ปิด tab หลังกด logout
+      // (sb.from().insert() ใช้ fetch ปกติ → request โดน abort เมื่อ navigate)
       function _logLoginEvent(rec) {
         try {
           const ua = navigator.userAgent || "";
@@ -7821,7 +7823,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           else if (/Windows/i.test(ua)) platform = "Windows";
           else if (/Macintosh|Mac OS/i.test(ua)) platform = "macOS";
           else if (/Linux/i.test(ua)) platform = "Linux";
-          sb.from("login_logs").insert({
+          const body = JSON.stringify({
             user_code:   rec.code || "",
             user_name:   rec.name || "",
             role:        rec.role || "",
@@ -7831,9 +7833,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             ua:          ua.slice(0, 300),
             platform:    platform,
             event_type:  rec.event_type || "login"
-          }).then(({ error }) => {
-            if (error) console.warn("[login_logs]", error.message);
           });
+          fetch(SUPABASE_URL + "/rest/v1/login_logs", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey":        SUPABASE_KEY,
+              "Authorization": "Bearer " + SUPABASE_KEY,
+              "Prefer":        "return=minimal"
+            },
+            body: body,
+            keepalive: true   // ⭐ สำคัญ: ให้ request วิ่งต่อแม้ page unload (logout)
+          }).catch(e => console.warn("[login_logs]", e));
         } catch (e) { console.warn("[login_logs]", e); }
       }
 
@@ -8450,11 +8461,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.querySelectorAll(".admin-tab-pane").forEach(p => {
           p.style.display = (p.dataset.tab === tab) ? "block" : "none";
         });
+        // ปิด auto-refresh ของ logins ถ้าไม่ได้อยู่แท็บนี้
+        if (tab !== "logins" && typeof _stopAdminLoginAutoRefresh === "function") _stopAdminLoginAutoRefresh();
         if (tab === "branches") loadAdminBranches();
         else if (tab === "bzms") loadAdminBzms();
         else if (tab === "zones") loadAdminZones();
         else if (tab === "users") loadAdminUsers();
-        else if (tab === "logins") loadAdminLogins();
+        else if (tab === "logins") {
+          loadAdminLogins();
+          // auto-refresh ทุก 20 วินาทีระหว่างอยู่หน้านี้
+          _stopAdminLoginAutoRefresh();
+          _adminLoginAutoRefresh = setInterval(loadAdminLogins, 20000);
+        }
         else if (tab === "import") adminImportReset();
       }
 
@@ -8463,6 +8481,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       ══════════════════════════════════════════════ */
       let _adminLogins = [];        // all events (login + logout) เรียงใหม่→เก่า
       let _adminLoginExpanded = {}; // session key → bool
+      let _adminLoginAutoRefresh = null;
+      // หยุด auto-refresh เมื่อสลับแท็บออก
+      function _stopAdminLoginAutoRefresh() {
+        if (_adminLoginAutoRefresh) { clearInterval(_adminLoginAutoRefresh); _adminLoginAutoRefresh = null; }
+      }
       async function loadAdminLogins() {
         const body = document.getElementById("adminLoginBody");
         if (body) body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:16px;text-align:center">⏳ กำลังโหลด...</td></tr>`;
@@ -14369,10 +14392,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           else if (isSat)  dayCls += " sat";
           else if (isSun)  dayCls += " sun";
 
-          // Admin: ลง/แก้ Plan ย้อนหลังได้ (สำหรับเคสส่งยอดขายย้อนหลังต้องการ Plan ของวันนั้น)
-          // Branch: ล็อกวันที่ผ่านมาแล้ว (แก้ผ่านประวัติรอบ 16.00 ตามเดิม)
-          const _isAdmin = (S.role === "admin" || S.code === "ADMIN");
-          const isLocked = !_isAdmin && isPast && !isToday;
+          // ปลดล็อกทุก role — เปิดให้ทั้ง admin/BZM/สาขา ลง Plan ย้อนหลังได้
+          //   เพื่อรองรับเคสสาขาส่งยอดขายย้อนหลัง แล้วต้องตั้ง Plan ของวันนั้นด้วย
+          const isLocked = false;
           const inpCls = hasVal ? "plan-inp has-val" : "plan-inp";
           const statusHtml = isLocked
             ? `<span class="plan-status" title="ล็อก — แก้ไขผ่านประวัติรอบ 16.00">🔒</span>`
@@ -14433,14 +14455,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           showAlert("⚠️", "ยังไม่ได้เลือกสาขา", "กรุณาเลือกสาขาก่อนบันทึก Plan");
           return;
         }
-        const today = todayStr();
-        const _isAdmin = (S.role === "admin" || S.code === "ADMIN");
         const entries = [];
         document.querySelectorAll(".plan-inp").forEach(inp => {
           const date = inp.dataset.date;
-          // Admin: รวมวันย้อนหลังด้วย (ลง Plan ย้อนหลังได้)
-          // Branch: ข้ามวันที่ผ่านแล้ว — แก้ผ่านประวัติรอบ 16.00 เท่านั้น
-          if (!_isAdmin && date < today) return;
+          // เปิดทุกวัน (รวมย้อนหลัง) — รองรับเคสส่งยอดขายย้อนหลัง
           const val = parseFloat(inp.value.replace(/,/g, "")) || 0;
           entries.push({ date: date, plan_sale: val });
         });
