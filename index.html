@@ -1503,7 +1503,10 @@
       }
 
       /* Single-row table ใน modal — compact ให้ฟิตในกรอบ ไม่ต้องเลื่อน */
-      .mp-single-tbl th { padding: 6px 3px !important; font-size: 10.5px !important; }
+      .mp-single-tbl th {
+        padding: 6px 2px !important; font-size: 10px !important;
+        white-space: normal !important; word-break: break-word; line-height: 1.2;
+      }
       .mp-single-tbl td { padding: 8px 3px !important; }
       .mp-single-tbl td input,
       .mp-single-tbl td .calc-val {
@@ -1511,13 +1514,15 @@
         padding: 6px 4px !important; font-size: 13px !important;
         text-align: center !important; box-sizing: border-box;
       }
-      /* Branch column — กว้างพอใส่ชื่อสาขาในบรรทัดเดียว (โค้งบรรทัดได้ถ้ายาวมาก) */
+      /* Branch column — กว้างพอใส่ชื่อสาขายาวๆ ในบรรทัดเดียว */
       .mp-single-tbl .branch-cell {
         padding: 10px 12px !important;
-        width: 200px !important;
+        width: 260px !important;
+        min-width: 260px !important;
         text-align: left !important;
         white-space: normal;
         word-break: break-word;
+        line-height: 1.35;
       }
       .mp-single-tbl td.branch-cell .code {
         display: inline-block; vertical-align: middle;
