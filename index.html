@@ -8787,6 +8787,31 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
       }
 
+      // ── ฟัง pagehide (รวมถึงปิด tab/refresh/navigate away) → log logout event ──
+      // ใช้ keepalive ให้ request วิ่งจบแม้ user navigates away
+      // ป้องกัน double-log ด้วย sessionStorage flag
+      (function _bindUnloadLogger() {
+        const fire = () => {
+          try {
+            if (!S || !S.code) return;
+            if (sessionStorage.getItem("_logoutSent") === "1") return;
+            sessionStorage.setItem("_logoutSent", "1");
+            _logLoginEvent({
+              code: S.code, name: S.name || "", role: S.role || "",
+              branch_code: S.branch_code || S.code || "",
+              branch_name: S.branch || "", dm: S.dm || "",
+              event_type: "logout"
+            });
+          } catch (_) {}
+        };
+        // pagehide = ปิด tab/navigate/back-forward cache (ดีกว่า beforeunload ใน mobile)
+        window.addEventListener("pagehide", fire);
+        // visibilitychange ถูกซ่อน + bfcache → fire ทันที (กัน mobile background)
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") fire();
+        });
+      })();
+
       function doLogout() {
         try {
           // หยุดจับ idle timer
@@ -8922,6 +8947,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       async function enterApp() {
+        // login ใหม่ → ล้าง _logoutSent flag เพื่อให้ pagehide ครั้งต่อไป log logout ได้
+        try { sessionStorage.removeItem("_logoutSent"); } catch (_) {}
         // เริ่มจับ idle: 30 นาที → เด้งออก (เตือนล่วงหน้า 2 นาที)
         _idleStart();
         // โหลด users DB cache เป็น background (ใช้สำหรับ login รอบต่อๆ ไป)
@@ -9483,20 +9510,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const roleLbl = _ROLE_LABEL[r.role] || r.role || "—";
           const roleClr = _ROLE_COLOR[r.role] || "#64748b";
           const lo = _findLogoutAfter(_adminLogins, r);
-          const durTxt = lo ? _fmtDuration(new Date(lo.logged_at) - new Date(r.logged_at)) : "—";
-          const isOnline = !lo;
+          // ── Session staleness check ──
+          // ถ้า login > 30 นาทีก่อน + ไม่มี logout = สันนิษฐานว่าปิด tab โดยไม่ logout (เซสชันหมดอายุ)
+          const ageMs2 = Date.now() - new Date(r.logged_at).getTime();
+          const STALE_THRESHOLD = 30 * 60 * 1000; // ตรงกับ idle timeout
+          const isExpired = !lo && ageMs2 > STALE_THRESHOLD;
+          const isOnline = !lo && !isExpired;
+          const durTxt = lo
+            ? _fmtDuration(new Date(lo.logged_at) - new Date(r.logged_at))
+            : (isExpired ? "หมดอายุ (~" + _fmtDuration(STALE_THRESHOLD) + ")" : "—");
           // Title: รหัส + ชื่อสาขา (สาขา) หรือ ชื่อ user
           const isBranch = (r.role === "branch" || r.role === "franchise");
           const titleMain = isBranch
             ? `${escHtml(r.branch_code || r.user_code || "")} ${escHtml(r.branch_name || r.user_name || "")}`
             : escHtml(r.user_name || "—");
           const avatarChar = _initial(isBranch ? (r.branch_name || r.user_name) : r.user_name);
-          // Avatar color: green=online, gray=offline
-          const avBg = isOnline ? "#16a34a" : "#94a3b8";
+          // Avatar color: green=online, amber=expired, gray=offline
+          const avBg = isOnline ? "#16a34a" : (isExpired ? "#f59e0b" : "#94a3b8");
           // Status pill (top-right)
           const statusPill = isOnline
             ? '<span class="alh-pill alh-pill-active">กำลังใช้งาน</span>'
-            : '<span class="alh-pill alh-pill-done">ออกแล้ว</span>';
+            : isExpired
+              ? '<span class="alh-pill" style="background:#fef3c7;color:#92400e">เซสชันหมดอายุ</span>'
+              : '<span class="alh-pill alh-pill-done">ออกแล้ว</span>';
 
           return `<div class="alh-card ${open ? 'is-open' : ''}" onclick="_adminLoginToggle(${key})">
             <!-- Top row -->
@@ -9525,7 +9561,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 <div class="alh-d-val">${escHtml(_fmtShort(r.logged_at))}</div>
 
                 <div class="alh-d-lbl">ออกจากระบบ</div>
-                <div class="alh-d-val ${isOnline ? 'is-online' : ''}">${lo ? escHtml(_fmtShort(lo.logged_at)) : 'กำลังใช้งานอยู่'}</div>
+                <div class="alh-d-val ${isOnline ? 'is-online' : ''}">${lo
+                  ? escHtml(_fmtShort(lo.logged_at))
+                  : isExpired
+                    ? '<span style="color:#d97706">เซสชันหมดอายุ (ไม่ได้กดออก)</span>'
+                    : 'กำลังใช้งานอยู่'
+                }</div>
 
                 <div class="alh-d-lbl">ระยะเวลา</div>
                 <div class="alh-d-val">${escHtml(durTxt)}</div>
