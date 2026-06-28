@@ -3041,6 +3041,184 @@
         50%      { box-shadow: 0 0 0 4px rgba(220,38,38,0); }
       }
 
+      /* ════════════════════════════════════════
+         REVIEW MODAL — สรุปข้อมูลก่อนส่ง (สวยกว่า rv-row เดิม)
+      ════════════════════════════════════════ */
+      #mReview .modal-body { padding: 16px 18px; background: #fafbfc; }
+      .rv-hero {
+        background: linear-gradient(135deg, #fff7ed, #ffedd5);
+        border: 1px solid #fed7aa;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+      }
+      .rv-hero-row { display: flex; align-items: center; gap: 12px; }
+      .rv-hero-ico {
+        font-size: 28px;
+        width: 48px; height: 48px;
+        background: #fff; border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 1px 4px rgba(15,23,42,.08);
+      }
+      .rv-hero-info { flex: 1; min-width: 0; }
+      .rv-hero-branch { font-size: 16px; font-weight: 800; color: #1e293b; letter-spacing: -.01em; }
+      .rv-hero-bzm { font-size: 12px; color: #92400e; margin-top: 2px; font-weight: 600; }
+      .rv-hero-slot {
+        padding: 6px 12px;
+        font-size: 12px; font-weight: 800;
+        border-radius: 999px;
+        border: 1px solid;
+        white-space: nowrap;
+      }
+      .rv-hero-meta {
+        margin-top: 10px;
+        font-size: 12.5px;
+        color: #57534e;
+        font-weight: 600;
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      }
+      .rv-hero-meta-sep { color: #d6d3d1; }
+
+      .rv-sales-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(15,23,42,.04);
+      }
+      .rv-sales-row { display: flex; gap: 12px; align-items: stretch; }
+      .rv-sales-actual, .rv-sales-plan { flex: 1; padding: 4px 0; }
+      .rv-sales-plan { padding-left: 14px; border-left: 1px dashed #e2e8f0; }
+      .rv-mini-lbl {
+        font-size: 11px; color: #64748b; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .04em;
+      }
+      .rv-mini-val {
+        font-size: 24px; font-weight: 800;
+        color: #0f172a; margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.02em;
+      }
+      .rv-plan-val { color: #64748b; font-size: 20px; }
+
+      .rv-pct-bar-wrap { margin-top: 14px; }
+      .rv-pct-bar {
+        height: 10px;
+        background: #f1f5f9;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .rv-pct-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width .5s ease;
+      }
+      .rv-pct-info {
+        display: flex; justify-content: space-between; align-items: baseline;
+        margin-top: 8px;
+      }
+      .rv-no-plan {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #fef3c7; color: #92400e;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        font-size: 12.5px; font-weight: 700;
+        text-align: center;
+      }
+
+      .rv-section-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(15,23,42,.04);
+      }
+      .rv-section-hdr {
+        display: flex; align-items: center; gap: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 12px;
+      }
+      .rv-section-ico { font-size: 20px; }
+      .rv-section-title { flex: 1; font-size: 14px; font-weight: 800; color: #1e293b; }
+      .rv-section-sum { font-size: 14px; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+
+      .rv-chan-list { display: flex; flex-direction: column; gap: 9px; }
+      .rv-chan-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 110px;
+        gap: 10px;
+        align-items: center;
+        font-size: 12.5px;
+      }
+      .rv-chan-name { font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; }
+      .rv-chan-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .rv-chan-bar { height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+      .rv-chan-fill { height: 100%; border-radius: 999px; transition: width .4s ease; min-width: 2px; }
+      .rv-chan-val { text-align: right; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+      .rv-chan-trans {
+        display: block; font-size: 10.5px; color: #94a3b8; font-weight: 600;
+        margin-top: 2px;
+      }
+
+      .rv-stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .rv-stat-cell {
+        border: 1px solid;
+        border-radius: 12px;
+        padding: 12px 14px;
+        text-align: center;
+      }
+      .rv-stat-ico { font-size: 20px; margin-bottom: 4px; }
+      .rv-stat-val {
+        font-size: 18px; font-weight: 800; color: #0f172a;
+        font-variant-numeric: tabular-nums;
+      }
+      .rv-stat-lbl { font-size: 11.5px; color: #475569; font-weight: 600; margin-top: 2px; }
+
+      @media (max-width: 480px) {
+        .rv-sales-row { flex-direction: column; gap: 10px; }
+        .rv-sales-plan { padding-left: 0; padding-top: 10px; border-left: none; border-top: 1px dashed #e2e8f0; }
+        .rv-chan-row { grid-template-columns: 90px 1fr auto; gap: 8px; }
+        .rv-stat-grid { grid-template-columns: 1fr 1fr; }
+      }
+
+      /* LIVE indicator (auto-refresh ทุก 15s) */
+      .adm-live {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px;
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        font-size: 11px; font-weight: 800;
+        color: #b91c1c;
+      }
+      .adm-live-dot {
+        width: 8px; height: 8px;
+        background: #dc2626; border-radius: 50%;
+        animation: admLiveDot 1.4s ease-in-out infinite;
+      }
+      @keyframes admLiveDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.6); }
+        50%      { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+      }
+      .adm-live-txt { letter-spacing: .08em; }
+      .adm-live-stamp {
+        color: #94a3b8; font-weight: 600;
+        padding-left: 6px; border-left: 1px solid #fecaca;
+      }
+      .adm-live.is-pulsing .adm-live-dot {
+        background: #16a34a;
+        animation-duration: 0.3s;
+      }
+
       /* ─── Login history table polish ─── */
       .adm-login-tbl tbody tr:not(.adm-login-detail) {
         border-bottom: 1px solid #f1f5f9;
@@ -6850,6 +7028,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <option value="franchise">Franchise</option>
             </select>
             <span id="adminLoginCount" style="font-size:12px;color:var(--txt2);font-weight:600">— ครั้ง</span>
+            <span class="adm-live" id="adminLoginLive" title="อัปเดตอัตโนมัติทุก 15 วินาที">
+              <span class="adm-live-dot"></span>
+              <span class="adm-live-txt">LIVE</span>
+              <span class="adm-live-stamp" id="adminLoginStamp">—</span>
+            </span>
           </div>
           <div class="dash-card-wrap adm-desk-wrap" style="overflow:hidden;padding:0">
             <table class="dash-tbl adm-login-tbl" style="min-width:680px;width:100%;border-collapse:collapse">
@@ -8702,10 +8885,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         else if (tab === "zones") loadAdminZones();
         else if (tab === "users") loadAdminUsers();
         else if (tab === "logins") {
-          loadAdminLogins();
-          // auto-refresh ทุก 20 วินาทีระหว่างอยู่หน้านี้
+          loadAdminLogins(false);  // first load — show spinner
+          // auto-refresh ทุก 15 วินาทีระหว่างอยู่หน้านี้ (silent — ไม่ flicker UI)
           _stopAdminLoginAutoRefresh();
-          _adminLoginAutoRefresh = setInterval(loadAdminLogins, 20000);
+          _adminLoginAutoRefresh = setInterval(() => loadAdminLogins(true), 15000);
         }
         else if (tab === "import") adminImportReset();
       }
@@ -8720,9 +8903,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _stopAdminLoginAutoRefresh() {
         if (_adminLoginAutoRefresh) { clearInterval(_adminLoginAutoRefresh); _adminLoginAutoRefresh = null; }
       }
-      async function loadAdminLogins() {
+      async function loadAdminLogins(silent) {
         const body = document.getElementById("adminLoginBody");
-        if (body) body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:16px;text-align:center">⏳ กำลังโหลด...</td></tr>`;
+        // Silent refresh (auto): ไม่ใส่ "กำลังโหลด..." เพื่อไม่ flicker UI
+        if (!silent && body) body.innerHTML = `<tr><td colspan="6" style="color:#94a3b8;padding:16px;text-align:center">⏳ กำลังโหลด...</td></tr>`;
+        // toggle live indicator
+        const live = document.getElementById("adminLoginLive");
+        if (live) live.classList.add("is-pulsing");
         try {
           const { data, error } = await sb.from("login_logs")
             .select("*").order("logged_at", { ascending: false }).range(0, 1999);
@@ -8732,8 +8919,19 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           }
           _adminLogins = data || [];
           renderAdminLogins();
+          // อัปเดต timestamp "อัปเดตเมื่อ"
+          const stamp = document.getElementById("adminLoginStamp");
+          if (stamp) {
+            const n = new Date();
+            const hh = String(n.getHours()).padStart(2, "0");
+            const mm = String(n.getMinutes()).padStart(2, "0");
+            const ss = String(n.getSeconds()).padStart(2, "0");
+            stamp.textContent = `อัปเดตเมื่อ ${hh}:${mm}:${ss}`;
+          }
         } catch (e) {
-          if (body) body.innerHTML = `<tr><td colspan="6" style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(e.message || "")}</td></tr>`;
+          if (!silent && body) body.innerHTML = `<tr><td colspan="6" style="color:#dc2626;padding:16px;text-align:center">⚠️ โหลดไม่สำเร็จ: ${escHtml(e.message || "")}</td></tr>`;
+        } finally {
+          if (live) setTimeout(() => live.classList.remove("is-pulsing"), 600);
         }
       }
       function _adminLoginToggle(key) {
@@ -14355,49 +14553,118 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         p.plan_sale     = planVal;
         _pendingPayload = p;
 
-        function rvRow(lbl, val) {
-          return `<div class="rv-row"><span class="rv-lbl">${lbl}</span><span class="rv-val">${val}</span></div>`;
-        }
-        function rvHi(lbl, val) {
-          return `<div class="rv-row rv-hi"><span class="rv-lbl">${lbl}</span><span class="rv-val">${val}</span></div>`;
-        }
-        function rvSec(title) {
-          return `<div class="rv-sec">${title}</div>`;
-        }
+        // ── format helpers ──
+        const _TH_M = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+        const _dp = date.split("-");
+        const _thDate = `${parseInt(_dp[2],10)} ${_TH_M[parseInt(_dp[1],10)-1]} ${parseInt(_dp[0],10)+543}`;
+        const _slotIco = slot === "16.00" ? "🕓" : "🌙";
+        const _slotLbl = slot === "16.00" ? "รอบ 16:00 น." : "รอบสิ้นวัน";
+        const _slotColor = slot === "16.00" ? "#0ea5e9" : "#7c3aed";
+        const _slotBg    = slot === "16.00" ? "#f0f9ff" : "#faf5ff";
 
-        let html = "";
-        html += rvSec("สาขา & BZM");
-        html += rvRow("สาขา", S.branch);
-        html += rvRow("BZM", S.dm);
-        html += rvSec("ข้อมูลการส่ง");
-        html += rvRow("ชื่อผู้ส่ง", name);
-        html += rvRow("วันที่", date);
-        html += rvRow("รอบเวลา", slot);
-        html += rvSec("ยอดขาย");
-        if (p.plan_sale > 0) html += rvRow("Plan Sale", fmt(p.plan_sale));
-        html += rvHi("Actual Sale", fmt(p.actual_sale));
-        const pct = p.plan_sale > 0 ? (p.actual_sale / p.plan_sale * 100).toFixed(1) + "%" : "-";
+        const pct = p.plan_sale > 0 ? (p.actual_sale / p.plan_sale * 100) : 0;
         const pctColor = p.plan_sale > 0 ? (p.actual_sale >= p.plan_sale ? "#15803d" : "#dc2626") : "#64748b";
-        html += `<div class="rv-row"><span class="rv-lbl">% ของ Plan</span><span class="rv-val" style="color:${pctColor}">${pct}</span></div>`;
+        const pctBg    = p.plan_sale > 0 ? (p.actual_sale >= p.plan_sale ? "#f0fdf4" : "#fef2f2") : "#f8fafc";
+        const overUnder = p.actual_sale - p.plan_sale;
+
+        let html = `
+          <!-- HERO: branch + date + slot -->
+          <div class="rv-hero">
+            <div class="rv-hero-row">
+              <div class="rv-hero-ico">🏬</div>
+              <div class="rv-hero-info">
+                <div class="rv-hero-branch">${escHtml(S.branch || "—")}</div>
+                <div class="rv-hero-bzm">BZM: ${escHtml(S.dm || "—")}</div>
+              </div>
+              <div class="rv-hero-slot" style="background:${_slotBg};color:${_slotColor};border-color:${_slotColor}33">
+                ${_slotIco} ${_slotLbl}
+              </div>
+            </div>
+            <div class="rv-hero-meta">
+              <span>📅 ${escHtml(_thDate)}</span>
+              <span class="rv-hero-meta-sep">·</span>
+              <span>👤 ${escHtml(name || "—")}</span>
+            </div>
+          </div>
+
+          <!-- SALES HERO CARD -->
+          <div class="rv-sales-card">
+            <div class="rv-sales-row">
+              <div class="rv-sales-actual">
+                <div class="rv-mini-lbl">ยอดขายจริง</div>
+                <div class="rv-mini-val">฿${fmt(p.actual_sale)}</div>
+              </div>
+              <div class="rv-sales-plan">
+                <div class="rv-mini-lbl">เป้า Plan</div>
+                <div class="rv-mini-val rv-plan-val">฿${fmt(p.plan_sale || 0)}</div>
+              </div>
+            </div>
+            ${p.plan_sale > 0 ? `
+              <div class="rv-pct-bar-wrap">
+                <div class="rv-pct-bar">
+                  <div class="rv-pct-fill" style="width:${Math.min(100, pct).toFixed(1)}%;background:${pctColor}"></div>
+                </div>
+                <div class="rv-pct-info">
+                  <span style="color:${pctColor};font-weight:800;font-size:18px">${pct.toFixed(1)}%</span>
+                  <span style="color:${overUnder >= 0 ? '#15803d' : '#dc2626'};font-weight:700;font-size:12.5px">
+                    ${overUnder >= 0 ? "▲ เกินเป้า" : "▼ ต่ำกว่าเป้า"} ฿${fmt(Math.abs(Math.round(overUnder)))}
+                  </span>
+                </div>
+              </div>` : `<div class="rv-no-plan">ยังไม่ได้ตั้ง Plan สำหรับวันนี้</div>`}
+          </div>`;
 
         if (slot === "สิ้นวัน") {
-          html += rvRow("Dine In", fmt(p.sale_dine_in));
-          html += rvRow("Take Away", fmt(p.sale_take_away));
-          html += rvRow("Grab", fmt(p.sale_grab));
-          html += rvRow("Lineman", fmt(p.sale_lineman));
-          html += rvRow("Shopee Food", fmt(p.sale_shopeefood));
-          html += rvSec("Trans");
-          html += rvHi("Total Trans", fmt(p.total_trans));
-          html += rvRow("Dine In", fmt(p.trans_dine_in));
-          html += rvRow("Take Away", fmt(p.trans_take_away));
-          html += rvRow("Grab", fmt(p.trans_grab));
-          html += rvRow("Lineman", fmt(p.trans_lineman));
-          html += rvRow("Shopee Food", fmt(p.trans_shopeefood));
-          html += rvSec("Customer & Labour");
-          html += rvRow("Customer", fmt(p.customer));
-          html += rvRow("Labour Hour", fmt(p.labour_hour) + " ชม.");
-          const labPct = p.actual_sale > 0 ? " (" + (p.labour_baht / p.actual_sale * 100).toFixed(1) + "%)" : "";
-          html += rvRow("Labour Baht", fmt(p.labour_baht) + labPct);
+          // ── ช่องทางการขาย ──
+          const channels = [
+            { lbl: "🍽️ Dine In",    sale: p.sale_dine_in,    trans: p.trans_dine_in,    color: "#0ea5e9" },
+            { lbl: "🥡 Take Away",  sale: p.sale_take_away,  trans: p.trans_take_away,  color: "#10b981" },
+            { lbl: "🛵 Grab",       sale: p.sale_grab,       trans: p.trans_grab,       color: "#22c55e" },
+            { lbl: "🛵 Lineman",    sale: p.sale_lineman,    trans: p.trans_lineman,    color: "#f59e0b" },
+            { lbl: "🛵 Shopee",     sale: p.sale_shopeefood, trans: p.trans_shopeefood, color: "#fb923c" }
+          ];
+          const chanSum = channels.reduce((s, c) => s + (c.sale || 0), 0);
+          html += `
+            <div class="rv-section-card">
+              <div class="rv-section-hdr">
+                <span class="rv-section-ico">🍽️</span>
+                <span class="rv-section-title">ช่องทางการขาย</span>
+                <span class="rv-section-sum">฿${fmt(chanSum)}</span>
+              </div>
+              <div class="rv-chan-list">
+                ${channels.map(c => {
+                  const w = chanSum > 0 ? (c.sale / chanSum * 100) : 0;
+                  return `<div class="rv-chan-row">
+                    <div class="rv-chan-name"><span class="rv-chan-dot" style="background:${c.color}"></span>${c.lbl}</div>
+                    <div class="rv-chan-bar"><div class="rv-chan-fill" style="width:${w.toFixed(1)}%;background:${c.color}"></div></div>
+                    <div class="rv-chan-val">฿${fmt(c.sale)}<span class="rv-chan-trans">${fmt(c.trans)} บิล</span></div>
+                  </div>`;
+                }).join("")}
+              </div>
+            </div>
+
+            <!-- Trans + Customer + Labour ── คอมแพ็ค -->
+            <div class="rv-stat-grid">
+              <div class="rv-stat-cell" style="background:#eff6ff;border-color:#bfdbfe">
+                <div class="rv-stat-ico">🧾</div>
+                <div class="rv-stat-val">${fmt(p.total_trans)}</div>
+                <div class="rv-stat-lbl">จำนวนบิล</div>
+              </div>
+              <div class="rv-stat-cell" style="background:#f0fdf4;border-color:#bbf7d0">
+                <div class="rv-stat-ico">👥</div>
+                <div class="rv-stat-val">${fmt(p.customer)}</div>
+                <div class="rv-stat-lbl">ลูกค้า</div>
+              </div>
+              <div class="rv-stat-cell" style="background:#fef3c7;border-color:#fde68a">
+                <div class="rv-stat-ico">⏱️</div>
+                <div class="rv-stat-val">${fmt(p.labour_hour)}</div>
+                <div class="rv-stat-lbl">ชม.ทำงาน</div>
+              </div>
+              <div class="rv-stat-cell" style="background:#fef2f2;border-color:#fecaca">
+                <div class="rv-stat-ico">💵</div>
+                <div class="rv-stat-val">฿${fmt(p.labour_baht)}</div>
+                <div class="rv-stat-lbl">ค่าแรง${p.actual_sale > 0 ? ` (${(p.labour_baht/p.actual_sale*100).toFixed(1)}%)` : ""}</div>
+              </div>
+            </div>`;
         }
 
         document.getElementById("reviewBody").innerHTML = html;
@@ -14863,13 +15130,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           return;
         }
 
-        // เรียงน้อย → มาก ตามวันที่ (และ slot 16.00 มาก่อนสิ้นวันในวันเดียวกัน)
+        // เรียงใหม่ → เก่า ตามวันที่ (วันล่าสุดบนสุด · ภายในวันเดียวกัน: สิ้นวัน อยู่ก่อน 16.00 เพราะส่งทีหลัง)
         rows = rows.slice().sort((a, b) => {
           const da = String(a.submit_date || "");
           const db = String(b.submit_date || "");
-          if (da !== db) return da < db ? -1 : 1;
-          // same date → 16.00 มาก่อน "สิ้นวัน"
-          return (a.submit_time_slot === "16.00" ? -1 : 1) - (b.submit_time_slot === "16.00" ? -1 : 1);
+          if (da !== db) return da > db ? -1 : 1;
+          // same date → สิ้นวัน (เวลาส่งล่าสุด) อยู่บน 16.00
+          return (a.submit_time_slot === "สิ้นวัน" ? -1 : 1) - (b.submit_time_slot === "สิ้นวัน" ? -1 : 1);
         });
 
         // ── TABLE (desktop) ──────────────────────
