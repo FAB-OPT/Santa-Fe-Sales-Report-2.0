@@ -8777,9 +8777,28 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         } catch (e) { console.warn("[login_logs dedup]", e); }
       }
 
+      // ล้างช่อง OTP ทั้ง branch + admin (เรียกเมื่อรหัสผิด)
+      function _clearLoginOtp() {
+        try {
+          for (let i = 0; i < 4; i++) {
+            _branchOtp[i] = "";
+            const el = document.getElementById("lc" + i);
+            if (el) { el.value = ""; el.classList.remove("filled"); }
+          }
+          for (let i = 0; i < 6; i++) {
+            _adminOtp[i] = "";
+            const el = document.getElementById("ac" + i);
+            if (el) { el.value = ""; el.classList.remove("filled"); }
+          }
+          // โฟกัสช่องแรกของ tab ที่ active เพื่อให้ user พิมพ์ใหม่ได้เลย
+          const first = document.getElementById(_loginMode === 'admin' ? 'ac0' : 'lc0');
+          if (first) setTimeout(() => first.focus(), 100);
+        } catch (_) {}
+      }
+
       function _doLoginCommit(u) {
         const newS = _stateFromDbUser(u);
-        if (!newS) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'role ในระบบไม่ถูกต้อง'); return; }
+        if (!newS) { _clearLoginOtp(); showAlert('❌', 'รหัสไม่ถูกต้อง', 'role ในระบบไม่ถูกต้อง'); return; }
         S = newS;
         localStorage.setItem(LS_CODE, u.code);
         _logLoginEventDeduped({
@@ -8809,10 +8828,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             showAlert('👋', 'ยินดีต้อนรับ!', msg, enterApp);
             return;
           }
+          _clearLoginOtp();
           showAlert('❌', 'รหัสผ่านไม่ถูกต้อง', 'ไม่พบบัญชีนี้ในระบบ'); return;
         }
         const info = BRANCH_DM_MAP[code];
-        if (!info) { showAlert('❌', 'รหัสไม่ถูกต้อง', 'ไม่พบรหัสสาขา ' + code); return; }
+        if (!info) { _clearLoginOtp(); showAlert('❌', 'รหัสไม่ถูกต้อง', 'ไม่พบรหัสสาขา ' + code); return; }
         S = { code: code, branch: info.branch, dm: info.dm, role: "branch" };
         localStorage.setItem(LS_CODE, code);
         _logLoginEventDeduped({ code: code, role: "branch", branch_code: code, branch_name: info.branch, dm: info.dm });
