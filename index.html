@@ -7565,9 +7565,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </button>
           </div>
 
-          <!-- Orphan actions (fixed above list — เห็นทันทีโดยไม่ต้อง scroll) -->
-          <div id="adminOrphanBox" style="margin-bottom:12px"></div>
-
           <!-- Cards list (desktop + mobile ใช้ตัวเดียวกัน) -->
           <div id="adminLoginList" class="alh-list">
             <div style="color:#94a3b8;padding:32px;text-align:center">⏳ กำลังโหลด...</div>
@@ -7685,10 +7682,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <input type="date" id="ehDateTo"   onchange="loadEditHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
         </div>
         <!-- Search + count — แถวใต้ปุ่มวันที่ -->
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
           <input type="text" id="ehSearch" oninput="renderEditHistory()" placeholder="🔍 ค้นหา รหัส/ชื่อสาขา/ผู้ส่ง"
                  style="flex:1;min-width:180px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:inherit;font-size:13px;outline:none">
           <span id="ehHint" style="font-size:12px;color:var(--txt2);margin-left:auto;font-weight:600">— รายการ</span>
+        </div>
+
+        <!-- Filter buttons: กรองตามประเภทการแก้ไข -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <button type="button" class="eh-fbtn is-active" data-ehfilter="all"
+            onclick="_setEhFilter('all')"
+            style="padding:8px 14px;border-radius:999px;border:1.5px solid #0f172a;background:#0f172a;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            ทั้งหมด
+          </button>
+          <button type="button" class="eh-fbtn" data-ehfilter="edit"
+            onclick="_setEhFilter('edit')"
+            style="padding:8px 14px;border-radius:999px;border:1.5px solid #fed7aa;background:#fff7ed;color:#c2410c;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            ✏️ แก้ไขยอด
+          </button>
+          <button type="button" class="eh-fbtn" data-ehfilter="plan"
+            onclick="_setEhFilter('plan')"
+            style="padding:8px 14px;border-radius:999px;border:1.5px solid #ddd6fe;background:#faf5ff;color:#6d28d9;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            📅 Plan Sale
+          </button>
         </div>
 
         <!-- Desktop table -->
@@ -9812,8 +9828,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }).join("");
 
         // Orphan section ถูกลบออก — ผู้ใช้ต้องการดูผ่านปุ่มกรองประเภทด้านบนแทน
-        const orphBox = document.getElementById("adminOrphanBox");
-        if (orphBox) orphBox.innerHTML = "";
       }
 
       function adminTabReload() {
@@ -12174,6 +12188,28 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         } catch (e) { cb([]); }
       }
 
+      let _ehFilter = "all"; // all | edit | plan
+      function _setEhFilter(key) {
+        _ehFilter = key;
+        document.querySelectorAll(".eh-fbtn").forEach(b => {
+          const active = b.dataset.ehfilter === key;
+          b.classList.toggle("is-active", active);
+          if (active) {
+            b.style.background = "#0f172a";
+            b.style.color = "#fff";
+            b.style.borderColor = "#0f172a";
+          } else {
+            const styles = {
+              edit: { bg: "#fff7ed", fg: "#c2410c", bd: "#fed7aa" },
+              plan: { bg: "#faf5ff", fg: "#6d28d9", bd: "#ddd6fe" },
+              all:  { bg: "#fff",    fg: "#0f172a", bd: "#cbd5e1" }
+            }[b.dataset.ehfilter];
+            if (styles) { b.style.background = styles.bg; b.style.color = styles.fg; b.style.borderColor = styles.bd; }
+          }
+        });
+        renderEditHistory();
+      }
+
       function renderEditHistory() {
         const body = document.getElementById("ehBody");
         const cards = document.getElementById("ehCards");
@@ -12182,6 +12218,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const list = _ehRows.filter(r => {
           // ข้ามรายการของสาขาที่ถูกลบไปแล้ว (ไม่อยู่ใน BRANCH_DM_MAP)
           if (r.branch_code && !BRANCH_DM_MAP[r.branch_code]) return false;
+          // กรองตามประเภท (edit = sales edits, plan = Plan Sale edits)
+          if (_ehFilter === "edit" && r._isPlanEdit) return false;
+          if (_ehFilter === "plan" && !r._isPlanEdit) return false;
           if (!q) return true;
           return (r.branch_code || "").toLowerCase().includes(q)
               || (r.branch_name || "").toLowerCase().includes(q)
