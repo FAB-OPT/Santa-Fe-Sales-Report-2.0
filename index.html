@@ -12097,10 +12097,23 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                     diffs = Array.isArray(j.diffs) ? j.diffs : [];
                   } catch (e) {}
                 } else {
-                  // เก่า: "5001 แฟชั่น ไอส์แลนด์ · N วัน"
+                  // เก่า format 2 แบบ:
+                  //   (1) "5001 แฟชั่น ไอส์แลนด์ · N วัน"  — มีรหัสสาขานำ
+                  //   (2) "โลตัส จรัญสนิทวงศ์ · N วัน"     — ไม่มีรหัส (v2.0 และก่อนหน้า)
                   const m = raw.match(/^(\d{4,5})\s+([^·]*)/);
-                  code = m ? m[1] : "";
-                  name = m ? m[2].trim() : raw;
+                  if (m) {
+                    code = m[1];
+                    name = m[2].trim();
+                  } else {
+                    // ไม่มีรหัส → เอา string ทั้งก้อน ตัด "· N วัน" ออก
+                    code = "";
+                    name = raw.replace(/\s*·\s*\d+\s*วัน\s*$/, "").trim();
+                  }
+                }
+                // fallback: ใช้ user_code เป็น branch_code (สาขาล็อกอินด้วย branch_code)
+                if (!code && a.user_code && /^\d{4,5}$/.test(a.user_code)) {
+                  code = a.user_code;
+                  if (!name && BRANCH_DM_MAP[code]) name = BRANCH_DM_MAP[code].branch || "";
                 }
                 const dm = code && BRANCH_DM_MAP[code] ? BRANCH_DM_MAP[code].dm : "";
                 return {
