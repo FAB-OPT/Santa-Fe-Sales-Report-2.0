@@ -9857,13 +9857,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
             };
             const _open = _adminOrphanExpanded;
-            // แยกกลุ่ม (เหมือน session activity)
-            const _CAT_ORPH = [
-              { key: "submit", label: "ส่งยอด",   ico: "📤", color: "#0ea5e9", bg: "#f0f9ff", actions: ["submit_sales_16", "submit_sales_eod"] },
-              { key: "edit",   label: "แก้ไขยอด", ico: "✏️", color: "#c2410c", bg: "#fff7ed", actions: ["edit_sales"] },
-              { key: "plan",   label: "Plan Sale", ico: "📅", color: "#7c3aed", bg: "#faf5ff", actions: ["save_plan"] },
-              { key: "mp",     label: "Manpower", ico: "👥", color: "#0891b2", bg: "#ecfeff", actions: ["save_manpower", "save_manpower_plan", "save_manpower_bulk"] }
-            ];
             const _mkOrphItem = (a) => {
               const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
               const um = _userMeta[a.user_code] || {};
@@ -9879,29 +9872,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 </span>
               </div>`;
             };
-            const _orphGroups = _CAT_ORPH.map(cat => ({
-              ...cat,
-              items: _orphans.filter(a => cat.actions.indexOf(a.action) >= 0)
-            })).filter(g => g.items.length);
-            const _orphOtherItems = _orphans.filter(a =>
-              !_CAT_ORPH.some(cat => cat.actions.indexOf(a.action) >= 0)
-            );
-            const itemsHtml = _orphGroups.map(g => `
-              <div style="margin-bottom:10px">
-                <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:${g.color};background:${g.bg};padding:5px 10px;border-radius:8px;margin-bottom:6px">
-                  <span>${g.ico}</span><span>${escHtml(g.label)}</span>
-                  <span style="margin-left:auto;background:#fff;padding:1px 8px;border-radius:999px;font-size:11px">${g.items.length}</span>
-                </div>
-                <div class="alh-action-list">${g.items.map(_mkOrphItem).join("")}</div>
-              </div>`).join("")
-              + (_orphOtherItems.length ? `
-                <div style="margin-bottom:10px">
-                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#64748b;background:#f1f5f9;padding:5px 10px;border-radius:8px;margin-bottom:6px">
-                    <span>📌</span><span>อื่นๆ</span>
-                    <span style="margin-left:auto;background:#fff;padding:1px 8px;border-radius:999px;font-size:11px">${_orphOtherItems.length}</span>
-                  </div>
-                  <div class="alh-action-list">${_orphOtherItems.map(_mkOrphItem).join("")}</div>
-                </div>` : "");
+            // flat list — ใช้ปุ่มกรองด้านบนแทนการแบ่งกลุ่มภายใน
+            const itemsHtml = _orphans.map(_mkOrphItem).join("");
             orphBox.innerHTML = `
               <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;overflow:hidden">
                 <button type="button" onclick="_adminOrphanToggle()"
