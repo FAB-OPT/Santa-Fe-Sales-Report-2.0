@@ -12125,6 +12125,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             return;
           }
           _ehRows = (_salesRes.rows || []).concat(_planRows || []);
+          // Sort ใหม่→เก่า ตาม last_edited_at (สาระสำคัญ: sales_edits และ plan edits ผสมกันมา)
+          _ehRows.sort((a, b) => {
+            const ta = new Date(a.last_edited_at || 0).getTime();
+            const tb = new Date(b.last_edited_at || 0).getTime();
+            return tb - ta;
+          });
           renderEditHistory();
         };
         apiCall(params, function(res) { _salesRes = res; _finish(); });
@@ -12401,8 +12407,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           && r.branch_code === branchCode
           && r.last_edited_at === lastEditedAt);
         const diffs = (row && row._planDiffs) || [];
+        // ดูว่า detail มี field diffs หรือไม่ (JSON v2.1+ = มี field, legacy = ไม่มี)
+        const _hasDiffField = row && Array.isArray(row._planDiffs);
         if (!diffs.length) {
-          body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--txt2)">ไม่มีข้อมูลรายละเอียดการแก้ไข<br><span style="font-size:11px">(ประวัติเดิมก่อน v2.1 ไม่ได้เก็บ diff)</span></div>`;
+          const _msg = _hasDiffField
+            ? `บันทึกเรียบร้อยแต่ไม่มีค่าใดเปลี่ยนแปลง<br><span style="font-size:11px;color:#94a3b8">(หรือ browser ยังใช้ cache เก่า — ให้สาขา hard refresh: Ctrl+Shift+R แล้วบันทึกใหม่)</span>`
+            : `ไม่มีข้อมูลรายละเอียดการแก้ไข<br><span style="font-size:11px;color:#94a3b8">(ประวัติเดิมก่อน v2.1 ไม่ได้เก็บ diff)</span>`;
+          body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--txt2)">${_msg}</div>`;
           return;
         }
         const fmtNum = v => (parseFloat(v) || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 });
