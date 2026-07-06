@@ -9443,6 +9443,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       ══════════════════════════════════════════════ */
       let _adminLogins = [];        // all events (login + logout) เรียงใหม่→เก่า
       let _adminLoginExpanded = {}; // session key → bool
+      let _adminOrphanExpanded = false; // ปุ่ม "กิจกรรมที่ไม่ผูกกับเซสชัน" เปิด/ปิด
+      function _adminOrphanToggle() {
+        _adminOrphanExpanded = !_adminOrphanExpanded;
+        renderAdminLogins();
+      }
       let _adminLoginAutoRefresh = null;
       // หยุด auto-refresh เมื่อสลับแท็บออก
       function _stopAdminLoginAutoRefresh() {
@@ -9755,29 +9760,37 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             }
             return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
           };
+          const _open = _adminOrphanExpanded;
+          const itemsHtml = _orphans.map(a => {
+            const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
+            const um = _userMeta[a.user_code] || {};
+            const who = um.name || a.user_code || "—";
+            const det = _prettyDetail(a.detail);
+            return `<div class="alh-action-item" style="border-bottom:1px solid #f1f5f9;padding:8px 0">
+              <span class="alh-action-time" style="color:#64748b;font-size:12px">${escHtml(_fmt(a.created_at))}</span>
+              <span class="alh-action-ico">${meta.ico}</span>
+              <span class="alh-action-text">
+                <b>${escHtml(meta.text)}</b>
+                ${det ? `<span class="alh-action-detail"> · ${escHtml(det)}</span>` : ""}
+                <span style="color:#94a3b8;font-size:11.5px"> · โดย ${escHtml(who)} (${escHtml(a.user_code || "—")})</span>
+              </span>
+            </div>`;
+          }).join("");
           const orphHtml = `
-            <div style="margin-top:20px;padding:14px 16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px">
-              <div style="font-size:14px;font-weight:700;color:#9a3412;margin-bottom:10px">
-                📌 กิจกรรมที่ไม่ผูกกับเซสชันใด (${_orphans.length})
-                <span style="font-size:11px;font-weight:500;color:#c2410c">— action ที่เกิดนอกช่วง login→logout ที่บันทึกไว้</span>
-              </div>
-              <div class="alh-action-list" style="background:#fff;border-radius:8px;padding:8px 10px">
-                ${_orphans.map(a => {
-                  const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
-                  const um = _userMeta[a.user_code] || {};
-                  const who = um.name || a.user_code || "—";
-                  const det = _prettyDetail(a.detail);
-                  return `<div class="alh-action-item" style="border-bottom:1px solid #f1f5f9;padding:8px 0">
-                    <span class="alh-action-time" style="color:#64748b;font-size:12px">${escHtml(_fmt(a.created_at))}</span>
-                    <span class="alh-action-ico">${meta.ico}</span>
-                    <span class="alh-action-text">
-                      <b>${escHtml(meta.text)}</b>
-                      ${det ? `<span class="alh-action-detail"> · ${escHtml(det)}</span>` : ""}
-                      <span style="color:#94a3b8;font-size:11.5px"> · โดย ${escHtml(who)} (${escHtml(a.user_code || "—")})</span>
-                    </span>
-                  </div>`;
-                }).join("")}
-              </div>
+            <div style="margin-top:20px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;overflow:hidden">
+              <button type="button" onclick="_adminOrphanToggle()"
+                style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;background:transparent;border:none;cursor:pointer;text-align:left;font-family:inherit">
+                <span style="font-size:14px;font-weight:700;color:#9a3412">
+                  📌 กิจกรรมที่ไม่ผูกกับเซสชันใด
+                  <span style="display:inline-block;margin-left:6px;padding:2px 10px;background:#f97316;color:#fff;border-radius:999px;font-size:12px">${_orphans.length}</span>
+                </span>
+                <span style="font-size:16px;color:#c2410c;transition:transform .15s ease;transform:rotate(${_open ? 90 : 0}deg)">▶</span>
+              </button>
+              ${_open ? `
+                <div style="padding:0 16px 14px 16px">
+                  <div style="font-size:11px;color:#c2410c;margin-bottom:8px">— action ที่เกิดนอกช่วง login→logout ที่บันทึกไว้</div>
+                  <div class="alh-action-list" style="background:#fff;border-radius:8px;padding:8px 10px">${itemsHtml}</div>
+                </div>` : ""}
             </div>`;
           list.insertAdjacentHTML("beforeend", orphHtml);
         }
