@@ -13260,8 +13260,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         return (codes || []).reduce((s, bc) => s + (parseFloat(map[bc]) || 0), 0);
       }
       function _ddAgg(rows) {
-        // จัดกลุ่ม branch+date 1 รายการต่อวัน · prefer "สิ้นวัน" · fallback "16.00" ถ้ายังไม่ส่งสิ้นวัน
-        // (รวมยอด preliminary แสดงในแดชบอร์ดได้ทันที ไม่ต้องรอสิ้นวัน)
+        // จัดกลุ่ม branch+date 1 รายการต่อวัน
+        //   · วันนี้ → ยอมรับ 16.00 preliminary ได้ (ยังไม่ปิดวัน)
+        //   · วันก่อนหน้า → ต้องมีสิ้นวันเท่านั้น (16.00 อย่างเดียวไม่นับ — กันยอดค้างที่ไม่แจกแจงช่องทาง)
+        const _today = todayStr();
         const byKey = {};
         (rows || []).forEach(r => {
           const k = (r.branch_code || "") + "|" + (r.submit_date || "");
@@ -13270,7 +13272,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           // ถ้า prev = 16.00 และ r = สิ้นวัน → แทนที่ (EOD ชนะ)
           if (prev.submit_time_slot !== "สิ้นวัน" && r.submit_time_slot === "สิ้นวัน") byKey[k] = r;
         });
-        const picked = Object.values(byKey);
+        // กรอง: ถ้าเป็นวันเก่า (ไม่ใช่วันนี้) และไม่มีสิ้นวัน → drop ทิ้ง
+        const picked = Object.values(byKey).filter(r => {
+          if (r.submit_time_slot === "สิ้นวัน") return true;
+          return r.submit_date === _today; // 16.00 preliminary รับเฉพาะวันนี้
+        });
         const a = { actual: 0, bills: 0, cust: 0, labHr: 0, labBaht: 0, sale: {}, trans: {} };
         CHANNEL_DEFS.forEach(c => { a.sale[c.key] = 0; a.trans[c.key] = 0; });
         picked.forEach(r => {
