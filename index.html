@@ -7536,6 +7536,35 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <!-- Count -->
           <div class="alh-count">พบ <b id="adminLoginCount">0</b> เซสชัน</div>
 
+          <!-- Filter buttons: เลือกดูตามประเภทกิจกรรม -->
+          <div id="adminActFilterBar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <button type="button" class="act-fbtn is-active" data-actfilter="all"
+              onclick="_setActFilter('all')"
+              style="padding:8px 14px;border-radius:999px;border:1.5px solid #cbd5e1;background:#0f172a;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+              ทั้งหมด
+            </button>
+            <button type="button" class="act-fbtn" data-actfilter="submit"
+              onclick="_setActFilter('submit')"
+              style="padding:8px 14px;border-radius:999px;border:1.5px solid #bae6fd;background:#f0f9ff;color:#0369a1;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+              📤 ส่งยอด
+            </button>
+            <button type="button" class="act-fbtn" data-actfilter="edit"
+              onclick="_setActFilter('edit')"
+              style="padding:8px 14px;border-radius:999px;border:1.5px solid #fed7aa;background:#fff7ed;color:#c2410c;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+              ✏️ แก้ไขยอด
+            </button>
+            <button type="button" class="act-fbtn" data-actfilter="plan"
+              onclick="_setActFilter('plan')"
+              style="padding:8px 14px;border-radius:999px;border:1.5px solid #ddd6fe;background:#faf5ff;color:#6d28d9;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+              📅 Plan Sale
+            </button>
+            <button type="button" class="act-fbtn" data-actfilter="mp"
+              onclick="_setActFilter('mp')"
+              style="padding:8px 14px;border-radius:999px;border:1.5px solid #a5f3fc;background:#ecfeff;color:#0e7490;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+              👥 Manpower
+            </button>
+          </div>
+
           <!-- Orphan actions (fixed above list — เห็นทันทีโดยไม่ต้อง scroll) -->
           <div id="adminOrphanBox" style="margin-bottom:12px"></div>
 
@@ -9452,8 +9481,39 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       let _adminLogins = [];        // all events (login + logout) เรียงใหม่→เก่า
       let _adminLoginExpanded = {}; // session key → bool
       let _adminOrphanExpanded = false; // ปุ่ม "กิจกรรมที่ไม่ผูกกับเซสชัน" เปิด/ปิด
+      let _adminActFilter = "all"; // ประเภทกิจกรรมที่กรอง: all|submit|edit|plan|mp
+      const _ACT_FILTER_MAP = {
+        submit: new Set(["submit_sales_16", "submit_sales_eod"]),
+        edit:   new Set(["edit_sales"]),
+        plan:   new Set(["save_plan"]),
+        mp:     new Set(["save_manpower", "save_manpower_plan", "save_manpower_bulk"])
+      };
       function _adminOrphanToggle() {
         _adminOrphanExpanded = !_adminOrphanExpanded;
+        renderAdminLogins();
+      }
+      function _setActFilter(key) {
+        _adminActFilter = key;
+        document.querySelectorAll(".act-fbtn").forEach(b => {
+          const active = b.dataset.actfilter === key;
+          b.classList.toggle("is-active", active);
+          if (active) {
+            b.style.background = "#0f172a";
+            b.style.color = "#fff";
+            b.style.borderColor = "#0f172a";
+          } else {
+            // restore original color from data attribute-less inline (re-render page instead for consistency)
+            const dk = b.dataset.actfilter;
+            const styles = {
+              submit: { bg: "#f0f9ff", fg: "#0369a1", bd: "#bae6fd" },
+              edit:   { bg: "#fff7ed", fg: "#c2410c", bd: "#fed7aa" },
+              plan:   { bg: "#faf5ff", fg: "#6d28d9", bd: "#ddd6fe" },
+              mp:     { bg: "#ecfeff", fg: "#0e7490", bd: "#a5f3fc" },
+              all:    { bg: "#fff",    fg: "#0f172a", bd: "#cbd5e1" }
+            }[dk];
+            if (styles) { b.style.background = styles.bg; b.style.color = styles.fg; b.style.borderColor = styles.bd; }
+          }
+        });
         renderAdminLogins();
       }
       let _adminLoginAutoRefresh = null;
@@ -9561,6 +9621,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const roleF = document.getElementById("adminLoginRoleFilter")?.value || "";
         // แสดงเฉพาะ event_type = 'login' เป็นแถวหลัก · logout match ในการขยาย
         // เรียงใหม่→เก่าก่อน filter เพื่อให้ login ล่าสุดอยู่บนสุดเสมอ (กันกรณี API ส่งมาสลับ)
+        const _actKey = _adminActFilter;
+        const _actSet = _ACT_FILTER_MAP[_actKey] || null;
         const logins = _adminLogins
           .filter(r => (r.event_type || "login") === "login")
           .slice()
@@ -9570,6 +9632,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             if (!q) return true;
             const hay = [r.user_code, r.user_name, r.branch_code, r.branch_name, r.dm].join(" ").toLowerCase();
             return hay.includes(q);
+          })
+          .filter(r => {
+            // ถ้าเลือก filter ประเภทเฉพาะ → ต้องมี action ประเภทนั้นในเซสชัน
+            // ถ้า "ทั้งหมด" → ต้องมี action อย่างน้อย 1 อัน (ซ่อนเซสชันที่กิจกรรม (0))
+            const lo = _findLogoutAfter(_adminLogins, r);
+            const acts = _findActionsInSession(r, lo);
+            if (!acts.length) return false;
+            if (!_actSet) return true;
+            return acts.some(a => _actSet.has(a.action));
           });
         const cnt = document.getElementById("adminLoginCount");
         if (cnt) cnt.textContent = logins.length.toLocaleString();
@@ -9686,7 +9757,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
 
               ${(() => {
-                const acts = _findActionsInSession(r, lo);
+                let acts = _findActionsInSession(r, lo);
+                if (_actSet) acts = acts.filter(a => _actSet.has(a.action));
                 // (0) → ไม่โชว์เลย
                 if (!acts.length) return "";
                 const _t = (iso) => {
@@ -9755,6 +9827,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
         const _orphans = _adminActions
           .filter(a => !_usedActIds.has(a.id))
+          .filter(a => !_actSet || _actSet.has(a.action))
           .filter(a => {
             const meta = _userMeta[a.user_code] || {};
             if (roleF && meta.role !== roleF) return false;
