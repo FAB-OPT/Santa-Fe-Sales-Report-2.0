@@ -6978,7 +6978,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
             </div>
           </div>
-          <div class="login-footer">© 2026 Santa Fe · Sales Report v2.0</div>
+          <div class="login-footer">© 2026 Santa Fe · Sales Report v2.1</div>
         </div>
       </div>
     </div>
@@ -8376,6 +8376,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       /* Detect touch device — หลายชั้น (iPad Safari report pointer:fine ในบาง mode) */
       function _detectTouch() {
         try {
+          // 🖱️ ถ้ามี mouse/trackpad (fine pointer) → เป็น desktop mode (แม้จอ notebook จะเป็น touchscreen)
+          if (window.matchMedia && window.matchMedia("(any-pointer: fine)").matches) return false;
+          // Desktop viewport กว้าง → ไม่ใช่ touch แม้ ontouchstart จะมี
+          if (window.innerWidth >= 1024) return false;
           if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
           if (window.matchMedia && window.matchMedia("(hover: none)").matches) return true;
           if ((navigator.maxTouchPoints || 0) > 1) return true;
@@ -9679,14 +9683,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                     const d = new Date(iso);
                     return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
                   };
+                  // แปลง detail — ถ้าเป็น JSON (save_plan v2.1+) → เอา b (branch) เท่านั้น
+                  const _prettyDetail = (raw) => {
+                    if (!raw) return "";
+                    const s = String(raw).trim();
+                    if (s.startsWith("{")) {
+                      try {
+                        const j = JSON.parse(s);
+                        // ตัด "N วัน" ออก — เอาแค่ชื่อสาขา (จำนวนวันไม่ค่อยมีประโยชน์เมื่อดูใน session)
+                        return j.b ? String(j.b) : "";
+                      } catch (e) {}
+                    }
+                    // legacy: "5001 ... · N วัน" → ตัด "· N วัน" ออก
+                    return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
+                  };
                   return `<div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (${acts.length})</b></div>
                           <div class="alh-action-list">
                             ${acts.map(a => {
                               const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
+                              const det = _prettyDetail(a.detail);
                               return `<div class="alh-action-item">
                                 <span class="alh-action-time">${_t(a.created_at)}</span>
                                 <span class="alh-action-ico">${meta.ico}</span>
-                                <span class="alh-action-text"><b>${escHtml(meta.text)}</b>${a.detail ? `<span class="alh-action-detail"> · ${escHtml(a.detail)}</span>` : ''}</span>
+                                <span class="alh-action-text"><b>${escHtml(meta.text)}</b>${det ? `<span class="alh-action-detail"> · ${escHtml(det)}</span>` : ''}</span>
                               </div>`;
                             }).join("")}
                           </div>`;
@@ -11959,15 +11978,81 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // validate ช่วงไม่เกิน 30 วัน (popup ถ้าเกิน + clamp + reload)
         if (!_validateDateSpan30(fromEl, toEl, loadEditHistory)) return;
         body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</td></tr>`;
-        const params = { mode: "listEditedSales", date_from: fromEl.value, date_to: toEl.value };
+        const dFrom = fromEl.value, dTo = toEl.value;
+        const params = { mode: "listEditedSales", date_from: dFrom, date_to: dTo };
         if (S.role === "bzm") {
           params.branch_codes = Object.keys(BRANCH_DM_MAP).filter(c => BRANCH_DM_MAP[c].dm === S.dm);
         }
-        apiCall(params, function(res) {
-          if (!res || !res.ok) { body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:#dc2626">โหลดไม่สำเร็จ: ${escHtml((res && res.error) || "—")}</td></tr>`; return; }
-          _ehRows = res.rows || [];
+        // Load 2 things concurrently: sales edits + plan edits (จาก user_actions)
+        let _salesRes = null, _planRows = null, _done = 0;
+        const _finish = () => {
+          if (++_done < 2) return;
+          if (!_salesRes || !_salesRes.ok) {
+            body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:#dc2626">โหลดไม่สำเร็จ: ${escHtml((_salesRes && _salesRes.error) || "—")}</td></tr>`;
+            return;
+          }
+          _ehRows = (_salesRes.rows || []).concat(_planRows || []);
           renderEditHistory();
-        });
+        };
+        apiCall(params, function(res) { _salesRes = res; _finish(); });
+        _fetchPlanEditsFromActions(dFrom, dTo, function(rows) { _planRows = rows; _finish(); });
+      }
+
+      // ดึงประวัติการแก้ไข plan sale จาก user_actions (action = save_plan)
+      function _fetchPlanEditsFromActions(dFrom, dTo, cb) {
+        try {
+          const t0 = dFrom + "T00:00:00";
+          const t1 = dTo   + "T23:59:59";
+          const url = SUPABASE_URL + "/rest/v1/user_actions"
+                    + "?select=*"
+                    + "&action=eq.save_plan"
+                    + "&created_at=gte." + encodeURIComponent(t0)
+                    + "&created_at=lte." + encodeURIComponent(t1)
+                    + "&order=created_at.desc";
+          fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+            .then(r => r.ok ? r.json() : [])
+            .then(data => {
+              // ผูกเป็น row format เดียวกับ sales edits
+              const bzmScope = (S.role === "bzm")
+                ? new Set(Object.keys(BRANCH_DM_MAP).filter(c => BRANCH_DM_MAP[c].dm === S.dm))
+                : null;
+              const rows = (data || []).map(a => {
+                let code = "", name = "", diffs = [];
+                const raw = String(a.detail || "").trim();
+                // ใหม่: detail เป็น JSON {b, n, diffs}
+                if (raw.startsWith("{")) {
+                  try {
+                    const j = JSON.parse(raw);
+                    const b = String(j.b || "");
+                    const m = b.match(/^(\d{4,5})\s+(.*)$/);
+                    code = m ? m[1] : "";
+                    name = m ? m[2] : b;
+                    diffs = Array.isArray(j.diffs) ? j.diffs : [];
+                  } catch (e) {}
+                } else {
+                  // เก่า: "5001 แฟชั่น ไอส์แลนด์ · N วัน"
+                  const m = raw.match(/^(\d{4,5})\s+([^·]*)/);
+                  code = m ? m[1] : "";
+                  name = m ? m[2].trim() : raw;
+                }
+                const dm = code && BRANCH_DM_MAP[code] ? BRANCH_DM_MAP[code].dm : "";
+                return {
+                  _isPlanEdit:      true,
+                  _planDiffs:       diffs,
+                  branch_code:      code,
+                  branch_name:      name,
+                  district_manager: dm,
+                  submitter_name:   a.user_code || "-",
+                  submit_date:      (a.created_at || "").slice(0, 10),
+                  submit_time_slot: "Plan Sale",
+                  edit_count:       diffs.length || 1,
+                  last_edited_at:   a.created_at
+                };
+              }).filter(r => !bzmScope || bzmScope.has(r.branch_code));
+              cb(rows);
+            })
+            .catch(() => cb([]));
+        } catch (e) { cb([]); }
       }
 
       function renderEditHistory() {
@@ -12004,8 +12089,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         // ── Desktop table rows ──
         body.innerHTML = list.map(r => {
-          const slotCol = r.submit_time_slot === "สิ้นวัน" ? "#7c3aed" : "#0ea5e9";
-          const slotBg  = r.submit_time_slot === "สิ้นวัน" ? "#faf5ff" : "#f0f9ff";
+          const isPlan = !!r._isPlanEdit;
+          const slotCol = isPlan ? "#c2410c" : (r.submit_time_slot === "สิ้นวัน" ? "#7c3aed" : "#0ea5e9");
+          const slotBg  = isPlan ? "#fff7ed" : (r.submit_time_slot === "สิ้นวัน" ? "#faf5ff" : "#f0f9ff");
+          const actionBtn = isPlan
+            ? `<button class="btn btn-sm" onclick="ehOpenPlanDetail('${escHtml(r.branch_code)}','${escHtml(r.branch_name)}','${escHtml(r.last_edited_at)}')" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดู Plan</button>`
+            : `<button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดู</button>`;
           return `<tr style="border-bottom:1px solid #f1f5f9">
             <td style="padding:10px 12px;font-weight:700">${fmtSubDate(r.submit_date)}</td>
             <td style="padding:10px 10px;text-align:center"><span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;background:${slotBg};color:${slotCol}">${escHtml(r.submit_time_slot || "—")}</span></td>
@@ -12014,7 +12103,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <td style="padding:10px 12px">${escHtml(r.submitter_name || "—")}</td>
             <td style="padding:10px 10px;text-align:center"><span style="font-size:13px;font-weight:800;color:#dc2626;background:#fee2e2;padding:3px 12px;border-radius:999px">${r.edit_count}</span></td>
             <td style="padding:10px 12px;color:var(--txt2);font-size:12px">${fmtDate(r.last_edited_at)}</td>
-            <td style="padding:8px 12px;text-align:right"><button class="btn btn-sm" onclick="ehOpenDetail('${escHtml(r.branch_code)}','${escHtml(r.submit_date)}','${escHtml(r.submit_time_slot)}')" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px;padding:5px 10px;border-radius:7px">👁️ ดู</button></td>
+            <td style="padding:8px 12px;text-align:right">${actionBtn}</td>
           </tr>`;
         }).join("");
 
@@ -12146,6 +12235,56 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </div>`;
           }).join("");
         });
+      }
+
+      // แสดงรายละเอียด Plan diff (จาก user_actions)
+      function ehOpenPlanDetail(branchCode, branchName, lastEditedAt) {
+        const bName = branchName || (BRANCH_DM_MAP[branchCode] || {}).branch || branchCode;
+        const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        const dt = new Date(lastEditedAt);
+        const dateLbl = isNaN(dt) ? lastEditedAt
+          : `${dt.getDate()} ${MONTH[dt.getMonth()]} ${dt.getFullYear()+543} · ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
+        document.getElementById("edTitle").textContent = `📅 ${branchCode} ${bName} · Plan Sale · ${dateLbl}`;
+        const body = document.getElementById("edBody");
+        openM("mEditDiff");
+
+        // หา row ตรงกับ lastEditedAt จาก _ehRows cache
+        const row = (_ehRows || []).find(r => r._isPlanEdit
+          && r.branch_code === branchCode
+          && r.last_edited_at === lastEditedAt);
+        const diffs = (row && row._planDiffs) || [];
+        if (!diffs.length) {
+          body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--txt2)">ไม่มีข้อมูลรายละเอียดการแก้ไข<br><span style="font-size:11px">(ประวัติเดิมก่อน v2.1 ไม่ได้เก็บ diff)</span></div>`;
+          return;
+        }
+        const fmtNum = v => (parseFloat(v) || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 });
+        const fmtDay = s => {
+          const p = String(s || "").split("-");
+          if (p.length !== 3) return s;
+          return `${parseInt(p[2])} ${MONTH[parseInt(p[1])-1]} ${parseInt(p[0])+543}`;
+        };
+        const rowsHtml = diffs.map(d => {
+          const delta = (parseFloat(d.t) || 0) - (parseFloat(d.f) || 0);
+          const deltaTxt = delta === 0 ? "" :
+            `<span class="eh-delta ${delta > 0 ? 'pos' : 'neg'}">${delta > 0 ? "+" : ""}${fmtNum(delta)}</span>`;
+          return `<tr>
+            <td class="eh-lbl">${escHtml(fmtDay(d.d))}</td>
+            <td class="eh-old">${fmtNum(d.f)}</td>
+            <td class="eh-arr">→</td>
+            <td class="eh-new">${fmtNum(d.t)}</td>
+            <td class="eh-diff">${deltaTxt}</td>
+          </tr>`;
+        }).join("");
+        body.innerHTML = `<div class="eh-card">
+          <div class="eh-card-hdr">
+            <span class="eh-evt">${diffs.length} วัน</span>
+            <span>ที่มีการแก้ไข Plan Sale</span>
+          </div>
+          <table class="eh-tbl">
+            <thead><tr><th class="l">วันที่</th><th>Plan เดิม</th><th></th><th>Plan ใหม่</th><th>เปลี่ยน</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>`;
       }
 
       function manpowerSave() {
@@ -12598,10 +12737,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             bzmList.map(dm => `<option value="BZM:${escHtml(dm)}">โซน BZM: ${escHtml(dm)} (${bzmCounts[dm]})</option>`).join("") +
             `</optgroup>`;
           html += `<optgroup label="รายสาขา">` +
-            codes.map(c => `<option value="${c}">${escHtml(BRANCH_DM_MAP[c].branch || c)}</option>`).join("") +
+            codes.map(c => `<option value="${c}">${escHtml(c + " " + (BRANCH_DM_MAP[c].branch || ""))}</option>`).join("") +
             `</optgroup>`;
         } else {
-          html += codes.map(c => `<option value="${c}">${escHtml(BRANCH_DM_MAP[c].branch || c)}</option>`).join("");
+          html += codes.map(c => `<option value="${c}">${escHtml(c + " " + (BRANCH_DM_MAP[c].branch || ""))}</option>`).join("");
         }
         sel.innerHTML = html;
         sel.value = current;
@@ -14081,10 +14220,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const rows = (_h && _h.ok && _h.rows) ? _h.rows
             // ตัดสาขาที่ยังไม่ระบุโซน (dm ว่าง) ออกจาก dashboard ทั้งหมด
             .filter(r => r.branch_code && (BRANCH_DM_MAP[r.branch_code] || {}).dm)
-            .map(r => ({
-              ...r,
-              plan_sale: planByDate[r.submit_date] !== undefined ? planByDate[r.submit_date] : (parseFloat(r.plan_sale) || 0)
-            })) : [];
+            .map(r => {
+              // ⚠️ plan ต้อง lookup ด้วย (branch_code, date) — ไม่งั้นทุกสาขาได้ plan รวมของทั้งวัน
+              const byB = planByBranchDate[r.branch_code];
+              const planForRow = (byB && byB[r.submit_date] !== undefined)
+                ? byB[r.submit_date]
+                : (parseFloat(r.plan_sale) || 0);
+              return { ...r, plan_sale: planForRow };
+            }) : [];
           _secData[sec] = { rows, planByDate, planByBranch, planByBranchDate, range: { startDate: pr.startDate, endDate: pr.endDate, periodDays: pr.periodDays } };
           // ช่วงที่กำลังดู = แหล่งโครงโซน/สาขา (drill source)
           if (sec === _secActive) { _dashRows = rows; _dashPlanByBranch = planByBranch; _dashPlans = planByDate; }
@@ -15543,7 +15686,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             // log action: ส่งยอด รอบ 16:00 / สิ้นวัน
             const _slot = _pendingPayload.submit_time_slot;
             const _act = _slot === "16.00" ? "submit_sales_16" : "submit_sales_eod";
-            const _det = `${S.branch || ""} · ${_pendingPayload.submit_date}`;
+            const _det = `${S.code || ""} ${S.branch || ""} · ${_pendingPayload.submit_date}`.trim();
             _logUserAction(_act, _det);
             _showSubmitSuccess(S.branch || "", _pendingPayload.submit_date, _pendingPayload.submit_time_slot);
             _pendingPayload = null;
@@ -15684,7 +15827,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const current = sel.value;
         const codes = Object.keys(BRANCH_DM_MAP).sort();
         sel.innerHTML = `<option value="">— เลือกสาขา —</option>` +
-          codes.map(c => `<option value="${c}">${escHtml(BRANCH_DM_MAP[c].branch || c)}</option>`).join("");
+          codes.map(c => `<option value="${c}">${escHtml(c + " " + (BRANCH_DM_MAP[c].branch || ""))}</option>`).join("");
         if (current) sel.value = current;
       }
       function getPlanBranchCode() {
@@ -15826,11 +15969,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           return;
         }
         const entries = [];
+        const diffs = [];   // เก็บ diff ต่อวัน (สำหรับ log user_actions)
         document.querySelectorAll(".plan-inp").forEach(inp => {
           const date = inp.dataset.date;
-          // เปิดทุกวัน (รวมย้อนหลัง) — รองรับเคสส่งยอดขายย้อนหลัง
           const val = parseFloat(inp.value.replace(/,/g, "")) || 0;
           entries.push({ date: date, plan_sale: val });
+          // เทียบกับค่าเดิม
+          const oldV = parseFloat(_planData[date]) || 0;
+          if (oldV !== val) diffs.push({ d: date, f: oldV, t: val });
         });
         if (!entries.length) return;
 
@@ -15853,7 +15999,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               _planCache[branchCode + "|" + d] = v;
             });
             const _bName = BRANCH_DM_MAP[branchCode]?.branch || branchCode;
-            _logUserAction("save_plan", `${_bName} · ${res.saved} วัน`);
+            // เก็บ diff แบบ JSON เพื่อให้ ประวัติแก้ไข ดูรายละเอียดได้
+            const _detail = JSON.stringify({
+              b: `${branchCode} ${_bName}`,
+              n: res.saved,
+              diffs: diffs.slice(0, 100)   // จำกัด 100 items กัน payload บวม
+            });
+            _logUserAction("save_plan", _detail);
             showAlert("✅", "บันทึกสำเร็จ", "บันทึก Plan " + res.saved + " วันเรียบร้อยแล้ว");
           } else {
             showAlert("❌", "บันทึกไม่สำเร็จ", (res && res.error) || "กรุณาลองใหม่");
@@ -15941,17 +16093,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             return;
           }
           // Build plan lookup จากตาราง plan_sale
-          const planByDate = {};
+          // ⚠️ ต้อง key ด้วย (branch_code + date) — ไม่งั้น admin ดูหลายสาขาแล้ว plan ซ้ำกันหมด
+          const planByBranchDate = {};
           if (_plan && _plan.ok && Array.isArray(_plan.rows)) {
-            _plan.rows.forEach(r => { planByDate[r.date] = parseFloat(r.plan_sale) || 0; });
+            _plan.rows.forEach(r => {
+              const key = (r.branch_code || "") + "|" + r.date;
+              planByBranchDate[key] = parseFloat(r.plan_sale) || 0;
+            });
           }
           // Merge: ใช้ plan จากตาราง plan_sale แทนที่ฝังในแถว
-          const merged = (_hist.rows || []).map(r => ({
-            ...r,
-            plan_sale: planByDate[r.submit_date] !== undefined
-              ? planByDate[r.submit_date]
-              : (parseFloat(r.plan_sale) || 0)
-          }));
+          const merged = (_hist.rows || []).map(r => {
+            const key = (r.branch_code || "") + "|" + r.submit_date;
+            return {
+              ...r,
+              plan_sale: planByBranchDate[key] !== undefined
+                ? planByBranchDate[key]
+                : (parseFloat(r.plan_sale) || 0)
+            };
+          });
           renderHistory(merged);
         }
 
@@ -15993,9 +16152,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           return (a.submit_time_slot === "สิ้นวัน" ? -1 : 1) - (b.submit_time_slot === "สิ้นวัน" ? -1 : 1);
         });
 
+        // Admin/VP/BZM ดูหลายสาขาได้ → โชว์ column "สาขา"
+        const _isMultiBranchViewer = (S.role === "admin" || S.role === "vp" || S.role === "bzm" || S.code === "ADMIN");
+
         // ── TABLE (desktop) ──────────────────────
         let tbl = `<table><thead><tr>
-    <th>รอบ</th><th>วันที่</th><th>ผู้ส่ง</th>
+    <th>รอบ</th><th>วันที่</th>
+    ${_isMultiBranchViewer ? '<th>สาขา</th>' : ''}
+    <th>ผู้ส่ง</th>
+    <th>เวลาส่ง</th>
     <th style="text-align:right">Plan</th>
     <th style="text-align:right">Actual</th>
     <th style="text-align:right">%</th>
@@ -16059,11 +16224,26 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             return `${parseInt(d)} ${month} ${parseInt(y)+543}`;
           })();
 
+          // ชื่อสาขา (พร้อมรหัส) + เวลาส่ง (จาก submitted_at)
+          const branchCell = _isMultiBranchViewer
+            ? `<td style="white-space:nowrap">${escHtml((r.branch_code || "") + " " + (r.branch_name || ""))}</td>`
+            : "";
+          const submittedTxt = r.submitted_at
+            ? (() => {
+                const d = new Date(r.submitted_at);
+                if (isNaN(d)) return String(r.submitted_at);
+                const pad = n => String(n).padStart(2, "0");
+                return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+              })()
+            : "-";
+
           // Table row
           tbl += `<tr>
       <td>${slotBadge} ${editBadge}${editInfo}</td>
       <td style="font-weight:600;white-space:nowrap">${dateDMY}</td>
+      ${branchCell}
       <td>${r.submitter_name || "-"}</td>
+      <td style="white-space:nowrap;color:var(--txt2);font-size:12.5px">${escHtml(submittedTxt)}</td>
       <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(plan)}</td>
       <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(actual)}</td>
       <td style="text-align:right" class="${pctCls}">${pctTxt}</td>
@@ -16085,7 +16265,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       </div>
       <div class="hist-card-detail">
         ${editInfo}
+        ${_isMultiBranchViewer ? `<div class="hist-card-row"><span class="hist-card-lbl">สาขา</span><span class="hist-card-val">${escHtml((r.branch_code||"") + " " + (r.branch_name||""))}</span></div>` : ""}
         <div class="hist-card-row"><span class="hist-card-lbl">ผู้ส่ง</span><span class="hist-card-val">${r.submitter_name || "-"}</span></div>
+        <div class="hist-card-row"><span class="hist-card-lbl">เวลาส่ง</span><span class="hist-card-val">${escHtml(submittedTxt)}</span></div>
         <div class="hist-card-row">
           <span class="hist-card-lbl">Plan / Actual</span>
           <span class="hist-card-val">${fmt(plan)} / ${fmt(actual)}</span>
@@ -16216,10 +16398,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           return;
         }
 
+        // Admin แก้ไขยอดของสาขาอื่น → ใช้ข้อมูลสาขาจาก _editRow (ไม่ทับด้วย S ของ admin)
+        const editBranchCode = _editRow.branch_code || S.code;
+        const editBranchName = _editRow.branch_name || _editRow.branch || S.branch;
+        const editDM = _editRow.district_manager || S.dm;
+
         const payload = {
           mode: "edit", _row: _editRow._row,
-          branch_code: S.code, submitter_name: submitter,
-          district_manager: S.dm, branch: S.branch,
+          branch_code: editBranchCode, submitter_name: submitter,
+          district_manager: editDM, branch: editBranchName,
           submit_date: _editRow.submit_date,
           submit_time_slot: _editRow.submit_time_slot,
           plan_sale: eNum("e_plan"), actual_sale: eNum("e_actual"),
@@ -16239,7 +16426,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           closeM("mAlert");
           if (!res) { showAlert("❌", "ไม่ได้รับการตอบกลับ", "กรุณาลองใหม่"); return; }
           if (res.ok && res.edited) {
-            _logUserAction("edit_sales", `${payload.branch_name || S.branch || ""} · ${payload.submit_date} · ${payload.submit_time_slot}`);
+            _logUserAction("edit_sales", `${editBranchCode} ${editBranchName} · ${payload.submit_date} · ${payload.submit_time_slot}`);
             _editRow = null;
             // Refresh history ทันที — ไม่รอให้ user คลิก OK
             loadHistory();
