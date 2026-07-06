@@ -16409,7 +16409,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           district_manager: editDM, branch: editBranchName,
           submit_date: _editRow.submit_date,
           submit_time_slot: _editRow.submit_time_slot,
-          plan_sale: eNum("e_plan"), actual_sale: eNum("e_actual"),
+          actual_sale: eNum("e_actual"),
           sale_dine_in: eNum("e_din_s"), sale_take_away: eNum("e_ta_s"),
           sale_grab: eNum("e_grab_s"), sale_lineman: eNum("e_line_s"),
           sale_shopeefood: eNum("e_shp_s"),
@@ -16418,6 +16418,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           trans_lineman: eNum("e_line_t"), trans_shopeefood: eNum("e_shp_t"),
           customer: eNum("e_cust"), labour_hour: lh, labour_baht: lb
         };
+        // รอบ 16.00 → รวม plan_sale (แก้ไขได้)
+        // รอบสิ้นวัน → ไม่ใส่ plan_sale (ช่อง disabled — eNum จะ return 0 → เคยทับ DB เป็น 0)
+        if (!isEod) {
+          payload.plan_sale = eNum("e_plan");
+        }
 
         closeM("mEdit");
         showAlert("⏳", "กำลังบันทึก...", "กรุณารอสักครู่");
