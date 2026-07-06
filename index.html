@@ -13308,8 +13308,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           { lbl: "🧾 จำนวนบิล", val: fmt(a.bills), sub: "ลูกค้า " + fmt(a.cust) + " คน" },
           { lbl: "💵 บิลเฉลี่ย", val: a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-", sub: "ต่อบิล" },
           { lbl: "🙋 ค่าเฉลี่ยต่อคน", val: a.cust > 0 ? "฿" + fmt(Math.round(perCust)) : "-", sub: "ต่อลูกค้า" },
-          { lbl: "👥 ค่าแรง %", val: a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-", sub: fmt(Math.round(a.labHr)) + " ชม." },
-          { lbl: "💸 ค่าแรง (บาท)", val: "฿" + fmt(Math.round(a.labBaht)), sub: a.actual > 0 ? (labPct * 100).toFixed(1) + "% ของยอดขาย" : "—" }
+          { lbl: "👥 ค่าแรง",
+            val: "฿" + fmt(Math.round(a.labBaht)),
+            sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." }
         ];
         return cards.map(k => `
           <div class="dash3-kpi${k.hero ? " dash3-kpi-hero" : ""}">
