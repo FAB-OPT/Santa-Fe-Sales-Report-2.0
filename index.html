@@ -3271,6 +3271,11 @@
         font-size: 17px; font-weight: 800; color: #0f172a;
         letter-spacing: -.01em;
       }
+      /* Header title (page title) — ตัวใหญ่กว่า session card title */
+      .alh-hdr .alh-title {
+        font-size: 26px; letter-spacing: -.02em;
+      }
+      body.is-touch .alh-hdr .alh-title { font-size: 20px; }
       .alh-actions { display: flex; align-items: center; gap: 10px; }
 
       .alh-toolbar {
@@ -9680,45 +9685,56 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 ${r.dm ? `<div class="alh-d-lbl">BZM</div><div class="alh-d-val">${escHtml(r.dm)}</div>` : ''}
               </div>
 
-              <div class="alh-menus">
-                ${(() => {
-                  const acts = _findActionsInSession(r, lo);
-                  if (!acts.length) {
-                    return `<div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (0)</b></div>
-                            <div class="alh-menus-empty">— ไม่ได้ทำรายการใด</div>`;
+              ${(() => {
+                const acts = _findActionsInSession(r, lo);
+                // (0) → ไม่โชว์เลย
+                if (!acts.length) return "";
+                const _t = (iso) => {
+                  const d = new Date(iso);
+                  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+                };
+                const _prettyDetail = (raw) => {
+                  if (!raw) return "";
+                  const s = String(raw).trim();
+                  if (s.startsWith("{")) {
+                    try { const j = JSON.parse(s); return j.b ? String(j.b) : ""; } catch (e) {}
                   }
-                  const _t = (iso) => {
-                    const d = new Date(iso);
-                    return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-                  };
-                  // แปลง detail — ถ้าเป็น JSON (save_plan v2.1+) → เอา b (branch) เท่านั้น
-                  const _prettyDetail = (raw) => {
-                    if (!raw) return "";
-                    const s = String(raw).trim();
-                    if (s.startsWith("{")) {
-                      try {
-                        const j = JSON.parse(s);
-                        // ตัด "N วัน" ออก — เอาแค่ชื่อสาขา (จำนวนวันไม่ค่อยมีประโยชน์เมื่อดูใน session)
-                        return j.b ? String(j.b) : "";
-                      } catch (e) {}
-                    }
-                    // legacy: "5001 ... · N วัน" → ตัด "· N วัน" ออก
-                    return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
-                  };
-                  return `<div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (${acts.length})</b></div>
-                          <div class="alh-action-list">
-                            ${acts.map(a => {
-                              const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
-                              const det = _prettyDetail(a.detail);
-                              return `<div class="alh-action-item">
-                                <span class="alh-action-time">${_t(a.created_at)}</span>
-                                <span class="alh-action-ico">${meta.ico}</span>
-                                <span class="alh-action-text"><b>${escHtml(meta.text)}</b>${det ? `<span class="alh-action-detail"> · ${escHtml(det)}</span>` : ''}</span>
-                              </div>`;
-                            }).join("")}
-                          </div>`;
-                })()}
-              </div>
+                  return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
+                };
+                // แยกกิจกรรมเป็นกลุ่ม
+                const _CAT = [
+                  { key: "submit", label: "ส่งยอด",   ico: "📤", color: "#0ea5e9", bg: "#f0f9ff", actions: ["submit_sales_16", "submit_sales_eod"] },
+                  { key: "edit",   label: "แก้ไขยอด", ico: "✏️", color: "#c2410c", bg: "#fff7ed", actions: ["edit_sales"] },
+                  { key: "plan",   label: "Plan Sale", ico: "📅", color: "#7c3aed", bg: "#faf5ff", actions: ["save_plan"] },
+                  { key: "mp",     label: "Manpower", ico: "👥", color: "#0891b2", bg: "#ecfeff", actions: ["save_manpower", "save_manpower_plan", "save_manpower_bulk"] }
+                ];
+                const groups = _CAT.map(cat => ({
+                  ...cat,
+                  items: acts.filter(a => cat.actions.indexOf(a.action) >= 0)
+                })).filter(g => g.items.length);
+                const groupsHtml = groups.map(g => `
+                  <div style="margin-bottom:10px">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:${g.color};background:${g.bg};padding:5px 10px;border-radius:8px;margin-bottom:6px">
+                      <span>${g.ico}</span><span>${escHtml(g.label)}</span>
+                      <span style="margin-left:auto;background:#fff;padding:1px 8px;border-radius:999px;font-size:11px">${g.items.length}</span>
+                    </div>
+                    <div class="alh-action-list">
+                      ${g.items.map(a => {
+                        const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
+                        const det = _prettyDetail(a.detail);
+                        return `<div class="alh-action-item">
+                          <span class="alh-action-time">${_t(a.created_at)}</span>
+                          <span class="alh-action-ico">${meta.ico}</span>
+                          <span class="alh-action-text"><b>${escHtml(meta.text)}</b>${det ? `<span class="alh-action-detail"> · ${escHtml(det)}</span>` : ''}</span>
+                        </div>`;
+                      }).join("")}
+                    </div>
+                  </div>`).join("");
+                return `<div class="alh-menus">
+                  <div class="alh-menus-hdr">📝 <b>กิจกรรมในเซสชัน (${acts.length})</b></div>
+                  <div style="margin-top:8px">${groupsHtml}</div>
+                </div>`;
+              })()}
             </div>` : ''}
           </div>`;
         }).join("");
@@ -9768,7 +9784,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               return s.replace(/\s*·\s*\d+\s*วัน\s*$/, "");
             };
             const _open = _adminOrphanExpanded;
-            const itemsHtml = _orphans.map(a => {
+            // แยกกลุ่ม (เหมือน session activity)
+            const _CAT_ORPH = [
+              { key: "submit", label: "ส่งยอด",   ico: "📤", color: "#0ea5e9", bg: "#f0f9ff", actions: ["submit_sales_16", "submit_sales_eod"] },
+              { key: "edit",   label: "แก้ไขยอด", ico: "✏️", color: "#c2410c", bg: "#fff7ed", actions: ["edit_sales"] },
+              { key: "plan",   label: "Plan Sale", ico: "📅", color: "#7c3aed", bg: "#faf5ff", actions: ["save_plan"] },
+              { key: "mp",     label: "Manpower", ico: "👥", color: "#0891b2", bg: "#ecfeff", actions: ["save_manpower", "save_manpower_plan", "save_manpower_bulk"] }
+            ];
+            const _mkOrphItem = (a) => {
               const meta = _ACTION_LBL[a.action] || { ico: "📌", text: a.action };
               const um = _userMeta[a.user_code] || {};
               const who = um.name || a.user_code || "—";
@@ -9782,7 +9805,30 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                   <span style="color:#94a3b8;font-size:11.5px"> · โดย ${escHtml(who)} (${escHtml(a.user_code || "—")})</span>
                 </span>
               </div>`;
-            }).join("");
+            };
+            const _orphGroups = _CAT_ORPH.map(cat => ({
+              ...cat,
+              items: _orphans.filter(a => cat.actions.indexOf(a.action) >= 0)
+            })).filter(g => g.items.length);
+            const _orphOtherItems = _orphans.filter(a =>
+              !_CAT_ORPH.some(cat => cat.actions.indexOf(a.action) >= 0)
+            );
+            const itemsHtml = _orphGroups.map(g => `
+              <div style="margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:${g.color};background:${g.bg};padding:5px 10px;border-radius:8px;margin-bottom:6px">
+                  <span>${g.ico}</span><span>${escHtml(g.label)}</span>
+                  <span style="margin-left:auto;background:#fff;padding:1px 8px;border-radius:999px;font-size:11px">${g.items.length}</span>
+                </div>
+                <div class="alh-action-list">${g.items.map(_mkOrphItem).join("")}</div>
+              </div>`).join("")
+              + (_orphOtherItems.length ? `
+                <div style="margin-bottom:10px">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#64748b;background:#f1f5f9;padding:5px 10px;border-radius:8px;margin-bottom:6px">
+                    <span>📌</span><span>อื่นๆ</span>
+                    <span style="margin-left:auto;background:#fff;padding:1px 8px;border-radius:999px;font-size:11px">${_orphOtherItems.length}</span>
+                  </div>
+                  <div class="alh-action-list">${_orphOtherItems.map(_mkOrphItem).join("")}</div>
+                </div>` : "");
             orphBox.innerHTML = `
               <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;overflow:hidden">
                 <button type="button" onclick="_adminOrphanToggle()"
