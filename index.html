@@ -13403,10 +13403,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           { lbl: "🙋 ค่าเฉลี่ยต่อคน", val: a.cust > 0 ? "฿" + fmt(Math.round(perCust)) : "-", sub: "ต่อลูกค้า" },
           { lbl: "👥 ค่าแรง",
             val: "฿" + fmt(Math.round(a.labBaht)),
-            sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." },
-          { lbl: "🎯 เชียร์ขาย",
-            val: fmt(_currentPromoAgg.qty || 0) + " จาน",
-            sub: "฿" + fmt(Math.round(_currentPromoAgg.amt || 0)) }
+            sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." }
         ];
         return cards.map(k => `
           <div class="dash3-kpi${k.hero ? " dash3-kpi-hero" : ""}">
@@ -13414,6 +13411,39 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <div class="dash3-kpi-val">${k.val}</div>
             <div class="dd-kpi-sub"${k.subColor ? ` style="color:${k.subColor}"` : ""}>${k.sub}</div>
           </div>`).join("");
+      }
+
+      // Promo strip — แนวยาว (โชว์ item breakdown)
+      function _renderPromoStrip(agg) {
+        if (!agg || !agg.qty) {
+          return `<div class="dash3-promo-strip" style="margin:10px 0 14px;padding:12px 16px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid #fed7aa;border-radius:12px;display:flex;align-items:center;gap:10px;color:#9a3412;font-size:13px">
+            <span style="font-size:18px">🎯</span>
+            <b>รายการเชียร์ขาย</b>
+            <span style="color:#c2410c;font-style:italic">— ยังไม่มีข้อมูลในช่วงนี้</span>
+          </div>`;
+        }
+        const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
+        const itemsHtml = items.map(it => `
+          <div style="flex:1 1 200px;min-width:180px;display:flex;flex-direction:column;gap:2px;padding:8px 12px;background:#fff;border:1px solid #fed7aa;border-radius:10px">
+            <div style="font-size:12px;color:#64748b;line-height:1.3">${escHtml(it.name)}</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:18px;font-weight:900;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)}</span>
+              <span style="font-size:11px;color:#94a3b8">จาน</span>
+              <span style="margin-left:auto;font-size:12px;font-weight:700;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
+            </div>
+          </div>`).join("");
+        return `<div class="dash3-promo-strip" style="margin:10px 0 14px;padding:14px 16px;background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;border-radius:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+            <span style="font-size:22px">🎯</span>
+            <b style="font-size:15px;color:#9a3412">รายการเชียร์ขาย</b>
+            <span style="margin-left:auto;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap">
+              <span style="font-size:13px;color:#64748b"><b style="color:#c2410c;font-size:16px;font-variant-numeric:tabular-nums">${fmt(agg.qty)}</b> จาน</span>
+              <span style="font-size:13px;color:#64748b"><b style="color:#c2410c;font-size:16px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</b></span>
+              <span style="font-size:12px;color:#94a3b8"><b style="color:#475569">${agg.count}</b> สาขาส่งแล้ว</span>
+            </span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${itemsHtml}</div>
+        </div>`;
       }
 
       function _ddBarList(items, onClick, sec) {
@@ -14314,6 +14344,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const isDayMode = (sec === 'day');
         const _isBranchRole = (role === 'branch' || role === 'franchise');
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
+        // ── Promo strip (แนวยาว · โชว์ item breakdown) ──
+        // ลบ strip เก่าก่อน (ป้องกัน accumulate ตอน re-render)
+        let _promoStripEl = kpiEl.nextElementSibling;
+        if (_promoStripEl && _promoStripEl.classList && _promoStripEl.classList.contains("dash3-promo-strip")) {
+          _promoStripEl.remove();
+        }
+        kpiEl.insertAdjacentHTML("afterend", _renderPromoStrip(_currentPromoAgg));
 
         // ── สำหรับ company/zone view บน month/year → เพิ่ม "สรุปยอดขายช่วง" (สัปดาห์ที่ 1-5 / มกราคม-ธันวาคม) ──
         let _periodPanel = '';
@@ -14500,14 +14537,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 : (parseFloat(r.plan_sale) || 0);
               return { ...r, plan_sale: planForRow };
             }) : [];
-          // Aggregate promo (เชียร์ขาย)
-          const promoAgg = { count: 0, qty: 0, amt: 0 };
+          // Aggregate promo (เชียร์ขาย) + breakdown per item
+          const promoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };
           if (Array.isArray(_promo)) {
             _promo.forEach(pr2 => {
               if (queryCodes && queryCodes.indexOf(pr2.branch_code) < 0) return;
               promoAgg.count += 1;
               promoAgg.qty  += parseInt(pr2.total_qty) || 0;
               promoAgg.amt  += parseFloat(pr2.total_amount) || 0;
+              // per-item breakdown
+              const items = (typeof pr2.items === "string") ? JSON.parse(pr2.items) : (pr2.items || []);
+              items.forEach(it => {
+                const id = it.id || it.name;
+                if (!promoAgg.byItem[id]) {
+                  promoAgg.byItem[id] = { id: id, name: it.name || id, price: parseFloat(it.price) || 0, qty: 0, subtotal: 0 };
+                }
+                promoAgg.byItem[id].qty += parseInt(it.qty) || 0;
+                promoAgg.byItem[id].subtotal += parseFloat(it.subtotal) || 0;
+              });
             });
           }
           _secData[sec] = { rows, planByDate, planByBranch, planByBranchDate, promoAgg, range: { startDate: pr.startDate, endDate: pr.endDate, periodDays: pr.periodDays } };
