@@ -13405,8 +13405,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             val: "฿" + fmt(Math.round(a.labBaht)),
             sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." },
           { lbl: "🎯 เชียร์ขาย",
-            val: "฿" + fmt(Math.round(_currentPromoAgg.amt || 0)),
-            sub: (_currentPromoAgg.qty || 0) + " จาน · " + (_currentPromoAgg.count || 0) + " สาขา" }
+            val: fmt(_currentPromoAgg.qty || 0) + " จาน",
+            sub: "฿" + fmt(Math.round(_currentPromoAgg.amt || 0)) }
         ];
         return cards.map(k => `
           <div class="dash3-kpi${k.hero ? " dash3-kpi-hero" : ""}">
