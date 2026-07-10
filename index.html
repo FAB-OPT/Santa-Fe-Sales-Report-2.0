@@ -16830,6 +16830,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const out = {};
         Object.keys(obj).forEach(k => {
           if (k === "mode" || k === "_row" || k === "entries") return;
+          if (k.startsWith("_")) return;   // ตัด field ภายในทั้งหมด (_promo, _isPlanEdit, _row, ฯลฯ)
           // form ส่ง "branch" — schema ใช้ "branch_name"
           const key = (k === "branch") ? "branch_name" : k;
           let v = obj[k];
