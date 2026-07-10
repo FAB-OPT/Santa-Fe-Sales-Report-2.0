@@ -6806,6 +6806,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <button class="desk-nav-btn" id="dnHistory" onclick="showHistory()">
           <span class="desk-nav-ico">🗂️</span>ประวัติ
         </button>
+        <button class="desk-nav-btn" id="dnPromo" onclick="showPromo()">
+          <span class="desk-nav-ico">🎯</span>เชียร์ขาย
+        </button>
         <button class="desk-nav-btn tm-nav" id="dnManpower" onclick="showManpower()" style="display:none">
           <span class="desk-nav-ico">👥</span>Manpower
         </button>
@@ -6894,6 +6897,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </button>
         <button class="md-nav-btn" id="mdHistory" onclick="showHistory(); closeMobDrawer()">
           <span class="md-nav-ico">🗂️</span><span class="md-nav-lbl">ประวัติ</span>
+        </button>
+        <button class="md-nav-btn" id="mdPromo" onclick="showPromo(); closeMobDrawer()">
+          <span class="md-nav-ico">🎯</span><span class="md-nav-lbl">เชียร์ขาย</span>
         </button>
         <button class="md-nav-btn tm-nav" id="mdManpower" onclick="showManpower(); closeMobDrawer()" style="display:none">
           <span class="md-nav-ico">👥</span><span class="md-nav-lbl">Manpower</span>
@@ -7727,6 +7733,59 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>
         <!-- Mobile cards -->
         <div id="ehCards" class="eh-mob-wrap"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     SCREEN: PROMO (รอบปิดการขาย — รายการเชียร์ขาย)
+════════════════════════════════════════ -->
+    <div id="sPromo" class="screen">
+      <div class="dash-wrap">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+          <div>
+            <h2 style="margin:0;font-size:24px;letter-spacing:-.01em">🎯 รายการเชียร์ขาย</h2>
+            <div style="font-size:13px;color:var(--txt2);margin-top:4px">ส่งได้ครั้งเดียวต่อวัน · แก้ไขไม่ได้</div>
+          </div>
+        </div>
+
+        <!-- Sticky banner ถ้ามีข้อมูลของวันนี้แล้ว -->
+        <div id="promoAlreadySent" style="display:none;background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13.5px;color:#166534;font-weight:700"></div>
+
+        <div class="dash-card-wrap" style="padding:16px 16px 18px;background:#fff;border:1px solid var(--bd);border-radius:12px;max-width:640px">
+          <!-- Date + Submitter -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div class="field">
+              <label style="font-size:12px;font-weight:700;color:#64748b">📅 วันที่</label>
+              <input type="date" id="promoDate" style="width:100%;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:14px" onchange="checkPromoAlreadySent()">
+            </div>
+            <div class="field">
+              <label style="font-size:12px;font-weight:700;color:#64748b">👤 ชื่อผู้ส่ง</label>
+              <input type="text" id="promoSubmitter" placeholder="กรอกชื่อ" style="width:100%;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:14px">
+            </div>
+          </div>
+
+          <!-- Items list -->
+          <div style="margin-bottom:10px;font-weight:800;color:#475569;font-size:13px">รายการ (กรอกแค่จำนวนจาน)</div>
+          <div id="promoItemsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+
+          <!-- Total -->
+          <div style="padding:14px 16px;background:linear-gradient(135deg,#fff7ed,#fed7aa);border:1px solid #fdba74;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;font-weight:800;color:#9a3412">รวมทั้งหมด</span>
+            <div style="text-align:right">
+              <div style="font-size:22px;font-weight:900;color:#c2410c;line-height:1"><span id="promoTotalAmt">฿0</span></div>
+              <div style="font-size:12px;color:#c2410c;margin-top:3px"><span id="promoTotalQty">0</span> จาน</div>
+            </div>
+          </div>
+
+          <!-- Submit btn -->
+          <button id="promoSubmitBtn" onclick="submitPromo()" style="width:100%;margin-top:14px;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer">💾 ส่งข้อมูล</button>
+        </div>
+
+        <!-- ประวัติ 7 วันล่าสุดของสาขานี้ -->
+        <div style="margin-top:24px;max-width:640px">
+          <div style="font-size:14px;font-weight:800;color:#475569;margin-bottom:10px">📜 ประวัติ 7 วันล่าสุด</div>
+          <div id="promoRecent" style="background:#fff;border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:13px;color:#94a3b8">— ยังไม่มีการส่ง</div>
+        </div>
       </div>
     </div>
 
@@ -9221,6 +9280,200 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         loadHistory();
       }
 
+      /* ═══════════════════════════════════════════════════
+         PROMO — รายการเชียร์ขาย (รอบปิดการขาย)
+      ═══════════════════════════════════════════════════ */
+      const PROMO_ITEMS = [
+        { id: "P1", name: "ข้าวน้ำตกสันคอหมูย่าง",           price: 129 },
+        { id: "P2", name: "ข้าวยำสันคอหมูย่าง",              price: 129 },
+        { id: "P3", name: "สเต๊กสันคอหมูย่างแจ่วข้าวคั่ว",    price: 149 }
+      ];
+
+      function showPromo() {
+        showScreen("sPromo");
+        setMobTab("mnPromo");
+        // set default date = today
+        const dEl = document.getElementById("promoDate");
+        if (dEl && !dEl.value) dEl.value = todayStr();
+        // pre-fill submitter name
+        const sEl = document.getElementById("promoSubmitter");
+        if (sEl && !sEl.value) sEl.value = localStorage.getItem(LS_NAME) || "";
+        renderPromoItems();
+        checkPromoAlreadySent();
+        loadPromoRecent();
+      }
+
+      function renderPromoItems() {
+        const box = document.getElementById("promoItemsList");
+        if (!box) return;
+        box.innerHTML = PROMO_ITEMS.map(it => `
+          <div class="promo-item" data-id="${it.id}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:#0f172a;font-size:14px">${escHtml(it.name)}</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button type="button" onclick="promoQtyDelta('${it.id}',-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">−</button>
+              <input type="number" class="promo-qty" id="promoQty_${it.id}" data-price="${it.price}" min="0" value="0" oninput="updatePromoTotal()" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700">
+              <button type="button" onclick="promoQtyDelta('${it.id}',+1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">+</button>
+            </div>
+            <div style="min-width:80px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
+          </div>
+        `).join("");
+        updatePromoTotal();
+      }
+
+      function promoQtyDelta(id, d) {
+        const el = document.getElementById("promoQty_" + id);
+        if (!el) return;
+        const cur = parseInt(el.value) || 0;
+        el.value = Math.max(0, cur + d);
+        updatePromoTotal();
+      }
+
+      function updatePromoTotal() {
+        let totalQty = 0, totalAmt = 0;
+        PROMO_ITEMS.forEach(it => {
+          const qEl = document.getElementById("promoQty_" + it.id);
+          const q = Math.max(0, parseInt(qEl?.value) || 0);
+          const sub = q * it.price;
+          totalQty += q;
+          totalAmt += sub;
+          const subEl = document.getElementById("promoSub_" + it.id);
+          if (subEl) subEl.textContent = "฿" + fmt(sub);
+        });
+        const qEl = document.getElementById("promoTotalQty");
+        const aEl = document.getElementById("promoTotalAmt");
+        if (qEl) qEl.textContent = totalQty;
+        if (aEl) aEl.textContent = "฿" + fmt(totalAmt);
+      }
+
+      // เช็คว่าสาขานี้ส่งของวันนี้แล้วหรือยัง (UNIQUE constraint)
+      function checkPromoAlreadySent() {
+        const bc = S.code;
+        const d  = document.getElementById("promoDate")?.value;
+        const banner = document.getElementById("promoAlreadySent");
+        const btn = document.getElementById("promoSubmitBtn");
+        if (!bc || !d || !banner || !btn) return;
+        if (S.code === "ADMIN") {  // admin เดินผ่าน
+          banner.style.display = "none";
+          btn.disabled = false; btn.style.opacity = "1";
+          return;
+        }
+        fetch(SUPABASE_URL + "/rest/v1/promo_submissions?select=id,total_amount,total_qty,submitter_name&branch_code=eq." + encodeURIComponent(bc) + "&submit_date=eq." + d + "&limit=1",
+              { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => {
+            if (rows && rows.length) {
+              const r = rows[0];
+              banner.innerHTML = `✓ ส่งแล้ววันนี้: <b>${r.submitter_name || "-"}</b> · <b>${r.total_qty} จาน · ฿${fmt(r.total_amount)}</b> — แก้ไขไม่ได้`;
+              banner.style.display = "block";
+              btn.disabled = true; btn.style.opacity = ".5"; btn.style.cursor = "not-allowed";
+            } else {
+              banner.style.display = "none";
+              btn.disabled = false; btn.style.opacity = "1"; btn.style.cursor = "pointer";
+            }
+          })
+          .catch(() => {});
+      }
+
+      function submitPromo() {
+        const submitter = document.getElementById("promoSubmitter")?.value?.trim() || "";
+        const date = document.getElementById("promoDate")?.value || "";
+        if (!submitter) { showAlert("⚠️", "กรอกไม่ครบ", "กรุณากรอกชื่อผู้ส่ง"); return; }
+        if (!date)      { showAlert("⚠️", "กรอกไม่ครบ", "กรุณาเลือกวันที่"); return; }
+
+        const items = PROMO_ITEMS.map(it => {
+          const q = Math.max(0, parseInt(document.getElementById("promoQty_" + it.id)?.value) || 0);
+          return { id: it.id, name: it.name, price: it.price, qty: q, subtotal: q * it.price };
+        }).filter(x => x.qty > 0);
+
+        if (!items.length) { showAlert("⚠️", "ยังไม่ได้กรอก", "กรอกจำนวนอย่างน้อย 1 รายการ"); return; }
+
+        const totalQty = items.reduce((s, x) => s + x.qty, 0);
+        const totalAmt = items.reduce((s, x) => s + x.subtotal, 0);
+        const branchCode = S.code;
+        const branchName = S.branch || (BRANCH_DM_MAP[branchCode]||{}).branch || "";
+        const dm = S.dm || (BRANCH_DM_MAP[branchCode]||{}).dm || "";
+
+        localStorage.setItem(LS_NAME, submitter);
+        const btn = document.getElementById("promoSubmitBtn");
+        btn.disabled = true; btn.textContent = "⏳ กำลังส่ง...";
+
+        const payload = {
+          branch_code: branchCode, branch_name: branchName,
+          district_manager: dm, submit_date: date,
+          submitter_name: submitter, items: items,
+          total_qty: totalQty, total_amount: totalAmt
+        };
+
+        fetch(SUPABASE_URL + "/rest/v1/promo_submissions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: "Bearer " + SUPABASE_KEY,
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify(payload)
+        }).then(r => {
+          btn.disabled = false; btn.textContent = "💾 ส่งข้อมูล";
+          if (r.status === 201 || r.ok) {
+            // mirror ไป Google Sheet แยก
+            pushToSheet("promo_submission", payload);
+            _logUserAction("submit_promo", `${branchCode} ${branchName} · ${date} · ${totalQty} จาน ฿${fmt(totalAmt)}`);
+            showAlert("✅", "ส่งสำเร็จ", `${branchName}\n${totalQty} จาน · ฿${fmt(totalAmt)}`);
+            // reset form
+            PROMO_ITEMS.forEach(it => {
+              const el = document.getElementById("promoQty_" + it.id);
+              if (el) el.value = 0;
+            });
+            updatePromoTotal();
+            checkPromoAlreadySent();
+            loadPromoRecent();
+          } else if (r.status === 409) {
+            showAlert("⚠️", "ข้อมูลซ้ำ", `สาขานี้ส่งข้อมูลของวันที่ ${date} ไปแล้ว\nไม่สามารถส่งซ้ำ / แก้ไขได้`);
+            checkPromoAlreadySent();
+          } else {
+            r.text().then(t => showAlert("❌", "ส่งไม่สำเร็จ", "HTTP " + r.status + "\n" + t.slice(0, 200)));
+          }
+        }).catch(e => {
+          btn.disabled = false; btn.textContent = "💾 ส่งข้อมูล";
+          showAlert("❌", "ส่งไม่สำเร็จ", String(e.message || e));
+        });
+      }
+
+      // โหลดประวัติ 7 วันล่าสุดของสาขา
+      function loadPromoRecent() {
+        const bc = S.code;
+        const box = document.getElementById("promoRecent");
+        if (!box || !bc) return;
+        const today = new Date();
+        const past = new Date(today.getTime() - 7*24*60*60*1000);
+        const from = past.getFullYear() + "-" + String(past.getMonth()+1).padStart(2,"0") + "-" + String(past.getDate()).padStart(2,"0");
+        let url = SUPABASE_URL + "/rest/v1/promo_submissions?select=submit_date,submitter_name,total_qty,total_amount,branch_code,branch_name&submit_date=gte." + from + "&order=submit_date.desc&limit=30";
+        if (bc !== "ADMIN") url += "&branch_code=eq." + encodeURIComponent(bc);
+        fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => {
+            if (!rows.length) { box.innerHTML = `<span style="color:#94a3b8">— ยังไม่มีการส่งใน 7 วันล่าสุด</span>`; return; }
+            const showBranch = (bc === "ADMIN");
+            box.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px">` +
+              rows.map(r => `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f8fafc;border-radius:8px">
+                <span style="font-weight:700;color:#475569;font-size:12px;min-width:70px">${_fmtPromoDate(r.submit_date)}</span>
+                ${showBranch ? `<span style="font-size:12px;color:#64748b">${escHtml(r.branch_code)} ${escHtml(r.branch_name || "")}</span>` : ""}
+                <span style="color:#0f172a">${escHtml(r.submitter_name || "-")}</span>
+                <span style="margin-left:auto;font-weight:800;color:#c2410c">${r.total_qty} จาน · ฿${fmt(r.total_amount)}</span>
+              </div>`).join("") + `</div>`;
+          })
+          .catch(() => { box.innerHTML = `<span style="color:#dc2626">โหลดไม่สำเร็จ</span>`; });
+      }
+      function _fmtPromoDate(s) {
+        const [y,m,d] = String(s||"").split("-");
+        const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        return `${parseInt(d)} ${MONTH[parseInt(m)-1]||""}`;
+      }
+
       function showDash() {
         showScreen("sDash");
         setMobTab("mnDash");
@@ -9612,7 +9865,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         save_plan:          { ico: "📅", text: "บันทึก Plan Sale" },
         save_manpower_plan: { ico: "👥", text: "บันทึก Manpower (Plan)" },
         save_manpower_bulk: { ico: "📝", text: "บันทึก Manpower หลายสาขา" },
-        save_manpower:      { ico: "👥", text: "บันทึก Manpower" }
+        save_manpower:      { ico: "👥", text: "บันทึก Manpower" },
+        submit_promo:       { ico: "🎯", text: "ส่งเชียร์ขาย" }
       };
       // หา actions ที่ user ทำใน session: ระหว่าง login_at → logout_at (หรือถึงปัจจุบันถ้ายังออนไลน์)
       function _findActionsInSession(loginRow, logoutRow) {
@@ -12817,6 +13071,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       let _dashDay   = undefined;   // "YYYY-MM-DD" — วันที่เลือก (รายวัน mode)
       let _dashPlans = {};          // { "yyyy-mm-dd": amount } — total ต่อวัน (รวมทุกสาขา)
       let _dashPlanByBranch = {};   // { branch_code: total } — สำหรับสรุปต่อ BZM
+      let _currentPromoAgg = { count: 0, qty: 0, amt: 0 };  // Aggregate เชียร์ขาย ของช่วง active
 
       function dashPrevMonth() {
         if (--_dashMonth < 0) { _dashMonth = 11; _dashYear--; }
@@ -13310,7 +13565,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           { lbl: "🙋 ค่าเฉลี่ยต่อคน", val: a.cust > 0 ? "฿" + fmt(Math.round(perCust)) : "-", sub: "ต่อลูกค้า" },
           { lbl: "👥 ค่าแรง",
             val: "฿" + fmt(Math.round(a.labBaht)),
-            sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." }
+            sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." },
+          { lbl: "🎯 เชียร์ขาย",
+            val: "฿" + fmt(Math.round(_currentPromoAgg.amt || 0)),
+            sub: (_currentPromoAgg.qty || 0) + " จาน · " + (_currentPromoAgg.count || 0) + " สาขา" }
         ];
         return cards.map(k => `
           <div class="dash3-kpi${k.hero ? " dash3-kpi-hero" : ""}">
@@ -14363,7 +14621,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
         const d = _secData[sec];
         if (!d || !d.range) loadSection(sec, true);   // ยังไม่โหลด → โหลด
-        else renderActive(false);                      // โหลดแล้ว → วาดใหม่ (เผื่อเอนทิตีเปลี่ยน)
+        else {
+          _currentPromoAgg = d.promoAgg || { count: 0, qty: 0, amt: 0 };
+          renderActive(false);                        // โหลดแล้ว → วาดใหม่ (เผื่อเอนทิตีเปลี่ยน)
+        }
       }
 
       // โหลดข้อมูลของพาร์ทเดียว (history + getPlan ของช่วงพาร์ทนั้น) แล้ววาด
@@ -14377,9 +14638,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const kpiEl = document.getElementById('sec' + C + 'Kpis');
         if (kpiEl) kpiEl.innerHTML = "";
 
-        let _h = null, _p = null, _n = 0;
+        let _h = null, _p = null, _promo = null, _n = 0;
         function done() {
-          if (++_n < 2) return;
+          if (++_n < 3) return;
           const planByDate = {}, planByBranch = {}, planByBranchDate = {};
           if (_p && _p.ok && Array.isArray(_p.rows)) _p.rows.forEach(r => {
             const amt = parseFloat(r.plan_amount) || 0;
@@ -14401,9 +14662,19 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 : (parseFloat(r.plan_sale) || 0);
               return { ...r, plan_sale: planForRow };
             }) : [];
-          _secData[sec] = { rows, planByDate, planByBranch, planByBranchDate, range: { startDate: pr.startDate, endDate: pr.endDate, periodDays: pr.periodDays } };
+          // Aggregate promo (เชียร์ขาย)
+          const promoAgg = { count: 0, qty: 0, amt: 0 };
+          if (Array.isArray(_promo)) {
+            _promo.forEach(pr2 => {
+              if (queryCodes && queryCodes.indexOf(pr2.branch_code) < 0) return;
+              promoAgg.count += 1;
+              promoAgg.qty  += parseInt(pr2.total_qty) || 0;
+              promoAgg.amt  += parseFloat(pr2.total_amount) || 0;
+            });
+          }
+          _secData[sec] = { rows, planByDate, planByBranch, planByBranchDate, promoAgg, range: { startDate: pr.startDate, endDate: pr.endDate, periodDays: pr.periodDays } };
           // ช่วงที่กำลังดู = แหล่งโครงโซน/สาขา (drill source)
-          if (sec === _secActive) { _dashRows = rows; _dashPlanByBranch = planByBranch; _dashPlans = planByDate; }
+          if (sec === _secActive) { _dashRows = rows; _dashPlanByBranch = planByBranch; _dashPlans = planByDate; _currentPromoAgg = promoAgg; }
           if (renderAfter && sec === _secActive) {
             renderActive(_secResetPending);
             _secResetPending = false;
@@ -14411,6 +14682,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         apiCall({ mode: "history", branch_codes: queryCodes, start_date: pr.startDate, end_date: pr.endDate }, function (res) { _h = res; done(); });
         apiCall({ mode: "getPlan", branch_codes: queryCodes, start_date: pr.startDate, end_date: pr.endDate, raw: true }, function (res) { _p = res; done(); });
+        // fetch promo submissions ในช่วงเดียวกัน
+        fetch(SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,submit_date,total_qty,total_amount&submit_date=gte." + pr.startDate + "&submit_date=lte." + pr.endDate,
+              { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(data => { _promo = data || []; done(); })
+          .catch(() => { _promo = []; done(); });
       }
 
       // เลื่อนช่วงของพาร์ท (เลื่อนเฉพาะพาร์ทนั้น · เอนทิตีคงเดิม)
