@@ -14565,8 +14565,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         apiCall({ mode: "history", branch_codes: queryCodes, start_date: pr.startDate, end_date: pr.endDate }, function (res) { _h = res; done(); });
         apiCall({ mode: "getPlan", branch_codes: queryCodes, start_date: pr.startDate, end_date: pr.endDate, raw: true }, function (res) { _p = res; done(); });
-        // fetch promo submissions ในช่วงเดียวกัน
-        fetch(SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,submit_date,total_qty,total_amount&submit_date=gte." + pr.startDate + "&submit_date=lte." + pr.endDate,
+        // fetch promo submissions ในช่วงเดียวกัน (ต้องมี items สำหรับ breakdown)
+        fetch(SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,submit_date,total_qty,total_amount,items&submit_date=gte." + pr.startDate + "&submit_date=lte." + pr.endDate,
               { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
           .then(r => r.ok ? r.json() : [])
           .then(data => { _promo = data || []; done(); })
