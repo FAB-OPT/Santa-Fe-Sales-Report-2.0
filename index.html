@@ -16006,7 +16006,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           return;
         }
 
-        apiCall(_pendingPayload, function (res) {
+        // แยก _promo ออกจาก payload ก่อนส่ง (ป้องกัน browser cache เก่า + defense-in-depth)
+        const _promoSnapshot = _pendingPayload._promo;
+        const _cleanPayload = { ..._pendingPayload };
+        delete _cleanPayload._promo;
+
+        apiCall(_cleanPayload, function (res) {
           btn.disabled = false; btn.textContent = "ยืนยันส่ง ✓";
           closeM("mReview");
 
@@ -16021,8 +16026,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             const _det = `${S.code || ""} ${S.branch || ""} · ${_pendingPayload.submit_date}`.trim();
             _logUserAction(_act, _det);
             // ── บันทึกรายการเชียร์ขาย (สิ้นวันเท่านั้น) ──
-            if (_slot === "สิ้นวัน" && _pendingPayload._promo && _pendingPayload._promo.items?.length) {
-              const pr = _pendingPayload._promo;
+            if (_slot === "สิ้นวัน" && _promoSnapshot && _promoSnapshot.items?.length) {
+              const pr = _promoSnapshot;
               const promoPayload = {
                 branch_code: _pendingPayload.branch_code,
                 branch_name: _pendingPayload.branch || S.branch,
