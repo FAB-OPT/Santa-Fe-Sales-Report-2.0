@@ -9256,7 +9256,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             </div>
             <div style="display:flex;align-items:center;gap:6px">
               <button type="button" onclick="promoQtyDelta('${it.id}',-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">−</button>
-              <input type="number" id="promoQty_${it.id}" data-price="${it.price}" min="0" value="0" oninput="updatePromoTotal()" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700">
+              <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="0" oninput="updatePromoTotal()" style="width:60px;height:36px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
               <button type="button" onclick="promoQtyDelta('${it.id}',+1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">+</button>
             </div>
             <div style="min-width:80px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
@@ -15684,12 +15684,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const lh = numVal("labour_hour"), lb = numVal("labour_baht");
           if ((lh > 0 || lb > 0) && lh >= lb)
             errs.push("Labour: Hour ต้องน้อยกว่า Baht");
-          // Promo (สิ้นวัน · บังคับ): ต้องมี qty > 0 อย่างน้อย 1 รายการ
-          const promoItems = _readPromoItems();
-          const promoTotalQty = promoItems.reduce((s, x) => s + x.qty, 0);
-          if (promoTotalQty <= 0) {
-            errs.push("รายการเชียร์ขาย: กรุณาระบุจำนวนอย่างน้อย 1 รายการ");
-          }
         }
 
         if (errs.length > 0) {
@@ -15737,6 +15731,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           // _testMode ไม่ skip order check แล้ว — มันแค่ไม่บันทึก DB
           // _bypassOrder = global flag เดียวที่ skip ตรวจลำดับ
           console.log("[submit] testMode:", _testMode, "bypassOrder:", _bypassOrder, "slot:", slot, "date:", date);
+          const _continueReview = () => _confirmEmptyPromoThen(slot, () => proceedReview(p, planVal, name, date, slot));
           if (!_bypassOrder) {
             checkSubmissionOrder(date, slot, function(check) {
               console.log("[submit] order check result:", check);
@@ -15744,13 +15739,27 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 showAlert("⛔", "ลำดับการส่งไม่ถูกต้อง", check.msg);
                 return;
               }
-              proceedReview(p, planVal, name, date, slot);
+              _continueReview();
             });
             return;
           }
 
-          proceedReview(p, planVal, name, date, slot);
+          _continueReview();
         });
+      }
+
+      // ถ้าเป็นสิ้นวัน + ไม่ได้กรอกเชียร์ขายเลย → confirm popup ก่อนไปหน้าสรุป
+      function _confirmEmptyPromoThen(slot, next) {
+        if (slot !== "สิ้นวัน") { next(); return; }
+        const totalQty = _readPromoItems().reduce((s, x) => s + x.qty, 0);
+        if (totalQty > 0) { next(); return; }
+        showConfirm(
+          "🎯",
+          "ไม่มีรายการเชียร์ขาย",
+          "วันนี้ไม่ได้กรอกจำนวนรายการเชียร์ขายเลย\n\nต้องการดำเนินการต่อไปหน้าสรุปหรือไม่?",
+          next,
+          { btnText: "ดำเนินการต่อ", cancelText: "กลับไปกรอก" }
+        );
       }
 
       /* ─ ตรวจลำดับการส่งยอด ─ */
@@ -15946,24 +15955,30 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
             </div>`;
 
-          // ── รายการเชียร์ขาย (สิ้นวันเท่านั้น · ผ่าน validation แล้ว) ──
+          // ── รายการเชียร์ขาย (สิ้นวัน · optional) ──
           const promoItems = _readPromoItems().filter(x => x.qty > 0);
           const promoTotalQty = promoItems.reduce((s, x) => s + x.qty, 0);
           const promoTotalAmt = promoItems.reduce((s, x) => s + x.subtotal, 0);
           p._promo = { items: promoItems, total_qty: promoTotalQty, total_amount: promoTotalAmt };
+          const promoBodyHtml = promoItems.length
+            ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+                <tbody>
+                  ${promoItems.map(it => `<tr style="border-bottom:1px solid #fed7aa">
+                    <td style="padding:8px 10px;color:#0f172a">${escHtml(it.name)}</td>
+                    <td style="padding:8px 10px;text-align:center;color:#64748b;white-space:nowrap;font-variant-numeric:tabular-nums">${it.qty} × ฿${it.price}</td>
+                    <td style="padding:8px 10px;text-align:right;font-weight:800;color:#c2410c;white-space:nowrap;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</td>
+                  </tr>`).join("")}
+                </tbody>
+              </table>`
+            : `<div style="padding:14px 10px;text-align:center;color:#94a3b8;font-style:italic;font-size:13px">— ไม่มีรายการเชียร์ขายวันนี้ —</div>`;
           html += `
             <div class="rv-section-card" style="border-color:#fed7aa">
               <div class="rv-section-hdr" style="background:linear-gradient(135deg,#fff7ed,#fed7aa)">
                 <span class="rv-section-ico">🎯</span>
                 <span class="rv-section-title" style="color:#9a3412">รายการเชียร์ขาย</span>
-                <span class="rv-section-sum" style="color:#c2410c">฿${fmt(promoTotalAmt)} · ${promoTotalQty} จาน</span>
+                <span class="rv-section-sum" style="color:#c2410c">${promoItems.length ? "฿" + fmt(promoTotalAmt) + " · " + promoTotalQty + " จาน" : "—"}</span>
               </div>
-              <div class="rv-chan-list">
-                ${promoItems.map(it => `<div class="rv-chan-row">
-                  <div class="rv-chan-name">${escHtml(it.name)}</div>
-                  <div class="rv-chan-val">${it.qty} จาน × ฿${it.price} = <b>฿${fmt(it.subtotal)}</b></div>
-                </div>`).join("")}
-              </div>
+              ${promoBodyHtml}
             </div>`;
         }
 
