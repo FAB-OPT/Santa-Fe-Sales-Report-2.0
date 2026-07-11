@@ -14643,6 +14643,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         // รีเซ็ตทุกช่วงเป็น "ยังไม่โหลด" + กลับมาแท็บรายวันเสมอ (โหลดเฉพาะแท็บที่กด)
         ['day','week','month','year'].forEach(s => { _secData[s] = { rows: [], planByDate: {}, planByBranch: {}, range: null }; });
+        _currentPromoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };  // reset ทันที กัน strip ค้าง
         _secActive = 'day';
         _secResetPending = true;
         showSecTab('day');
@@ -14702,10 +14703,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               return { ...r, plan_sale: planForRow };
             }) : [];
           // Aggregate promo (เชียร์ขาย) + breakdown per item
+          // Defense-in-depth: server กรองแล้ว + client กรองอีกรอบด้วย Set (เร็วกว่า indexOf)
           const promoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };
+          const _qcSet = Array.isArray(queryCodes) ? new Set(queryCodes.map(String)) : null;
           if (Array.isArray(_promo)) {
             _promo.forEach(pr2 => {
-              if (queryCodes && queryCodes.indexOf(pr2.branch_code) < 0) return;
+              if (_qcSet && !_qcSet.has(String(pr2.branch_code))) return;
               promoAgg.count += 1;
               promoAgg.qty  += parseInt(pr2.total_qty) || 0;
               promoAgg.amt  += parseFloat(pr2.total_amount) || 0;
