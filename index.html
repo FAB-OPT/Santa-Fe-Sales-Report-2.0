@@ -6843,6 +6843,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <span>โหมดทดสอบ: <span id="testModeStatus" style="font-weight:800;color:var(--brand)">ปิด</span></span>
       </button>
 
+      <!-- Promo toggle (admin only) -->
+      <button class="desk-nav-btn admin-only-nav" id="adminPromoToggle" onclick="togglePromoAdmin()" style="display:none;margin:0 10px 8px;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer">
+        🎯 เชียร์ขาย: เปิด
+      </button>
+
       <!-- Bypass order toggle (admin only) -->
       <button class="desk-nav-btn admin-only-nav" id="bypassOrderBtn" onclick="toggleBypassOrderAdmin()" style="display:none;margin:0 10px 8px">
         <span class="desk-nav-ico">🚫</span>
@@ -7091,9 +7096,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>
         </div>
 
-        <!-- ส่วนที่ 5: รายการเชียร์ขาย (สิ้นวันเท่านั้น · บังคับ) -->
+        <!-- ส่วนที่ 5: รายการเชียร์ขาย (สิ้นวันเท่านั้น) -->
         <div class="card" id="promoCard" style="display:none">
-          <div class="card-hdr" style="background:linear-gradient(135deg,#f97316,#c2410c)">🎯 รายการเชียร์ขาย <span style="font-size:12px;font-weight:500;opacity:.9;margin-left:6px">(บังคับ · ระบุจำนวนจาน)</span></div>
+          <div class="card-hdr" style="background:linear-gradient(135deg,#f97316,#c2410c)">🎯 รายการเชียร์ขาย</div>
           <div class="card-body">
             <div id="promoItemsInForm" style="display:flex;flex-direction:column;gap:10px"></div>
             <div style="margin-top:12px;padding:12px 14px;background:linear-gradient(135deg,#fff7ed,#fed7aa);border:1px solid #fdba74;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
@@ -9112,6 +9117,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       async function enterApp() {
         // login ใหม่ → ล้าง _logoutSent flag เพื่อให้ pagehide ครั้งต่อไป log logout ได้
         try { sessionStorage.removeItem("_logoutSent"); } catch (_) {}
+        // โหลดค่า promo_enabled จาก app_settings
+        _loadPromoEnabled();
         // เริ่มจับ idle: 30 นาที → เด้งออก (เตือนล่วงหน้า 2 นาที)
         _idleStart();
         // โหลด users DB cache เป็น background (ใช้สำหรับ login รอบต่อๆ ไป)
@@ -9245,32 +9252,76 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         { id: "P3", name: "สเต๊กสันคอหมูย่างแจ่วข้าวคั่ว",    price: 149 }
       ];
 
+      // Global toggle — โหลดจาก app_settings.promo_enabled
+      let _promoEnabled = true;
+      function _loadPromoEnabled() {
+        return fetch(SUPABASE_URL + "/rest/v1/app_settings?select=value&key=eq.promo_enabled&limit=1",
+          { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => {
+            _promoEnabled = !(rows && rows.length && String(rows[0].value).toLowerCase() === "false");
+            // update UI ทันที (ถ้าเปิดหน้าอยู่)
+            _togglePromoCard();
+            // sync ปุ่ม admin toggle ถ้ามี
+            const btn = document.getElementById("adminPromoToggle");
+            if (btn) {
+              btn.textContent = _promoEnabled ? "🎯 เชียร์ขาย: เปิด" : "🎯 เชียร์ขาย: ปิด";
+              btn.style.background = _promoEnabled ? "#dcfce7" : "#fee2e2";
+              btn.style.color = _promoEnabled ? "#166534" : "#991b1b";
+              btn.style.borderColor = _promoEnabled ? "#86efac" : "#fca5a5";
+            }
+          })
+          .catch(() => {});
+      }
+
+      function togglePromoAdmin() {
+        if (S.code !== "ADMIN") return;
+        const nextVal = !_promoEnabled;
+        const label = nextVal ? "เปิด" : "ปิด";
+        showConfirm(
+          "🎯",
+          `${label}การกรอกรายการเชียร์ขาย?`,
+          nextVal
+            ? "สาขาจะเห็นการ์ดเชียร์ขายในหน้าส่งยอดขายอีกครั้ง"
+            : "สาขาจะไม่เห็นการ์ดเชียร์ขาย และป็อปอัพยืนยันจะไม่ขึ้น",
+          () => {
+            fetch(SUPABASE_URL + "/rest/v1/app_settings?key=eq.promo_enabled", {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: SUPABASE_KEY,
+                Authorization: "Bearer " + SUPABASE_KEY,
+                Prefer: "return=minimal"
+              },
+              body: JSON.stringify({ value: nextVal ? "true" : "false", updated_at: new Date().toISOString() })
+            }).then(r => {
+              if (r.ok) {
+                _promoEnabled = nextVal;
+                _loadPromoEnabled();  // refresh UI
+                _logUserAction("toggle_promo", nextVal ? "เปิด" : "ปิด");
+              } else {
+                showAlert("❌", "ปรับค่าไม่สำเร็จ", "HTTP " + r.status);
+              }
+            }).catch(e => showAlert("❌", "ปรับค่าไม่สำเร็จ", String(e.message || e)));
+          },
+          { btnText: "ยืนยัน", cancelText: "ยกเลิก" }
+        );
+      }
+
       function renderPromoItems() {
         const box = document.getElementById("promoItemsInForm");
         if (!box || box.dataset.rendered === "1") return;
         box.innerHTML = PROMO_ITEMS.map(it => `
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:700;color:#0f172a;font-size:14px">${escHtml(it.name)}</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+            <div style="flex:1;min-width:0;overflow:hidden">
+              <div style="font-weight:700;color:#0f172a;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</div>
               <div style="font-size:12px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
             </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button type="button" onclick="promoQtyDelta('${it.id}',-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">−</button>
-              <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="0" oninput="updatePromoTotal()" style="width:60px;height:36px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
-              <button type="button" onclick="promoQtyDelta('${it.id}',+1)" style="width:32px;height:32px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;font-size:16px;font-weight:800;cursor:pointer">+</button>
-            </div>
-            <div style="min-width:80px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="0" oninput="updatePromoTotal()" style="flex-shrink:0;width:64px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
+            <div style="flex-shrink:0;min-width:70px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
           </div>
         `).join("");
         box.dataset.rendered = "1";
-        updatePromoTotal();
-      }
-
-      function promoQtyDelta(id, d) {
-        const el = document.getElementById("promoQty_" + id);
-        if (!el) return;
-        const cur = parseInt(el.value) || 0;
-        el.value = Math.max(0, cur + d);
         updatePromoTotal();
       }
 
@@ -9291,12 +9342,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (aEl) aEl.textContent = "฿" + fmt(totalAmt);
       }
 
-      // toggle promo card ตาม slot: โชว์เฉพาะสิ้นวัน
+      // toggle promo card ตาม slot: โชว์เฉพาะสิ้นวัน + ต้อง _promoEnabled
       function _togglePromoCard() {
         const slot = document.getElementById("submit_time_slot")?.value;
         const card = document.getElementById("promoCard");
         if (!card) return;
-        if (slot === "สิ้นวัน") {
+        if (slot === "สิ้นวัน" && _promoEnabled) {
           card.style.display = "";
           renderPromoItems();
         } else {
@@ -13420,11 +13471,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (hasData) {
           const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
           inner = items.map(it => `
-            <div style="display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
-              <span style="flex:1;color:#0f172a">${escHtml(it.name)}</span>
-              <span style="color:#94a3b8;font-size:11.5px">฿${it.price}/จาน</span>
-              <span style="min-width:60px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)} จาน</span>
-              <span style="min-width:70px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
+              <span style="flex:1;min-width:0;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</span>
+              <span style="flex-shrink:0;color:#94a3b8;font-size:11.5px">฿${it.price}/จาน</span>
+              <span style="flex-shrink:0;min-width:55px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)} จาน</span>
+              <span style="flex-shrink:0;min-width:65px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
             </div>`).join("") +
             `<div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 0;font-size:13.5px">
               <span style="flex:1;color:#475569;font-weight:800">รวมทั้งหมด</span>
@@ -15789,9 +15840,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
       }
 
-      // ถ้าเป็นสิ้นวัน + ไม่ได้กรอกเชียร์ขายเลย → confirm popup ก่อนไปหน้าสรุป
+      // ถ้าเป็นสิ้นวัน + promo เปิดอยู่ + ไม่ได้กรอกเชียร์ขายเลย → confirm popup
       function _confirmEmptyPromoThen(slot, next) {
-        if (slot !== "สิ้นวัน") { next(); return; }
+        if (slot !== "สิ้นวัน" || !_promoEnabled) { next(); return; }
         const totalQty = _readPromoItems().reduce((s, x) => s + x.qty, 0);
         if (totalQty > 0) { next(); return; }
         showConfirm(
@@ -16013,7 +16064,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </table>`
             : `<div style="padding:14px 10px;text-align:center;color:#94a3b8;font-style:italic;font-size:13px">— ไม่มีรายการเชียร์ขายวันนี้ —</div>`;
           html += `
-            <div class="rv-section-card" style="border-color:#fed7aa">
+            <div class="rv-section-card" style="border-color:#fed7aa;margin-top:14px;clear:both">
               <div class="rv-section-hdr">
                 <span class="rv-section-ico">🎯</span>
                 <span class="rv-section-title">รายการเชียร์ขาย</span>
@@ -16066,8 +16117,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             const _act = _slot === "16.00" ? "submit_sales_16" : "submit_sales_eod";
             const _det = `${S.code || ""} ${S.branch || ""} · ${_pendingPayload.submit_date}`.trim();
             _logUserAction(_act, _det);
-            // ── บันทึกรายการเชียร์ขาย (สิ้นวันเท่านั้น) ──
-            if (_slot === "สิ้นวัน" && _promoSnapshot && _promoSnapshot.items?.length) {
+            // ── บันทึกรายการเชียร์ขาย (สิ้นวัน + promo เปิดอยู่ + มีรายการ) ──
+            // ใช้ UPSERT (merge-duplicates) — ถ้าส่งซ้ำวันเดียวกัน จะ update แทน insert ใหม่
+            if (_slot === "สิ้นวัน" && _promoEnabled && _promoSnapshot && _promoSnapshot.items?.length) {
               const pr = _promoSnapshot;
               const promoPayload = {
                 branch_code: _pendingPayload.branch_code,
@@ -16075,26 +16127,26 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 district_manager: _pendingPayload.district_manager || S.dm,
                 submit_date: _pendingPayload.submit_date,
                 submitter_name: _pendingPayload.submitter_name,
-                items: pr.items, total_qty: pr.total_qty, total_amount: pr.total_amount
+                items: pr.items, total_qty: pr.total_qty, total_amount: pr.total_amount,
+                last_edited_by: _pendingPayload.submitter_name
               };
-              fetch(SUPABASE_URL + "/rest/v1/promo_submissions", {
+              fetch(SUPABASE_URL + "/rest/v1/promo_submissions?on_conflict=branch_code,submit_date", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   apikey: SUPABASE_KEY,
                   Authorization: "Bearer " + SUPABASE_KEY,
-                  Prefer: "return=minimal"
+                  Prefer: "return=minimal,resolution=merge-duplicates"
                 },
                 body: JSON.stringify(promoPayload)
               }).then(r => {
-                if (r.status === 201 || r.ok) {
+                if (r.status === 201 || r.status === 200 || r.ok) {
                   pushToSheet("promo_submission", promoPayload);
                   _logUserAction("submit_promo", `${promoPayload.branch_code} ${promoPayload.branch_name} · ${promoPayload.submit_date} · ${pr.total_qty} จาน ฿${fmt(pr.total_amount)}`);
-                } else if (r.status !== 409) {
-                  console.warn("[promo insert]", r.status);
+                } else {
+                  console.warn("[promo upsert]", r.status);
                 }
-                // 409 = duplicate (สาขานี้ส่งวันนี้ไปแล้ว) → ไม่ต้องแจ้ง เพราะ sales บันทึกสำเร็จแล้ว
-              }).catch(e => console.warn("[promo insert]", e));
+              }).catch(e => console.warn("[promo upsert]", e));
             }
             _showSubmitSuccess(S.branch || "", _pendingPayload.submit_date, _pendingPayload.submit_time_slot);
             _pendingPayload = null;

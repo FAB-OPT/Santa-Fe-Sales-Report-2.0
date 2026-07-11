@@ -217,8 +217,9 @@ function _resp(obj) {
 // PULL
 // ════════════════════════════════════════════
 function syncSales() { _syncBatch(["Sales"]); }
-function syncFast()  { _syncBatch(["Plan", "Manpower"]); syncPromo(); }
+function syncFast()  { _syncBatch(["Plan", "Manpower"]); }
 function syncSlow()  { _syncBatch(["Branches", "Users", "LoginLogs", "UserActions"]); }
+function syncPromoHourly() { syncPromo(); }  // ทุก 1 ชั่วโมง (แยก trigger)
 function syncAll()   {
   _syncBatch(["Sales", "Plan", "Branches", "Manpower", "Users", "LoginLogs", "UserActions"]);
   syncPromo();
@@ -288,8 +289,9 @@ function syncPromo() {
   try {
     const key = "Promo";
     const lastSync = _getLastSync(key);
+    // ดึง submissions ที่ created_at หรือ updated_at ใหม่กว่า lastSync (รองรับ edit)
     const filter = lastSync
-      ? `created_at=gt.${encodeURIComponent(lastSync)}`
+      ? `or=(created_at.gt.${encodeURIComponent(lastSync)},updated_at.gt.${encodeURIComponent(lastSync)})`
       : "";
     const url = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*${filter ? "&" + filter : ""}&order=created_at.asc&limit=5000`;
 
@@ -305,13 +307,25 @@ function syncPromo() {
       return;
     }
 
+    // ทำ full replace ทั้ง sheet — ง่ายและถูกต้องเมื่อมี edit
+    // (ดึง submissions ทั้งหมด แล้ว rewrite; ปริมาณข้อมูล promo น้อย)
+    const allUrl = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*&order=created_at.asc&limit=50000`;
+    const allResp = UrlFetchApp.fetch(allUrl, {
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
+      muteHttpExceptions: true
+    });
+    if (allResp.getResponseCode() !== 200 && allResp.getResponseCode() !== 206) {
+      throw new Error(`[Promo] full fetch HTTP ${allResp.getResponseCode()}`);
+    }
+    const allSubs = JSON.parse(allResp.getContentText());
+
     // Expand: 1 submission → หลายแถว (1 แถวต่อ item)
     const rows = [];
-    submissions.forEach(s => {
+    allSubs.forEach(s => {
       const items = (typeof s.items === "string") ? JSON.parse(s.items) : (s.items || []);
       items.forEach(it => {
         rows.push([
-          s.created_at,                    // timestamp
+          s.updated_at || s.created_at,    // timestamp (ใช้ updated_at ถ้ามี)
           s.submit_date,                   // submit_date
           s.branch_code || "",
           s.branch_name || "",
@@ -328,26 +342,24 @@ function syncPromo() {
       });
     });
 
-    if (!rows.length) { Logger.log(`[Promo] no items to write`); return; }
+    // เขียน sheet แยก (full replace)
+    _promoReplace(rows);
 
-    // เขียนลง sheet แยก (append)
-    _promoAppend(rows);
-
-    // update lastSync = created_at ล่าสุด
+    // update lastSync = updated_at หรือ created_at ล่าสุด
     const latest = submissions
-      .map(s => s.created_at)
+      .map(s => s.updated_at || s.created_at)
       .filter(Boolean)
       .sort()
       .pop();
     if (latest) _setLastSync(key, latest);
 
-    Logger.log(`[Promo] appended ${rows.length} item-rows from ${submissions.length} submissions`);
+    Logger.log(`[Promo] full rewrite ${rows.length} item-rows from ${allSubs.length} submissions (delta ${submissions.length})`);
   } catch (err) {
     Logger.log(`[Promo] FAILED: ${err.message}`);
   }
 }
 
-function _promoAppend(rows) {
+function _promoReplace(rows) {
   const ss = SpreadsheetApp.openById(PROMO_SHEET_ID);
   let sheet = ss.getSheetByName(PROMO_SHEET_NAME);
 
@@ -375,19 +387,22 @@ function _promoAppend(rows) {
         }]
       }, PROMO_SHEET_ID);
     } catch (e) {}
-    // เขียน header
-    Sheets.Spreadsheets.Values.update(
-      { values: [PROMO_HEADERS] }, PROMO_SHEET_ID,
-      `${PROMO_SHEET_NAME}!A1:${_colLetter(PROMO_HEADERS.length)}1`,
-      { valueInputOption: "RAW" }
-    );
   }
 
-  const lastRow = sheet.getLastRow();
-  const startRow = Math.max(2, lastRow + 1);
+  // เขียน header + rows ทับทั้งหมด (จัดการ edit ได้)
+  const values = [PROMO_HEADERS].concat(rows);
+  const lastCol = _colLetter(PROMO_HEADERS.length);
+
+  // clear ก่อน (กันข้อมูลเก่าค้าง)
+  try {
+    const gridRows = sheet.getMaxRows();
+    Sheets.Spreadsheets.Values.clear({}, PROMO_SHEET_ID,
+      `${PROMO_SHEET_NAME}!A2:${_colLetter(sheet.getMaxColumns())}${gridRows}`);
+  } catch (e) {}
+
   Sheets.Spreadsheets.Values.update(
-    { values: rows }, PROMO_SHEET_ID,
-    `${PROMO_SHEET_NAME}!A${startRow}:${_colLetter(PROMO_HEADERS.length)}${startRow + rows.length - 1}`,
+    { values: values }, PROMO_SHEET_ID,
+    `${PROMO_SHEET_NAME}!A1:${lastCol}${values.length}`,
     { valueInputOption: "RAW" }
   );
 }
@@ -628,8 +643,9 @@ function setupTriggers() {
   ScriptApp.newTrigger("syncSales").timeBased().everyMinutes(30).create();
   ScriptApp.newTrigger("syncFast").timeBased().everyMinutes(5).create();
   ScriptApp.newTrigger("syncSlow").timeBased().everyMinutes(15).create();
+  ScriptApp.newTrigger("syncPromoHourly").timeBased().everyHours(1).create();
   ScriptApp.newTrigger("nightlyFullSync").timeBased().atHour(2).everyDays(1).create();
-  Logger.log("✅ Sales 30 min · Fast 5 min (+Promo) · Slow 15 min · Nightly 2 AM");
+  Logger.log("✅ Sales 30 min · Fast 5 min · Slow 15 min · Promo 1 hr · Nightly 2 AM");
 }
 
 function stopTriggers() {
