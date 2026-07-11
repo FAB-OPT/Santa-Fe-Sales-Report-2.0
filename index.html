@@ -13641,9 +13641,57 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>`;
       }
 
+      // แปลง _secActive → ชื่อช่วง + ป้ายวันที่ (ใช้กับการ์ดสาขา)
+      function _promoPeriodInfo() {
+        const names = { day: "รายวัน", week: "รายสัปดาห์", month: "รายเดือน", year: "รายปี" };
+        const name  = names[_secActive] || "ช่วงที่เลือก";
+        const rng   = (_secData[_secActive] && _secData[_secActive].range) || null;
+        let sub = "";
+        if (rng && rng.startDate) {
+          sub = (_secActive === "day")
+            ? fmtThaiDate(rng.startDate)
+            : fmtThaiDate(rng.startDate) + " – " + fmtThaiDate(rng.endDate);
+        }
+        return { name, sub };
+      }
+
+      // ── Campaign card สำหรับ role สาขา — เน้นสาขาตัวเอง (ซ่อนเป้าบริษัท) ──
+      // จาน + incentive "ตามแท็บที่เลือก" (รายวัน/สัปดาห์/เดือน/ปี) + ยอดสะสมทั้งโปรของสาขา
+      function _renderPromoCampaignBranch() {
+        const C = PROMO_CAMPAIGN;
+        const bcode = (_ddView && _ddView.branch) || (typeof S !== "undefined" && S && S.branch) || "";
+        const bname = (typeof S !== "undefined" && S && S.branch) || bcode || "สาขา";
+        const pQty  = (_currentPromoAgg && _currentPromoAgg.qty) || 0;   // ตามแท็บ + สาขา
+        const pInc  = pQty * C.incentivePerDish;
+        const cumQty = _promoCampaign.byBranch[String(bcode)] || 0;      // สะสมทั้งโปร
+        const cumInc = cumQty * C.incentivePerDish;
+        const P = _promoPeriodInfo();
+        const tiles = [
+          { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: P.sub || "&nbsp;",                                     hero: true },
+          { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pQty) + " จาน", hero: true },
+          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "10 ก.ค. – วันนี้",                                    hero: false },
+          { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(cumQty) + " จาน", hero: false }
+        ];
+        const tilesHtml = tiles.map(t => `
+          <div style="flex:1 1 130px;min-width:120px;padding:10px 12px;background:${t.hero ? '#fff7ed' : '#f8fafc'};border:1px solid ${t.hero ? '#fdba74' : '#e2e8f0'};border-radius:10px">
+            <div style="font-size:11px;color:${t.hero ? '#9a3412' : '#64748b'};font-weight:700">${t.lbl}</div>
+            <div style="font-size:${t.hero ? '18px' : '15px'};font-weight:900;color:${t.hero ? '#c2410c' : '#334155'};font-variant-numeric:tabular-nums;line-height:1.25">${t.val}</div>
+            <div style="font-size:10.5px;color:#94a3b8">${t.sub}</div>
+          </div>`).join("");
+        return `<div class="dash2-card dash3-card dash3-promo-campaign" style="padding:14px 16px;margin:12px 0 16px;border:1px solid #fdba74">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <h3 style="font-size:14.5px;margin:0;color:#9a3412">🎯 โปรอีสาน ซีรีย์ — ${escHtml(String(bname))}</h3>
+            <span style="margin-left:auto;font-size:11.5px;color:#94a3b8">incentive ฿${C.incentivePerDish}/จาน</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${tilesHtml}</div>
+        </div>`;
+      }
+
       // ── Campaign card (เป้า + incentive) — company-wide · ยอดสะสมทั้งแคมเปญ ──
       function _renderPromoCampaign() {
         if (!_promoEnabled || !_promoCampaign.loaded) return "";
+        const _role = (typeof S !== "undefined" && S && S.role) || "";
+        if (_role === "branch" || _role === "franchise") return _renderPromoCampaignBranch();
         const C = PROMO_CAMPAIGN;
         const msDay  = 86400000;
         const dStart = new Date(C.startDate + "T00:00:00");
