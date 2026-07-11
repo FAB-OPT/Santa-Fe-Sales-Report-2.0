@@ -7369,6 +7369,23 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
     </div>
 
     <!-- ════════════════════════════════════════
+     MODAL: PROMO SETTINGS (admin only)
+════════════════════════════════════════ -->
+    <div id="mPromoSettings" class="modal-bg">
+      <div class="modal">
+        <div class="modal-hdr">
+          <h3>🎯 ตั้งค่ารายการเชียร์ขาย</h3>
+          <button class="modal-close" onclick="closeM('mPromoSettings')">×</button>
+        </div>
+        <div class="modal-body" id="mPromoSettingsBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeM('mPromoSettings')">ยกเลิก</button>
+          <button class="btn btn-brand" id="promoSettingsSaveBtn" onclick="savePromoSettings()">💾 บันทึก</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
      MODAL: EDIT
 ════════════════════════════════════════ -->
     <div id="mEdit" class="modal-bg">
@@ -9259,61 +9276,159 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         { id: "P3", name: "สเต๊กสันคอหมูย่างแจ่วข้าวคั่ว",    price: 149 }
       ];
 
-      // Global toggle — โหลดจาก app_settings.promo_enabled
+      // Global toggle + branches list — โหลดจาก app_settings
       let _promoEnabled = true;
+      let _promoBranches = "ALL"; // "ALL" หรือ array ของ branch_code
       function _loadPromoEnabled() {
-        return fetch(SUPABASE_URL + "/rest/v1/app_settings?select=value&key=eq.promo_enabled&limit=1",
+        return fetch(SUPABASE_URL + "/rest/v1/app_settings?select=key,value&key=in.(promo_enabled,promo_branches)",
           { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
           .then(r => r.ok ? r.json() : [])
           .then(rows => {
-            _promoEnabled = !(rows && rows.length && String(rows[0].value).toLowerCase() === "false");
-            // update UI ทันที (ถ้าเปิดหน้าอยู่)
+            const map = {};
+            (rows || []).forEach(r => { map[r.key] = r.value; });
+            _promoEnabled = !(map.promo_enabled && String(map.promo_enabled).toLowerCase() === "false");
+            const rawBranches = map.promo_branches || "ALL";
+            if (rawBranches === "ALL") _promoBranches = "ALL";
+            else {
+              try { _promoBranches = JSON.parse(rawBranches); if (!Array.isArray(_promoBranches)) _promoBranches = "ALL"; }
+              catch (_) { _promoBranches = "ALL"; }
+            }
             _togglePromoCard();
-            // sync สถานะ + label ในทุก UI (sidebar + mobile drawer)
-            const label = _promoEnabled ? "เปิด" : "ปิด";
-            const color = _promoEnabled ? "var(--green)" : "var(--red)";
-            [document.getElementById("promoToggleStatus"),
-             document.getElementById("mnMorePromoStat")].forEach(s => {
-              if (!s) return;
-              s.textContent = label;
-              s.style.color = color;
-            });
+            _syncPromoToggleUI();
           })
           .catch(() => {});
       }
 
+      function _syncPromoToggleUI() {
+        const label = _promoEnabled
+          ? (_promoBranches === "ALL" ? "ทุกสาขา" : `${_promoBranches.length} สาขา`)
+          : "ปิด";
+        const color = _promoEnabled ? "var(--green)" : "var(--red)";
+        [document.getElementById("promoToggleStatus"),
+         document.getElementById("mnMorePromoStat")].forEach(s => {
+          if (!s) return;
+          s.textContent = label;
+          s.style.color = color;
+        });
+      }
+
+      // ── Modal ตั้งค่า promo (admin) ──
       function togglePromoAdmin() {
         if (S.code !== "ADMIN") return;
-        const nextVal = !_promoEnabled;
-        const label = nextVal ? "เปิด" : "ปิด";
-        showConfirm(
-          "🎯",
-          `${label}การกรอกรายการเชียร์ขาย?`,
-          nextVal
-            ? "สาขาจะเห็นการ์ดเชียร์ขายในหน้าส่งยอดขายอีกครั้ง"
-            : "สาขาจะไม่เห็นการ์ดเชียร์ขาย และป็อปอัพยืนยันจะไม่ขึ้น",
-          () => {
-            fetch(SUPABASE_URL + "/rest/v1/app_settings?key=eq.promo_enabled", {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_KEY,
-                Authorization: "Bearer " + SUPABASE_KEY,
-                Prefer: "return=minimal"
-              },
-              body: JSON.stringify({ value: nextVal ? "true" : "false", updated_at: new Date().toISOString() })
-            }).then(r => {
-              if (r.ok) {
-                _promoEnabled = nextVal;
-                _loadPromoEnabled();  // refresh UI
-                _logUserAction("toggle_promo", nextVal ? "เปิด" : "ปิด");
-              } else {
-                showAlert("❌", "ปรับค่าไม่สำเร็จ", "HTTP " + r.status);
-              }
-            }).catch(e => showAlert("❌", "ปรับค่าไม่สำเร็จ", String(e.message || e)));
+        openPromoSettings();
+      }
+
+      function openPromoSettings() {
+        // build branches list — เอาจาก BRANCH_DM_MAP
+        const codes = Object.keys(BRANCH_DM_MAP).sort();
+        const isAll = _promoBranches === "ALL";
+        const selectedSet = new Set(isAll ? [] : _promoBranches);
+        const branchesHtml = codes.map(c => {
+          const nm = BRANCH_DM_MAP[c].branch || "";
+          const checked = isAll || selectedSet.has(c) ? "checked" : "";
+          return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="promo-br-cb" data-code="${c}" ${checked} style="width:16px;height:16px;cursor:pointer;accent-color:#c2410c">
+            <span style="font-family:tabular-nums;font-weight:700;color:#475569;min-width:48px">${c}</span>
+            <span style="color:#0f172a">${escHtml(nm)}</span>
+          </label>`;
+        }).join("");
+        document.getElementById("mPromoSettingsBody").innerHTML = `
+          <div style="margin-bottom:12px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700">
+              <input type="checkbox" id="promoEnabledCb" ${_promoEnabled ? "checked" : ""} style="width:16px;height:16px;cursor:pointer;accent-color:#c2410c">
+              เปิดใช้งานเชียร์ขาย (ทั่วระบบ)
+            </label>
+            <div style="font-size:11.5px;color:#64748b;margin-top:4px">ถ้าปิด — ไม่มีสาขาไหนเห็นการ์ดเชียร์ขาย</div>
+          </div>
+          <div style="margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700">
+              <input type="radio" name="promoScope" id="promoScopeAll"    value="ALL"     ${isAll ? "checked" : ""} style="cursor:pointer;accent-color:#c2410c" onchange="_updatePromoScopeUI()">
+              ทุกสาขา
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;margin-top:6px">
+              <input type="radio" name="promoScope" id="promoScopeCustom" value="CUSTOM"  ${!isAll ? "checked" : ""} style="cursor:pointer;accent-color:#c2410c" onchange="_updatePromoScopeUI()">
+              เฉพาะสาขาที่เลือก
+            </label>
+          </div>
+          <div id="promoBranchList" style="max-height:320px;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;${isAll ? 'opacity:.5;pointer-events:none' : ''}">
+            <div style="padding:6px 8px;border-bottom:2px solid #e2e8f0;display:flex;gap:10px;font-size:12px;color:#475569;font-weight:800">
+              <button type="button" onclick="_promoSelectAll(true)" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">เลือกทั้งหมด</button>
+              <button type="button" onclick="_promoSelectAll(false)" style="padding:4px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer">ล้างการเลือก</button>
+              <span style="margin-left:auto;color:#94a3b8" id="promoSelCount"></span>
+            </div>
+            ${branchesHtml}
+          </div>`;
+        _updatePromoSelCount();
+        openM("mPromoSettings");
+      }
+
+      function _updatePromoScopeUI() {
+        const isAll = document.getElementById("promoScopeAll")?.checked;
+        const list = document.getElementById("promoBranchList");
+        if (list) {
+          list.style.opacity = isAll ? ".5" : "1";
+          list.style.pointerEvents = isAll ? "none" : "";
+        }
+      }
+
+      function _promoSelectAll(checked) {
+        document.querySelectorAll(".promo-br-cb").forEach(cb => { cb.checked = checked; });
+        _updatePromoSelCount();
+      }
+
+      // อัปเดต count เมื่อคลิก checkbox
+      document.addEventListener("change", function(e) {
+        if (e.target && e.target.classList && e.target.classList.contains("promo-br-cb")) {
+          _updatePromoSelCount();
+        }
+      });
+
+      function _updatePromoSelCount() {
+        const cnt = document.querySelectorAll(".promo-br-cb:checked").length;
+        const el = document.getElementById("promoSelCount");
+        if (el) el.textContent = cnt + " สาขาที่เลือก";
+      }
+
+      function savePromoSettings() {
+        const enabled = document.getElementById("promoEnabledCb")?.checked;
+        const isAll = document.getElementById("promoScopeAll")?.checked;
+        let branchesVal = "ALL";
+        if (!isAll) {
+          const selected = Array.from(document.querySelectorAll(".promo-br-cb:checked")).map(cb => cb.dataset.code);
+          branchesVal = JSON.stringify(selected);
+        }
+        const btn = document.getElementById("promoSettingsSaveBtn");
+        btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก...";
+
+        // update ทั้ง 2 keys parallel
+        const _patch = (key, val) => fetch(SUPABASE_URL + "/rest/v1/app_settings?key=eq." + key, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: "Bearer " + SUPABASE_KEY,
+            Prefer: "return=minimal"
           },
-          { btnText: "ยืนยัน", cancelText: "ยกเลิก" }
-        );
+          body: JSON.stringify({ value: val, updated_at: new Date().toISOString() })
+        });
+
+        Promise.all([
+          _patch("promo_enabled", enabled ? "true" : "false"),
+          _patch("promo_branches", branchesVal)
+        ]).then(rs => {
+          btn.disabled = false; btn.textContent = "💾 บันทึก";
+          if (rs.every(r => r.ok)) {
+            _logUserAction("toggle_promo", enabled ? `เปิด (${isAll ? "ทุกสาขา" : (JSON.parse(branchesVal).length + " สาขา")})` : "ปิด");
+            _loadPromoEnabled();
+            closeM("mPromoSettings");
+            showAlert("✅", "บันทึกสำเร็จ", enabled ? (isAll ? "เปิดใช้งานทุกสาขา" : "เปิดใช้งาน " + JSON.parse(branchesVal).length + " สาขา") : "ปิดใช้งานทั่วระบบ");
+          } else {
+            showAlert("❌", "บันทึกไม่สำเร็จ", "กรุณาลองใหม่");
+          }
+        }).catch(e => {
+          btn.disabled = false; btn.textContent = "💾 บันทึก";
+          showAlert("❌", "บันทึกไม่สำเร็จ", String(e.message || e));
+        });
       }
 
       function renderPromoItems() {
@@ -9350,12 +9465,20 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (aEl) aEl.textContent = "฿" + fmt(totalAmt);
       }
 
-      // toggle promo card ตาม slot: โชว์เฉพาะสิ้นวัน + ต้อง _promoEnabled
+      // เช็คว่า S.code นี้เห็น promo card ได้ไหม
+      function _isPromoAllowedForBranch() {
+        if (!_promoEnabled) return false;
+        if (S.code === "ADMIN") return true;  // admin เห็นเสมอ (ทดสอบ)
+        if (_promoBranches === "ALL") return true;
+        return Array.isArray(_promoBranches) && _promoBranches.indexOf(String(S.code)) >= 0;
+      }
+
+      // toggle promo card ตาม slot: โชว์เฉพาะสิ้นวัน + สาขานี้เปิด promo
       function _togglePromoCard() {
         const slot = document.getElementById("submit_time_slot")?.value;
         const card = document.getElementById("promoCard");
         if (!card) return;
-        if (slot === "สิ้นวัน" && _promoEnabled) {
+        if (slot === "สิ้นวัน" && _isPromoAllowedForBranch()) {
           card.style.display = "";
           renderPromoItems();
         } else {
@@ -15840,9 +15963,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
       }
 
-      // ถ้าเป็นสิ้นวัน + promo เปิดอยู่ + ไม่ได้กรอกเชียร์ขายเลย → confirm popup
+      // ถ้าเป็นสิ้นวัน + promo เปิดอยู่ + สาขานี้เข้าข่าย + ไม่ได้กรอกเลย → confirm popup
       function _confirmEmptyPromoThen(slot, next) {
-        if (slot !== "สิ้นวัน" || !_promoEnabled) { next(); return; }
+        if (slot !== "สิ้นวัน" || !_isPromoAllowedForBranch()) { next(); return; }
         const totalQty = _readPromoItems().reduce((s, x) => s + x.qty, 0);
         if (totalQty > 0) { next(); return; }
         showConfirm(
@@ -16047,8 +16170,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
             </div>`;
 
-          // ── รายการเชียร์ขาย (สิ้นวัน · optional · ต้อง promo เปิดอยู่) ──
-          if (_promoEnabled) {
+          // ── รายการเชียร์ขาย (สิ้นวัน · optional · ต้องเข้าข่ายสาขา) ──
+          if (_isPromoAllowedForBranch()) {
           const promoItems = _readPromoItems().filter(x => x.qty > 0);
           const promoTotalQty = promoItems.reduce((s, x) => s + x.qty, 0);
           const promoTotalAmt = promoItems.reduce((s, x) => s + x.subtotal, 0);
@@ -16121,7 +16244,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             _logUserAction(_act, _det);
             // ── บันทึกรายการเชียร์ขาย (สิ้นวัน + promo เปิดอยู่ + มีรายการ) ──
             // ใช้ UPSERT (merge-duplicates) — ถ้าส่งซ้ำวันเดียวกัน จะ update แทน insert ใหม่
-            if (_slot === "สิ้นวัน" && _promoEnabled && _promoSnapshot && _promoSnapshot.items?.length) {
+            if (_slot === "สิ้นวัน" && _isPromoAllowedForBranch() && _promoSnapshot && _promoSnapshot.items?.length) {
               const pr = _promoSnapshot;
               const promoPayload = {
                 branch_code: _pendingPayload.branch_code,
@@ -16811,8 +16934,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           gridHtml += `<div class="field" style="${col}"><label>${f.label}</label>${inp}</div>`;
         });
 
-        // สิ้นวัน + promo เปิดอยู่ → เพิ่มแถวเชียร์ขาย ต่อท้าย grid
-        if (isEod && _promoEnabled) {
+        // สิ้นวัน + promo เปิดอยู่ + สาขาของ row นี้เข้าข่าย → เพิ่มแถวเชียร์ขาย
+        const _rowBranchAllowed = _promoEnabled && (
+          _promoBranches === "ALL" ||
+          (Array.isArray(_promoBranches) && _promoBranches.indexOf(String(row.branch_code)) >= 0)
+        );
+        if (isEod && _rowBranchAllowed) {
           gridHtml += `<div id="_editPromoWrap" style="grid-column:1/-1;margin-top:12px;padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
             <div style="font-weight:800;color:#9a3412;margin-bottom:10px;font-size:14px">🎯 รายการเชียร์ขาย</div>
             <div id="_editPromoList" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -16828,8 +16955,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         document.getElementById("editGrid").innerHTML = gridHtml;
 
-        // fetch + render promo (ถ้าเปิด modal สิ้นวัน)
-        if (isEod && _promoEnabled) {
+        // fetch + render promo (ถ้าเปิด modal สิ้นวัน + สาขาเข้าข่าย)
+        if (isEod && _rowBranchAllowed) {
           _renderEditPromo(row);
         }
 
@@ -16981,7 +17108,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         showAlert("⏳", "กำลังบันทึก...", "กรุณารอสักครู่");
 
         // snapshot promo ก่อนล้าง _editRow
-        const _isEodEdit = (payload.submit_time_slot === "สิ้นวัน") && _promoEnabled;
+        const _rowBranchAllowedEdit = _promoEnabled && (
+          _promoBranches === "ALL" ||
+          (Array.isArray(_promoBranches) && _promoBranches.indexOf(String(editBranchCode)) >= 0)
+        );
+        const _isEodEdit = (payload.submit_time_slot === "สิ้นวัน") && _rowBranchAllowedEdit;
         const _promoEditData = _isEodEdit ? _readEditPromoPayload() : null;
         const _promoExistingId = _editPromoExistingId;
 
