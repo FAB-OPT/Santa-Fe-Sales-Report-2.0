@@ -13416,10 +13416,6 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       // Promo strip — ใช้ dash2-card ให้เหมือน "สรุปยอดขาย"
       function _renderPromoStrip(agg) {
         const hasData = !!(agg && agg.qty);
-        const subHtml = hasData
-          ? `<span style="margin-right:14px"><b style="color:#c2410c;font-size:15px;font-variant-numeric:tabular-nums">${fmt(agg.qty)}</b> จาน</span>` +
-            `<span><b style="color:#c2410c;font-size:15px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</b></span>`
-          : `<span style="font-style:italic;color:#94a3b8">— ยังไม่มีข้อมูลในช่วงนี้</span>`;
         let inner = "";
         if (hasData) {
           const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
@@ -13429,10 +13425,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <span style="color:#94a3b8;font-size:12px">฿${it.price}/จาน</span>
               <span style="min-width:70px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)} จาน</span>
               <span style="min-width:80px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
-            </div>`).join("") + `</div>`;
+            </div>`).join("") +
+            `<div style="display:flex;align-items:baseline;gap:10px;padding:12px 4px 4px;font-size:14px">
+              <span style="flex:1;color:#475569;font-weight:800">รวมทั้งหมด</span>
+              <span style="min-width:70px;text-align:right;font-weight:900;color:#c2410c;font-size:16px;font-variant-numeric:tabular-nums">${fmt(agg.qty)} จาน</span>
+              <span style="min-width:80px;text-align:right;font-weight:900;color:#0f172a;font-size:16px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</span>
+            </div>` +
+            `</div>`;
+        } else {
+          inner = `<div style="padding:16px 4px;color:#94a3b8;font-style:italic;font-size:13.5px">— ยังไม่มีข้อมูลในช่วงนี้</div>`;
         }
         return `<div class="dash2-card dash3-card dash3-promo-strip">
-          <div class="dash2-cardhdr"><h3>🎯 รายการเชียร์ขาย</h3><div class="dash2-cardsub">${subHtml}</div></div>
+          <div class="dash2-cardhdr"><h3>🎯 รายการเชียร์ขาย</h3></div>
           ${inner}
         </div>`;
       }
