@@ -6844,8 +6844,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       </button>
 
       <!-- Promo toggle (admin only) -->
-      <button class="desk-nav-btn admin-only-nav" id="adminPromoToggle" onclick="togglePromoAdmin()" style="display:none;margin:0 10px 8px;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer">
-        🎯 เชียร์ขาย: เปิด
+      <button class="desk-nav-btn admin-only-nav" id="adminPromoToggle" onclick="togglePromoAdmin()" style="display:none;margin:0 10px 8px">
+        <span class="desk-nav-ico">🎯</span>
+        <span>เชียร์ขาย: <span id="promoToggleStatus" style="font-weight:800;color:var(--brand)">เปิด</span></span>
       </button>
 
       <!-- Bypass order toggle (admin only) -->
@@ -7211,6 +7212,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <p style="margin-top:12px;color:#94a3b8;font-size:14px">กำลังโหลด...</p>
           </div>
         </div>
+
+        <!-- Promo history (แสดง + แก้ไข) -->
+        <div id="histPromoSection" style="margin-top:20px;display:none"></div>
       </div>
     </div>
 
@@ -7382,6 +7386,23 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <div class="modal-footer">
           <button class="btn btn-outline" onclick="closeM('mEdit')">ยกเลิก</button>
           <button class="btn btn-brand" onclick="confirmEdit()">บันทึกการแก้ไข ✓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+     MODAL: PROMO EDIT
+════════════════════════════════════════ -->
+    <div id="mPromoEdit" class="modal-bg">
+      <div class="modal">
+        <div class="modal-hdr">
+          <h3 id="mPromoEditTitle">🎯 แก้ไขเชียร์ขาย</h3>
+          <button class="modal-close" onclick="closeM('mPromoEdit')">×</button>
+        </div>
+        <div class="modal-body" id="mPromoEditBody"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" onclick="closeM('mPromoEdit')">ยกเลิก</button>
+          <button class="btn btn-brand" id="promoEditConfirmBtn" onclick="confirmPromoEdit()">💾 บันทึก</button>
         </div>
       </div>
     </div>
@@ -8155,6 +8176,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       <button class="mn-more-row" onclick="closeMnMore();toggleBypassOrderAdmin()">
         <span class="mn-more-ico">🚫</span>
         <span class="mn-more-lbl">ข้ามกฎลำดับ <span id="mnMoreBypassStat" style="color:var(--brand);font-weight:800;margin-left:auto">ปิด</span></span>
+      </button>
+      <button class="mn-more-row admin-only-nav" onclick="closeMnMore();togglePromoAdmin()" style="display:none">
+        <span class="mn-more-ico">🎯</span>
+        <span class="mn-more-lbl">เชียร์ขาย <span id="mnMorePromoStat" style="color:var(--brand);font-weight:800;margin-left:auto">เปิด</span></span>
       </button>
     </div>
 
@@ -9262,14 +9287,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             _promoEnabled = !(rows && rows.length && String(rows[0].value).toLowerCase() === "false");
             // update UI ทันที (ถ้าเปิดหน้าอยู่)
             _togglePromoCard();
-            // sync ปุ่ม admin toggle ถ้ามี
-            const btn = document.getElementById("adminPromoToggle");
-            if (btn) {
-              btn.textContent = _promoEnabled ? "🎯 เชียร์ขาย: เปิด" : "🎯 เชียร์ขาย: ปิด";
-              btn.style.background = _promoEnabled ? "#dcfce7" : "#fee2e2";
-              btn.style.color = _promoEnabled ? "#166534" : "#991b1b";
-              btn.style.borderColor = _promoEnabled ? "#86efac" : "#fca5a5";
-            }
+            // sync สถานะ + label ในทุก UI (sidebar + mobile drawer)
+            const label = _promoEnabled ? "เปิด" : "ปิด";
+            const stat1 = document.getElementById("promoToggleStatus");
+            if (stat1) stat1.textContent = label;
+            const stat2 = document.getElementById("mnMorePromoStat");
+            if (stat2) stat2.textContent = label;
           })
           .catch(() => {});
       }
@@ -9317,7 +9340,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <div style="font-weight:700;color:#0f172a;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</div>
               <div style="font-size:12px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
             </div>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="0" oninput="updatePromoTotal()" style="flex-shrink:0;width:64px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="" placeholder="0" oninput="updatePromoTotal()" style="flex-shrink:0;width:64px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
             <div style="flex-shrink:0;min-width:70px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
           </div>
         `).join("");
@@ -9755,7 +9778,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         save_manpower_plan: { ico: "👥", text: "บันทึก Manpower (Plan)" },
         save_manpower_bulk: { ico: "📝", text: "บันทึก Manpower หลายสาขา" },
         save_manpower:      { ico: "👥", text: "บันทึก Manpower" },
-        submit_promo:       { ico: "🎯", text: "ส่งเชียร์ขาย" }
+        submit_promo:       { ico: "🎯", text: "ส่งเชียร์ขาย" },
+        edit_promo:         { ico: "🎯", text: "แก้ไขเชียร์ขาย" },
+        toggle_promo:       { ico: "🎯", text: "ปรับตั้งเชียร์ขาย" }
       };
       // หา actions ที่ user ทำใน session: ระหว่าง login_at → logout_at (หรือถึงปัจจุบันถ้ายังออนไลน์)
       function _findActionsInSession(loginRow, logoutRow) {
@@ -13471,16 +13496,16 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (hasData) {
           const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
           inner = items.map(it => `
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
               <span style="flex:1;min-width:0;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</span>
-              <span style="flex-shrink:0;color:#94a3b8;font-size:11.5px">฿${it.price}/จาน</span>
-              <span style="flex-shrink:0;min-width:55px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)} จาน</span>
-              <span style="flex-shrink:0;min-width:65px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
+              <span style="flex-shrink:0;color:#94a3b8;font-size:11px">฿${it.price}</span>
+              <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)}จาน</span>
+              <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
             </div>`).join("") +
-            `<div style="display:flex;align-items:baseline;gap:10px;padding:8px 0 0;font-size:13.5px">
+            `<div style="display:flex;align-items:baseline;gap:6px;padding:8px 0 0;font-size:13.5px">
               <span style="flex:1;color:#475569;font-weight:800">รวมทั้งหมด</span>
-              <span style="min-width:60px;text-align:right;font-weight:900;color:#c2410c;font-size:14.5px;font-variant-numeric:tabular-nums">${fmt(agg.qty)} จาน</span>
-              <span style="min-width:70px;text-align:right;font-weight:900;color:#0f172a;font-size:14.5px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</span>
+              <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:900;color:#c2410c;font-size:14.5px;font-variant-numeric:tabular-nums">${fmt(agg.qty)}จาน</span>
+              <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:900;color:#0f172a;font-size:14.5px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</span>
             </div>`;
         } else {
           inner = `<div style="padding:6px 0;color:#94a3b8;font-style:italic;font-size:13px">— ยังไม่มีข้อมูลในช่วงนี้</div>`;
@@ -16047,7 +16072,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
             </div>`;
 
-          // ── รายการเชียร์ขาย (สิ้นวัน · optional) ──
+          // ── รายการเชียร์ขาย (สิ้นวัน · optional · ต้อง promo เปิดอยู่) ──
+          if (_promoEnabled) {
           const promoItems = _readPromoItems().filter(x => x.qty > 0);
           const promoTotalQty = promoItems.reduce((s, x) => s + x.qty, 0);
           const promoTotalAmt = promoItems.reduce((s, x) => s + x.subtotal, 0);
@@ -16072,6 +16098,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
               ${promoBodyHtml}
             </div>`;
+          } // end if _promoEnabled
         }
 
         document.getElementById("reviewBody").innerHTML = html;
@@ -16175,7 +16202,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // reset promo qty inputs + ซ่อน card
         PROMO_ITEMS.forEach(it => {
           const el = document.getElementById("promoQty_" + it.id);
-          if (el) el.value = 0;
+          if (el) el.value = "";
         });
         updatePromoTotal();
         const pc = document.getElementById("promoCard");
@@ -16586,6 +16613,159 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 function(res) { _hist = res; _onDone(); });
         apiCall({ mode:"getPlan", branch_codes:queryCodes, start_date:since, end_date:until },
                 function(res) { _plan = res; _onDone(); });
+        // โหลด promo submissions ในช่วงเดียวกัน (แสดงรายการ + edit)
+        _loadPromoHistory(queryCodes, since, until);
+      }
+
+      let _promoHistCache = [];
+      function _loadPromoHistory(queryCodes, since, until) {
+        const box = document.getElementById("histPromoSection");
+        if (!box) return;
+        let url = SUPABASE_URL + "/rest/v1/promo_submissions?select=*&submit_date=gte." + since + "&submit_date=lte." + until + "&order=submit_date.desc&limit=500";
+        if (queryCodes && queryCodes.length === 1) url += "&branch_code=eq." + encodeURIComponent(queryCodes[0]);
+        else if (queryCodes && queryCodes.length > 1) url += "&branch_code=in.(" + queryCodes.map(encodeURIComponent).join(",") + ")";
+        fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => { _promoHistCache = rows || []; _renderPromoHistory(); })
+          .catch(() => { _promoHistCache = []; _renderPromoHistory(); });
+      }
+
+      function _renderPromoHistory() {
+        const box = document.getElementById("histPromoSection");
+        if (!box) return;
+        const rows = _promoHistCache;
+        if (!rows.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+        box.style.display = "";
+        const isAdmin = (S.role === "admin" || S.code === "ADMIN");
+        const showBranchCol = isAdmin || S.role === "vp" || S.role === "bzm";
+        const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        const fmtDate = (s) => {
+          const [y,m,d] = String(s||"").split("-");
+          return `${parseInt(d)} ${MONTH[parseInt(m)-1]} ${(parseInt(y)+543).toString().slice(-2)}`;
+        };
+        const rowsHtml = rows.map(r => {
+          const editBadge = (parseInt(r.edit_count) || 0) > 0
+            ? `<span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:999px;font-weight:700;margin-left:6px">✏️ แก้ ${r.edit_count} ครั้ง</span>`
+            : "";
+          const canEdit = isAdmin || (parseInt(r.edit_count) || 0) < 1;
+          const editBtn = canEdit
+            ? `<button onclick='openPromoEdit(${JSON.stringify(r).replace(/'/g, "&#39;")})' style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">✏️ แก้ไข</button>`
+            : `<span style="color:#94a3b8;font-size:12px;font-style:italic">🔒 แก้ครั้งเดียว</span>`;
+          const branchCell = showBranchCol
+            ? `<span style="color:#64748b;font-size:12px;font-weight:600">${escHtml((r.branch_code||"") + " " + (r.branch_name||""))}</span>`
+            : "";
+          return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;flex-wrap:wrap">
+            <div style="min-width:100px">
+              <div style="font-weight:800;color:#0f172a">${fmtDate(r.submit_date)}</div>
+              ${branchCell}
+            </div>
+            <div style="flex:1;min-width:180px;color:#64748b;font-size:13px">
+              ${(r.items || []).map(it => `${escHtml(it.name)}: <b style="color:#c2410c">${it.qty}</b>`).join(" · ")}
+            </div>
+            <div style="text-align:right;min-width:110px">
+              <div style="font-weight:900;color:#c2410c;font-size:16px">${r.total_qty} จาน</div>
+              <div style="font-size:12px;color:#64748b">฿${fmt(r.total_amount)}</div>
+            </div>
+            <div>${editBtn}</div>
+            ${editBadge}
+          </div>`;
+        }).join("");
+        box.innerHTML = `
+          <h3 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a">🎯 ประวัติเชียร์ขาย <span style="font-size:12px;font-weight:500;color:#94a3b8">(${rows.length} รายการ)</span></h3>
+          ${rowsHtml}
+        `;
+      }
+
+      // ── Modal แก้ไข promo ──
+      let _promoEditRow = null;
+      function openPromoEdit(row) {
+        _promoEditRow = row;
+        const items = row.items || [];
+        const inputsHtml = PROMO_ITEMS.map(it => {
+          const cur = items.find(x => x.id === it.id);
+          const qty = cur ? cur.qty : 0;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px">
+            <div style="flex:1;min-width:0;overflow:hidden">
+              <div style="font-weight:700;color:#0f172a;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
+            </div>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="ePromoQty_${it.id}" data-price="${it.price}" value="${qty || ''}" placeholder="0" oninput="_updatePromoEditTotal()" style="flex-shrink:0;width:64px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700">
+            <div style="flex-shrink:0;min-width:70px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="ePromoSub_${it.id}">฿0</div>
+          </div>`;
+        }).join("");
+        const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        const [y,m,d] = String(row.submit_date||"").split("-");
+        const dateLbl = `${parseInt(d)} ${MONTH[parseInt(m)-1]} ${parseInt(y)+543}`;
+        document.getElementById("mPromoEditTitle").textContent = `🎯 แก้ไขเชียร์ขาย · ${dateLbl}`;
+        document.getElementById("mPromoEditBody").innerHTML = inputsHtml + `
+          <div style="margin-top:10px;padding:12px 14px;background:linear-gradient(135deg,#fff7ed,#fed7aa);border:1px solid #fdba74;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:800;color:#9a3412">รวมทั้งหมด</span>
+            <div style="text-align:right">
+              <div style="font-size:18px;font-weight:900;color:#c2410c" id="ePromoTotalAmt">฿0</div>
+              <div style="font-size:12px;color:#c2410c" id="ePromoTotalQty">0 จาน</div>
+            </div>
+          </div>`;
+        _updatePromoEditTotal();
+        openM("mPromoEdit");
+      }
+
+      function _updatePromoEditTotal() {
+        let totalQty = 0, totalAmt = 0;
+        PROMO_ITEMS.forEach(it => {
+          const q = Math.max(0, parseInt(document.getElementById("ePromoQty_" + it.id)?.value) || 0);
+          const sub = q * it.price;
+          totalQty += q;
+          totalAmt += sub;
+          const subEl = document.getElementById("ePromoSub_" + it.id);
+          if (subEl) subEl.textContent = "฿" + fmt(sub);
+        });
+        const qEl = document.getElementById("ePromoTotalQty");
+        const aEl = document.getElementById("ePromoTotalAmt");
+        if (qEl) qEl.textContent = totalQty + " จาน";
+        if (aEl) aEl.textContent = "฿" + fmt(totalAmt);
+      }
+
+      function confirmPromoEdit() {
+        if (!_promoEditRow) return;
+        const items = PROMO_ITEMS.map(it => {
+          const q = Math.max(0, parseInt(document.getElementById("ePromoQty_" + it.id)?.value) || 0);
+          return { id: it.id, name: it.name, price: it.price, qty: q, subtotal: q * it.price };
+        }).filter(x => x.qty > 0);
+        if (!items.length) { showAlert("⚠️", "ไม่มีรายการ", "กรอกจำนวนอย่างน้อย 1 รายการ"); return; }
+        const totalQty = items.reduce((s,x) => s + x.qty, 0);
+        const totalAmt = items.reduce((s,x) => s + x.subtotal, 0);
+        const btn = document.getElementById("promoEditConfirmBtn");
+        btn.disabled = true; btn.textContent = "⏳ กำลังบันทึก...";
+        const patch = {
+          items: items,
+          total_qty: totalQty,
+          total_amount: totalAmt,
+          last_edited_by: localStorage.getItem(LS_NAME) || S.branch || S.code
+        };
+        fetch(SUPABASE_URL + "/rest/v1/promo_submissions?id=eq." + _promoEditRow.id, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_KEY,
+            Authorization: "Bearer " + SUPABASE_KEY,
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify(patch)
+        }).then(r => {
+          btn.disabled = false; btn.textContent = "💾 บันทึก";
+          if (r.ok) {
+            pushToSheet("promo_submission", { branch_code: _promoEditRow.branch_code, ...patch });
+            _logUserAction("edit_promo", `${_promoEditRow.branch_code} · ${_promoEditRow.submit_date} · ${totalQty} จาน ฿${fmt(totalAmt)}`);
+            closeM("mPromoEdit");
+            showAlert("✅", "บันทึกสำเร็จ", `${totalQty} จาน · ฿${fmt(totalAmt)}`);
+            loadHistory();
+          } else {
+            r.text().then(t => showAlert("❌", "บันทึกไม่สำเร็จ", "HTTP " + r.status + "\n" + t.slice(0, 200)));
+          }
+        }).catch(e => {
+          btn.disabled = false; btn.textContent = "💾 บันทึก";
+          showAlert("❌", "บันทึกไม่สำเร็จ", String(e.message || e));
+        });
       }
 
       var _histCachedRows = [];
