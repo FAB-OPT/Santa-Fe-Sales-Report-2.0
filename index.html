@@ -13588,26 +13588,22 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       // Promo strip — ใช้ dash2-card ให้เหมือน "สรุปยอดขาย" (compact)
+      // โชว์เฉพาะเมื่อมีข้อมูล (ไม่มีข้อมูล = ไม่ render เลย)
       function _renderPromoStrip(agg) {
-        const hasData = !!(agg && agg.qty);
-        let inner = "";
-        if (hasData) {
-          const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
-          inner = items.map(it => `
-            <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
-              <span style="flex:1;min-width:0;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</span>
-              <span style="flex-shrink:0;color:#94a3b8;font-size:11px">฿${it.price}</span>
-              <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)}จาน</span>
-              <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
-            </div>`).join("") +
-            `<div style="display:flex;align-items:baseline;gap:6px;padding:8px 0 0;font-size:13.5px">
-              <span style="flex:1;color:#475569;font-weight:800">รวมทั้งหมด</span>
-              <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:900;color:#c2410c;font-size:14.5px;font-variant-numeric:tabular-nums">${fmt(agg.qty)}จาน</span>
-              <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:900;color:#0f172a;font-size:14.5px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</span>
-            </div>`;
-        } else {
-          inner = `<div style="padding:6px 0;color:#94a3b8;font-style:italic;font-size:13px">— ยังไม่มีข้อมูลในช่วงนี้</div>`;
-        }
+        if (!agg || !agg.qty) return "";
+        const items = Object.values(agg.byItem || {}).sort((a, b) => b.qty - a.qty);
+        const inner = items.map(it => `
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:13px">
+            <span style="flex:1;min-width:0;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</span>
+            <span style="flex-shrink:0;color:#94a3b8;font-size:11px">฿${it.price}</span>
+            <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:800;color:#c2410c;font-variant-numeric:tabular-nums">${fmt(it.qty)}จาน</span>
+            <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums">฿${fmt(it.subtotal)}</span>
+          </div>`).join("") +
+          `<div style="display:flex;align-items:baseline;gap:6px;padding:8px 0 0;font-size:13.5px">
+            <span style="flex:1;color:#475569;font-weight:800">รวมทั้งหมด</span>
+            <span style="flex-shrink:0;min-width:48px;text-align:right;font-weight:900;color:#c2410c;font-size:14.5px;font-variant-numeric:tabular-nums">${fmt(agg.qty)}จาน</span>
+            <span style="flex-shrink:0;min-width:60px;text-align:right;font-weight:900;color:#0f172a;font-size:14.5px;font-variant-numeric:tabular-nums">฿${fmt(Math.round(agg.amt))}</span>
+          </div>`;
         return `<div class="dash2-card dash3-card dash3-promo-strip" style="padding:12px 16px;margin:12px 0 16px">
           <div class="dash2-cardhdr" style="margin-bottom:8px"><h3 style="font-size:14px;margin:0">🎯 รายการเชียร์ขาย</h3></div>
           ${inner}
