@@ -14703,12 +14703,23 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               return { ...r, plan_sale: planForRow };
             }) : [];
           // Aggregate promo (เชียร์ขาย) + breakdown per item
-          // Defense-in-depth: server กรองแล้ว + client กรองอีกรอบด้วย Set (เร็วกว่า indexOf)
+          // Defense-in-depth: server กรองแล้ว + client กรองอีกรอบ + _ddView filter
           const promoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };
+          // Layer 1: queryCodes จาก dropdown
           const _qcSet = Array.isArray(queryCodes) ? new Set(queryCodes.map(String)) : null;
+          // Layer 2: _ddView drill state (zone / branch) — สำหรับกรณีที่ dropdown ไม่ sync
+          let _viewSet = null;
+          if (_ddView && _ddView.level === "branch" && _ddView.branch) {
+            _viewSet = new Set([String(_ddView.branch)]);
+          } else if (_ddView && _ddView.level === "zone" && _ddView.zone) {
+            const zoneCodes = Object.keys(BRANCH_DM_MAP).filter(c => BRANCH_DM_MAP[c].dm === _ddView.zone);
+            _viewSet = new Set(zoneCodes.map(String));
+          }
           if (Array.isArray(_promo)) {
             _promo.forEach(pr2 => {
-              if (_qcSet && !_qcSet.has(String(pr2.branch_code))) return;
+              const bc = String(pr2.branch_code);
+              if (_qcSet && !_qcSet.has(bc)) return;
+              if (_viewSet && !_viewSet.has(bc)) return;
               promoAgg.count += 1;
               promoAgg.qty  += parseInt(pr2.total_qty) || 0;
               promoAgg.amt  += parseFloat(pr2.total_amount) || 0;
