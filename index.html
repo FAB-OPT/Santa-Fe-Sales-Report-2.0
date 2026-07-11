@@ -9289,10 +9289,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             _togglePromoCard();
             // sync สถานะ + label ในทุก UI (sidebar + mobile drawer)
             const label = _promoEnabled ? "เปิด" : "ปิด";
-            const stat1 = document.getElementById("promoToggleStatus");
-            if (stat1) stat1.textContent = label;
-            const stat2 = document.getElementById("mnMorePromoStat");
-            if (stat2) stat2.textContent = label;
+            const color = _promoEnabled ? "var(--green)" : "var(--red)";
+            [document.getElementById("promoToggleStatus"),
+             document.getElementById("mnMorePromoStat")].forEach(s => {
+              if (!s) return;
+              s.textContent = label;
+              s.style.color = color;
+            });
           })
           .catch(() => {});
       }
@@ -9335,13 +9338,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const box = document.getElementById("promoItemsInForm");
         if (!box || box.dataset.rendered === "1") return;
         box.innerHTML = PROMO_ITEMS.map(it => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
             <div style="flex:1;min-width:0;overflow:hidden">
-              <div style="font-weight:700;color:#0f172a;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(it.name)}</div>
-              <div style="font-size:12px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
+              <div style="font-weight:700;color:#0f172a;font-size:13.5px;white-space:normal;line-height:1.25;word-break:break-word">${escHtml(it.name)}</div>
+              <div style="font-size:11.5px;color:#64748b;margin-top:2px">฿${it.price} / จาน</div>
             </div>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="" placeholder="0" oninput="updatePromoTotal()" style="flex-shrink:0;width:64px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
-            <div style="flex-shrink:0;min-width:70px;text-align:right;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" id="promoQty_${it.id}" data-price="${it.price}" value="" placeholder="0" oninput="updatePromoTotal()" style="flex-shrink:0;width:52px;height:38px;padding:0;border:1px solid #cbd5e1;border-radius:8px;text-align:center;font-family:inherit;font-size:15px;font-weight:700;-moz-appearance:textfield">
+            <div style="flex-shrink:0;min-width:56px;text-align:right;font-weight:800;color:#0f172a;font-size:13px;font-variant-numeric:tabular-nums" id="promoSub_${it.id}">฿0</div>
           </div>
         `).join("");
         box.dataset.rendered = "1";
@@ -12791,16 +12794,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // toggle .on class บนปุ่มใน header
         const hdrTb = document.getElementById("hdrTestModeBtn");
         if (hdrTb) hdrTb.classList.toggle("on", _testMode);
+        // ปุ่มไม่มีพื้นหลัง — สีข้อความตาม state
         const btn = document.getElementById("testModeBtn");
-        if (btn) {
-          btn.style.background = _testMode ? "var(--brand-l)" : "";
-          btn.style.borderLeft = _testMode ? "3px solid var(--brand)" : "";
-        }
+        if (btn) { btn.style.background = ""; btn.style.borderLeft = ""; }
         const mdBtn = document.getElementById("mdTestModeBtn");
-        if (mdBtn) {
-          mdBtn.style.background = _testMode ? "#fde68a" : "#fef3c7";
-          mdBtn.style.borderColor = _testMode ? "#f59e0b" : "#fde68a";
-        }
+        if (mdBtn) { mdBtn.style.background = ""; mdBtn.style.borderColor = ""; }
       }
       async function saveTestModeToDB(val) {
         const v = val ? "true" : "false";
@@ -12827,16 +12825,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
       function applyBypassOrderUI() {
         _recomputeBanners();
+        // ปุ่มไม่มีพื้นหลัง — สีข้อความตาม state
         const sb1 = document.getElementById("bypassOrderBtn");
-        if (sb1) {
-          sb1.style.background = _bypassOrder ? "#fee2e2" : "";
-          sb1.style.borderLeft = _bypassOrder ? "3px solid #dc2626" : "";
-        }
+        if (sb1) { sb1.style.background = ""; sb1.style.borderLeft = ""; }
         const md1 = document.getElementById("mdBypassOrderBtn");
-        if (md1) {
-          md1.style.background = _bypassOrder ? "#fecaca" : "#fee2e2";
-          md1.style.borderColor = _bypassOrder ? "#dc2626" : "#fecaca";
-        }
+        if (md1) { md1.style.background = ""; md1.style.borderColor = ""; }
         [document.getElementById("bypassOrderStatus"),
          document.getElementById("mdBypassOrderStatus"),
          document.getElementById("mnMoreBypassStat")].forEach(s => {
@@ -16634,8 +16627,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const box = document.getElementById("histPromoSection");
         if (!box) return;
         const rows = _promoHistCache;
-        if (!rows.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+        // ซ่อน section ถ้าสาขา + admin ปิด promo + ไม่มีข้อมูล (ไม่มีอะไรจะโชว์)
+        if (!rows.length && !_promoEnabled) { box.style.display = "none"; box.innerHTML = ""; return; }
         box.style.display = "";
+        if (!rows.length) {
+          box.innerHTML = `<h3 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a">🎯 ประวัติเชียร์ขาย</h3>
+            <div style="padding:20px;text-align:center;color:#94a3b8;font-style:italic;background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px">— ยังไม่มีข้อมูลเชียร์ขายในช่วงนี้ —</div>`;
+          return;
+        }
         const isAdmin = (S.role === "admin" || S.code === "ADMIN");
         const showBranchCol = isAdmin || S.role === "vp" || S.role === "bzm";
         const MONTH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -16649,7 +16648,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             : "";
           const canEdit = isAdmin || (parseInt(r.edit_count) || 0) < 1;
           const editBtn = canEdit
-            ? `<button onclick='openPromoEdit(${JSON.stringify(r).replace(/'/g, "&#39;")})' style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">✏️ แก้ไข</button>`
+            ? `<button onclick="openPromoEditById(${r.id})" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer">✏️ แก้ไข</button>`
             : `<span style="color:#94a3b8;font-size:12px;font-style:italic">🔒 แก้ครั้งเดียว</span>`;
           const branchCell = showBranchCol
             ? `<span style="color:#64748b;font-size:12px;font-weight:600">${escHtml((r.branch_code||"") + " " + (r.branch_name||""))}</span>`
@@ -16678,9 +16677,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // ── Modal แก้ไข promo ──
       let _promoEditRow = null;
+      function openPromoEditById(id) {
+        const row = (_promoHistCache || []).find(r => r.id === id);
+        if (!row) { showAlert("⚠️", "ไม่พบข้อมูล", "รายการนี้อาจถูกลบไปแล้ว"); return; }
+        openPromoEdit(row);
+      }
       function openPromoEdit(row) {
         _promoEditRow = row;
-        const items = row.items || [];
+        // items อาจเป็น string ในเคส Supabase คืน raw JSON
+        const items = (typeof row.items === "string") ? JSON.parse(row.items) : (row.items || []);
         const inputsHtml = PROMO_ITEMS.map(it => {
           const cur = items.find(x => x.id === it.id);
           const qty = cur ? cur.qty : 0;
