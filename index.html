@@ -9276,6 +9276,37 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         { id: "P3", name: "สเต๊กสันคอหมูย่างแจ่วข้าวคั่ว",    price: 149 }
       ];
 
+      // ═══ Campaign layer — เป้าโปรอีสาน + incentive (ปรับค่าที่นี่ที่เดียว) ═══
+      const PROMO_CAMPAIGN = {
+        goal: 25806,               // เป้าบริษัท (จาน) — เป้ารวมเดียว ไม่มีโควตารายสาขา
+        startDate: "2026-07-10",   // วันเริ่มโปร
+        endDate:   "2026-09-30",   // วันสิ้นสุดโปร (นับรวมวันนี้)
+        incentivePerDish: 5        // incentive ฿ ต่อจาน
+      };
+      // ยอดสะสม "ทั้งแคมเปญ" (ทุกสาขา · ไม่ขึ้นกับ date filter ของ dashboard)
+      let _promoCampaign = { loaded: false, totalQty: 0, byBranch: {} };
+      function _loadPromoCampaign(cb) {
+        const today  = todayStr();
+        const endCap = (today < PROMO_CAMPAIGN.endDate) ? today : PROMO_CAMPAIGN.endDate;
+        const url = SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,total_qty"
+          + "&submit_date=gte." + PROMO_CAMPAIGN.startDate
+          + "&submit_date=lte." + endCap;
+        fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => {
+            const byBranch = {}; let total = 0;
+            (rows || []).forEach(r => {
+              const q = parseInt(r.total_qty) || 0;
+              total += q;
+              const bc = String(r.branch_code);
+              byBranch[bc] = (byBranch[bc] || 0) + q;
+            });
+            _promoCampaign = { loaded: true, totalQty: total, byBranch };
+          })
+          .catch(() => {})
+          .then(() => { if (cb) cb(); });
+      }
+
       // Global toggle + branches list — โหลดจาก app_settings
       let _promoEnabled = true;
       let _promoBranches = "ALL"; // "ALL" หรือ array ของ branch_code
@@ -13610,6 +13641,81 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>`;
       }
 
+      // ── Campaign card (เป้า + incentive) — company-wide · ยอดสะสมทั้งแคมเปญ ──
+      function _renderPromoCampaign() {
+        if (!_promoEnabled || !_promoCampaign.loaded) return "";
+        const C = PROMO_CAMPAIGN;
+        const msDay  = 86400000;
+        const dStart = new Date(C.startDate + "T00:00:00");
+        const dEnd   = new Date(C.endDate   + "T00:00:00");
+        const dToday = new Date(todayStr()  + "T00:00:00");
+        let daysLeft = Math.floor((dEnd - dToday) / msDay) + 1;   // นับรวมวันนี้
+        if (daysLeft < 0) daysLeft = 0;
+        const sold      = _promoCampaign.totalQty;
+        const remaining = Math.max(0, C.goal - sold);
+        const reqPerDay = daysLeft > 0 ? Math.ceil(remaining / daysLeft) : 0;
+        const incentive = sold * C.incentivePerDish;
+        const goalPct   = C.goal > 0 ? sold / C.goal : 0;
+        const totalDays = Math.max(1, Math.round((dEnd - dStart) / msDay) + 1);
+        let elapsed = Math.round((dToday - dStart) / msDay) + 1;
+        elapsed = Math.min(Math.max(elapsed, 0), totalDays);
+        const elapsedPct = elapsed / totalDays;
+        const onPace = goalPct >= elapsedPct;
+        const barPct = Math.min(100, goalPct * 100).toFixed(1);
+        const barColor = goalPct >= 1 ? "#16a34a" : (onPace ? "#f97316" : "#f59e0b");
+        const badgeStyle = "display:inline-block;padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:800;";
+        const paceBadge = daysLeft === 0
+          ? `<span style="${badgeStyle}background:#e2e8f0;color:#475569">สิ้นสุดโปรแล้ว</span>`
+          : (goalPct >= 1
+              ? `<span style="${badgeStyle}background:#dcfce7;color:#166534">✅ ถึงเป้าแล้ว</span>`
+              : (onPace
+                  ? `<span style="${badgeStyle}background:#dcfce7;color:#166534">🟢 ทันเป้า</span>`
+                  : `<span style="${badgeStyle}background:#fef3c7;color:#92400e">🟠 ต่ำกว่าเป้า</span>`));
+        const mini = [
+          { lbl: "ยอดสะสม",       val: fmt(sold) + " จาน",       sub: (goalPct * 100).toFixed(1) + "% ของเป้า" },
+          { lbl: "เหลืออีก",       val: fmt(remaining) + " จาน",  sub: "จากเป้า " + fmt(C.goal) },
+          { lbl: "เหลือเวลา",      val: fmt(daysLeft) + " วัน",   sub: "ถึง 30 ก.ย. 2026" },
+          { lbl: "ต้องขาย/วัน",    val: fmt(reqPerDay) + " จาน",  sub: daysLeft > 0 ? "เพื่อให้ทันเป้า" : "—" },
+          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(sold) + " จาน" }
+        ];
+        const miniHtml = mini.map(m => `
+          <div style="flex:1 1 110px;min-width:100px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
+            <div style="font-size:11px;color:#9a3412;font-weight:700">${m.lbl}</div>
+            <div style="font-size:16px;font-weight:900;color:#c2410c;font-variant-numeric:tabular-nums;line-height:1.25">${m.val}</div>
+            <div style="font-size:10.5px;color:#94a3b8">${m.sub}</div>
+          </div>`).join("");
+        let branchLine = "";
+        if (_ddView && _ddView.level === "branch" && _ddView.branch) {
+          const bq = _promoCampaign.byBranch[String(_ddView.branch)] || 0;
+          branchLine = `<div style="margin-top:10px;padding:8px 12px;background:#fffbeb;border:1px dashed #fbbf24;border-radius:10px;font-size:12.5px;color:#92400e">
+            🏪 สาขานี้สะสม <b style="color:#c2410c">${fmt(bq)}</b> จาน · incentive สะสม <b style="color:#c2410c">฿${fmt(bq * C.incentivePerDish)}</b></div>`;
+        }
+        return `<div class="dash2-card dash3-card dash3-promo-campaign" style="padding:14px 16px;margin:12px 0 16px;border:1px solid #fdba74">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <h3 style="font-size:14.5px;margin:0;color:#9a3412">🎯 เป้าโปรอีสาน ซีรีย์</h3>
+            ${paceBadge}
+            <span style="margin-left:auto;font-size:11.5px;color:#94a3b8">เป้ารวมบริษัท ${fmt(C.goal)} จาน</span>
+          </div>
+          <div style="height:12px;background:#fde8d4;border-radius:999px;overflow:hidden;margin-bottom:12px">
+            <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:999px;transition:width .4s"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${miniHtml}</div>
+          ${branchLine}
+        </div>`;
+      }
+
+      // แทรก/รีเฟรชการ์ด campaign เหนือ promo strip ของพาร์ทที่กำลังดู (idempotent)
+      function _refreshPromoCampaignCard() {
+        const kpiEl = document.getElementById('sec' + _cap(_secActive) + 'Kpis');
+        if (!kpiEl) return;
+        let el = kpiEl.nextElementSibling;
+        while (el && el.classList && el.classList.contains("dash3-promo-campaign")) {
+          const next = el.nextElementSibling; el.remove(); el = next;
+        }
+        const html = _renderPromoCampaign();
+        if (html) kpiEl.insertAdjacentHTML("afterend", html);   // แทรกก่อน strip → [kpi][campaign][strip]
+      }
+
       function _ddBarList(items, onClick, sec) {
         if (!items.length) return `<div class="dd-empty">ไม่มีข้อมูลในช่วงนี้</div>`;
         const max = Math.max(...items.map(i => i.actual), 1);
@@ -14510,11 +14616,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
         // ── Promo strip (แนวยาว · โชว์ item breakdown) ──
         // ลบ strip เก่าก่อน (ป้องกัน accumulate ตอน re-render)
-        let _promoStripEl = kpiEl.nextElementSibling;
-        if (_promoStripEl && _promoStripEl.classList && _promoStripEl.classList.contains("dash3-promo-strip")) {
-          _promoStripEl.remove();
+        // ลบการ์ดโปรเก่า (campaign + strip · อาจมี 0-2 ใบ) กัน accumulate ตอน re-render
+        let _promoSib = kpiEl.nextElementSibling;
+        while (_promoSib && _promoSib.classList &&
+               (_promoSib.classList.contains("dash3-promo-strip") || _promoSib.classList.contains("dash3-promo-campaign"))) {
+          const _next = _promoSib.nextElementSibling; _promoSib.remove(); _promoSib = _next;
         }
         kpiEl.insertAdjacentHTML("afterend", _renderPromoStrip(_currentPromoAgg));
+        _refreshPromoCampaignCard();   // แทรกการ์ดเป้า/incentive เหนือ strip
 
         // ── สำหรับ company/zone view บน month/year → เพิ่ม "สรุปยอดขายช่วง" (สัปดาห์ที่ 1-5 / มกราคม-ธันวาคม) ──
         let _periodPanel = '';
@@ -14644,6 +14753,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // รีเซ็ตทุกช่วงเป็น "ยังไม่โหลด" + กลับมาแท็บรายวันเสมอ (โหลดเฉพาะแท็บที่กด)
         ['day','week','month','year'].forEach(s => { _secData[s] = { rows: [], planByDate: {}, planByBranch: {}, range: null }; });
         _currentPromoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };  // reset ทันที กัน strip ค้าง
+        _loadPromoCampaign(_refreshPromoCampaignCard);  // ยอดสะสมทั้งแคมเปญ (async · company-wide)
         _secActive = 'day';
         _secResetPending = true;
         showSecTab('day');
