@@ -286,37 +286,16 @@ function syncSheet(sheetName) {
 // PROMO SYNC — ไฟล์แยก (append-only)
 // ════════════════════════════════════════════
 function syncPromo() {
+  // True mirror mode: ดึงจาก Supabase ทั้งหมด แล้ว rewrite sheet ทุกครั้ง
+  // → รับประกันว่า sheet = Supabase เป๊ะๆ (รวม delete)
   try {
-    const key = "Promo";
-    const lastSync = _getLastSync(key);
-    // ดึง submissions ที่ created_at หรือ updated_at ใหม่กว่า lastSync (รองรับ edit)
-    const filter = lastSync
-      ? `or=(created_at.gt.${encodeURIComponent(lastSync)},updated_at.gt.${encodeURIComponent(lastSync)})`
-      : "";
-    const url = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*${filter ? "&" + filter : ""}&order=created_at.asc&limit=5000`;
-
-    const response = UrlFetchApp.fetch(url, {
-      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-      muteHttpExceptions: true
-    });
-    const code = response.getResponseCode();
-    if (code !== 200 && code !== 206) throw new Error(`[Promo] HTTP ${code}`);
-    const submissions = JSON.parse(response.getContentText());
-    if (!submissions.length) {
-      Logger.log(`[Promo] no changes`);
-      return;
-    }
-
-    // ทำ full replace ทั้ง sheet — ง่ายและถูกต้องเมื่อมี edit
-    // (ดึง submissions ทั้งหมด แล้ว rewrite; ปริมาณข้อมูล promo น้อย)
     const allUrl = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*&order=created_at.asc&limit=50000`;
     const allResp = UrlFetchApp.fetch(allUrl, {
       headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
       muteHttpExceptions: true
     });
-    if (allResp.getResponseCode() !== 200 && allResp.getResponseCode() !== 206) {
-      throw new Error(`[Promo] full fetch HTTP ${allResp.getResponseCode()}`);
-    }
+    const code = allResp.getResponseCode();
+    if (code !== 200 && code !== 206) throw new Error(`[Promo] HTTP ${code}`);
     const allSubs = JSON.parse(allResp.getContentText());
 
     // Expand: 1 submission → หลายแถว (1 แถวต่อ item)
@@ -342,18 +321,19 @@ function syncPromo() {
       });
     });
 
-    // เขียน sheet แยก (full replace)
+    // เขียน sheet แยก (full replace — clear ก่อน + write header + rows)
     _promoReplace(rows);
 
-    // update lastSync = updated_at หรือ created_at ล่าสุด
-    const latest = submissions
+    // update lastSync = latest updated_at ล่าสุด (สำหรับ log/ตรวจสอบ)
+    const latest = allSubs
       .map(s => s.updated_at || s.created_at)
       .filter(Boolean)
       .sort()
       .pop();
-    if (latest) _setLastSync(key, latest);
+    if (latest) _setLastSync("Promo", latest);
+    else _setLastSync("Promo", new Date().toISOString());
 
-    Logger.log(`[Promo] full rewrite ${rows.length} item-rows from ${allSubs.length} submissions (delta ${submissions.length})`);
+    Logger.log(`[Promo] mirror synced: ${rows.length} item-rows from ${allSubs.length} submissions`);
   } catch (err) {
     Logger.log(`[Promo] FAILED: ${err.message}`);
   }
