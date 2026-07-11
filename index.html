@@ -9279,7 +9279,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       // ═══ Campaign layer — เป้าโปรอีสาน + incentive (ปรับค่าที่นี่ที่เดียว) ═══
       const PROMO_CAMPAIGN = {
         goal: 25806,               // เป้าบริษัท (จาน) — เป้ารวมเดียว ไม่มีโควตารายสาขา
-        startDate: "2026-07-10",   // วันเริ่มโปร
+        startDate: "2026-07-06",   // วันเริ่มโปร (ขยับจาก 10 → 6 ก.ค. เพราะมียอดจริงตั้งแต่ 6 ก.ค.)
         endDate:   "2026-09-30",   // วันสิ้นสุดโปร (นับรวมวันนี้)
         incentivePerDish: 5        // incentive ฿ ต่อจาน
       };
@@ -13669,7 +13669,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const tiles = [
           { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: P.sub || "&nbsp;",                                     hero: true },
           { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pQty) + " จาน", hero: true },
-          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "10 ก.ค. – วันนี้",                                    hero: false },
+          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "6 ก.ค. – วันนี้",                                     hero: false },
           { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(cumQty) + " จาน", hero: false }
         ];
         const tilesHtml = tiles.map(t => `
