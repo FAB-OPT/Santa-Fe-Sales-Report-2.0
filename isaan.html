@@ -136,7 +136,7 @@
       <div class="brandttl">โปรอีสาน ซีรีย์<small>ระบบติดตามยอดขาย · Sales Tracker</small></div>
     </div>
     <h1>เข้าสู่ระบบ (ผู้บริหาร)</h1>
-    <div class="sub">Dashboard ภาพรวมทุกสาขา (อ่านอย่างเดียว) · เป้ารวม 25,806 จาน · 6 ก.ค.–30 ก.ย.</div>
+    <div class="sub">Dashboard ภาพรวมทุกสาขา</div>
 
     <!-- manager login (เฉพาะผู้บริหาร) -->
     <div id="mgrLogin">
@@ -694,7 +694,7 @@ function exportCSV(){
    Boot
    ===================================================================== */
 (async function(){
-  $("#loginHint").innerHTML = "🟢 Dashboard อ่านข้อมูลจาก Supabase (ชุดเดียวกับระบบหลัก) · ผู้บริหาร: manager / isaan2026";
+  $("#loginHint").innerHTML = "🟢 Dashboard อ่านข้อมูลจาก Supabase";
   await initStorage();
   const saved=sessionStorage.getItem("isaan_session");
   if(saved){ try{ session=JSON.parse(saved); if(session && session.role==="mgr") enterApp(); else sessionStorage.removeItem("isaan_session"); }catch(e){} }
