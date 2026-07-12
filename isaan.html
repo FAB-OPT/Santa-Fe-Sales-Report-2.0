@@ -590,10 +590,21 @@ function renderMgrData(){
   const elapsed=daysElapsed(), tot=totalDays();
   const pacePct=tot?elapsed/tot*100:0;
   const onPace=pct>=pacePct;
+  const salesCombined=`
+    <div class="kpi" style="grid-column:span 2;display:flex;align-items:stretch;gap:0">
+      <div style="flex:1;min-width:0;padding-right:12px">
+        <div class="k">ยอดขายสะสม <small style="font-size:10px">(จาก 6 ก.ค.)</small></div>
+        <div class="v">${fmt(g.total)} <small>จาน</small></div>
+      </div>
+      <div style="width:1px;background:var(--line);flex-shrink:0"></div>
+      <div style="flex:1;min-width:0;padding-left:12px">
+        <div class="k">ยอดขายรวม <small style="font-size:10px">(จาก 10 ก.ค.)</small></div>
+        <div class="v">${fmt(g.incQty)} <small>จาน</small></div>
+      </div>
+    </div>`;
   $("#mgrKpis").innerHTML=`
     ${kpi("วันเหลือ",dl+' <small>/ '+tot+' วัน</small>')}
-    ${kpi("ยอดขายสะสม (จาก 6 ก.ค.)",fmt(g.total)+' <small>จาน</small>')}
-    ${kpi("ยอดขายรวม (จาก 10 ก.ค.)",fmt(g.incQty)+' <small>จาน</small>')}
+    ${salesCombined}
     ${kpi("คงเหลือถึงเป้า",fmt(rem)+' <small>จาน</small>')}
     ${kpi("ต้องขาย/วัน",fmt(reqDay)+' <small>จาน</small>')}
     ${kpi("อินเซนทีฟสะสม (จาก 10 ก.ค.)",'฿'+fmt(g.inc),'hl')}
