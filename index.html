@@ -13728,24 +13728,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               : (onPace
                   ? `<span style="${badgeStyle}background:#dcfce7;color:#166534">🟢 ทันเป้า</span>`
                   : `<span style="${badgeStyle}background:#fef3c7;color:#92400e">🟠 ต่ำกว่าเป้า</span>`));
-        // การ์ดรวม "ยอดขายสะสม (6 ก.ค.)" + "ยอดขายรวม (10 ก.ค.)" ในใบเดียว มีเส้นแบ่ง
+        // จัดกลุ่มให้อ่านง่าย: เป้า/ความคืบหน้า (4 กล่อง) แล้วค่อยกลุ่ม incentive (จับคู่)
         const _half = (lbl, note, val, sub) => `
           <div style="flex:1;min-width:0">
-            <div style="font-size:11px;color:#9a3412;font-weight:700">${lbl} <span style="color:#c2721e;font-weight:600">(${note})</span></div>
+            <div style="font-size:11px;color:#9a3412;font-weight:700">${lbl}${note ? ` <span style="color:#c2721e;font-weight:600">(${note})</span>` : ""}</div>
             <div style="font-size:16px;font-weight:900;color:#c2410c;font-variant-numeric:tabular-nums;line-height:1.25">${val}</div>
             <div style="font-size:10.5px;color:#94a3b8">${sub}</div>
           </div>`;
-        const salesCombined = `
-          <div style="flex:2 1 240px;min-width:220px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;display:flex;align-items:stretch;gap:10px">
-            ${_half("ยอดขายสะสม", "6 ก.ค.", fmt(sold) + " จาน", (goalPct * 100).toFixed(1) + "% ของเป้า")}
-            <div style="width:1px;background:#fdba74;flex-shrink:0"></div>
-            ${_half("ยอดขายรวม", "10 ก.ค.", fmt(incQty) + " จาน", "ได้ incentive")}
-          </div>`;
         const mini = [
-          { lbl: "เหลืออีก",       val: fmt(remaining) + " จาน",  sub: "จากเป้า " + fmt(C.goal) },
-          { lbl: "เหลือเวลา",      val: fmt(daysLeft) + " วัน",   sub: "ถึง 30 ก.ย. 2026" },
-          { lbl: "ต้องขาย/วัน",    val: fmt(reqPerDay) + " จาน",  sub: daysLeft > 0 ? "เพื่อให้ทันเป้า" : "—" },
-          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(incQty) + " จาน (10 ก.ค.)" }
+          { lbl: "ยอดขายสะสม",   val: fmt(sold) + " จาน",      sub: "ตั้งแต่ 6 ก.ค. · " + (goalPct * 100).toFixed(1) + "% ของเป้า" },
+          { lbl: "เหลืออีก",     val: fmt(remaining) + " จาน", sub: "จากเป้า " + fmt(C.goal) },
+          { lbl: "เหลือเวลา",    val: fmt(daysLeft) + " วัน",  sub: "ถึง 30 ก.ย. 2026" },
+          { lbl: "ต้องขาย/วัน",  val: fmt(reqPerDay) + " จาน", sub: daysLeft > 0 ? "เพื่อให้ทันเป้า" : "—" }
         ];
         const miniHtml = mini.map(m => `
           <div style="flex:1 1 110px;min-width:100px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
@@ -13753,6 +13747,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <div style="font-size:16px;font-weight:900;color:#c2410c;font-variant-numeric:tabular-nums;line-height:1.25">${m.val}</div>
             <div style="font-size:10.5px;color:#94a3b8">${m.sub}</div>
           </div>`).join("");
+        // กลุ่ม incentive: ยอดที่ได้ incentive (ตั้งแต่ 10 ก.ค.) → เป็นเงิน
+        const incentiveCombined = `
+          <div style="flex:2 1 240px;min-width:220px;padding:8px 10px;background:#fff7ed;border:1px solid #fdba74;border-radius:10px;display:flex;align-items:stretch;gap:10px">
+            ${_half("💰 ยอดได้ incentive", "10 ก.ค.", fmt(incQty) + " จาน", "เฉพาะยอดตั้งแต่ 10 ก.ค.")}
+            <div style="width:1px;background:#fdba74;flex-shrink:0"></div>
+            ${_half("เป็นเงิน incentive", "", "฿" + fmt(incentive), fmt(incQty) + " จาน × ฿" + C.incentivePerDish)}
+          </div>`;
         let branchLine = "";
         if (_ddView && _ddView.level === "branch" && _ddView.branch) {
           const bo = _promoCampaign.byBranch[String(_ddView.branch)] || { qty: 0, incQty: 0 };
@@ -13768,7 +13769,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <div style="height:12px;background:#fde8d4;border-radius:999px;overflow:hidden;margin-bottom:12px">
             <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:999px;transition:width .4s"></div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">${salesCombined}${miniHtml}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${miniHtml}${incentiveCombined}</div>
           ${branchLine}
         </div>`;
       }
