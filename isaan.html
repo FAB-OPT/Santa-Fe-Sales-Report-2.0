@@ -178,7 +178,8 @@
    ===================================================================== */
 const CONFIG = {
   // --- ช่วงโปรโมชั่น / เป้าหมาย ---
-  startDate: "2026-07-06",     // วันเริ่มขาย (ขยับจาก 10 → 6 ก.ค. เพราะมียอดจริงตั้งแต่ 6 ก.ค.)
+  startDate: "2026-07-06",     // วันเริ่มนับ "ยอด/เป้า" (ขยับ 10 → 6 ก.ค. เพราะมียอดจริง)
+  incentiveStartDate: "2026-07-10", // วันเริ่มนับ "incentive" (6-9 ก.ค. ไม่ได้เงิน)
   endDate:   "2026-09-30",     // วันสุดท้ายของการขาย
   target:    25806,            // เป้ายอดขายรวม (จาน)
   incentive: 5,                // ค่าอินเซนทีฟต่อจาน (บาท) ให้พนักงานสาขา
@@ -317,20 +318,22 @@ function branchByCode(c){ return CONFIG.branches.find(b=>b.code===c); }
 
 // aggregate all sales -> {byBranch:{code:{m1,m2,m3,total,inc,last}}, grand:{...}, byDate:{date:total}}
 function aggregate(cache){
-  const byBranch={}, byDate={}; let g={m1:0,m2:0,m3:0,total:0};
-  CONFIG.branches.forEach(b=>byBranch[b.code]={m1:0,m2:0,m3:0,total:0,inc:0,last:0,lastBy:"",entries:0});
+  const byBranch={}, byDate={}; let g={m1:0,m2:0,m3:0,total:0,incQty:0};
+  const iStart=CONFIG.incentiveStartDate;
+  CONFIG.branches.forEach(b=>byBranch[b.code]={m1:0,m2:0,m3:0,total:0,incQty:0,inc:0,last:0,lastBy:"",entries:0});
   Object.keys(cache||{}).forEach(code=>{
     const bb=byBranch[code]; if(!bb)return;
     Object.keys(cache[code]||{}).forEach(date=>{
       const r=cache[code][date]||{}; const m1=+r.m1||0,m2=+r.m2||0,m3=+r.m3||0,t=m1+m2+m3;
       bb.m1+=m1;bb.m2+=m2;bb.m3+=m3;bb.total+=t;bb.entries++;
+      if(String(date)>=iStart){ bb.incQty+=t; g.incQty+=t; }   // incentive เฉพาะ ≥ 10 ก.ค.
       if(r.ts&&r.ts>bb.last){ bb.last=r.ts; bb.lastBy=r.byName||""; }
       g.m1+=m1;g.m2+=m2;g.m3+=m3;g.total+=t;
       byDate[date]=(byDate[date]||0)+t;
     });
-    bb.inc=bb.total*CONFIG.incentive;
+    bb.inc=bb.incQty*CONFIG.incentive;   // ฿ = ยอด ≥ 10 ก.ค. × 5
   });
-  g.inc=g.total*CONFIG.incentive;
+  g.inc=g.incQty*CONFIG.incentive;
   return {byBranch,byDate,grand:g};
 }
 

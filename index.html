@@ -9278,30 +9278,38 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // ═══ Campaign layer — เป้าโปรอีสาน + incentive (ปรับค่าที่นี่ที่เดียว) ═══
       const PROMO_CAMPAIGN = {
-        goal: 25806,               // เป้าบริษัท (จาน) — เป้ารวมเดียว ไม่มีโควตารายสาขา
-        startDate: "2026-07-06",   // วันเริ่มโปร (ขยับจาก 10 → 6 ก.ค. เพราะมียอดจริงตั้งแต่ 6 ก.ค.)
-        endDate:   "2026-09-30",   // วันสิ้นสุดโปร (นับรวมวันนี้)
-        incentivePerDish: 5        // incentive ฿ ต่อจาน
+        goal: 25806,                     // เป้าบริษัท (จาน) — เป้ารวมเดียว ไม่มีโควตารายสาขา
+        startDate: "2026-07-06",         // วันเริ่มนับ "ยอด/เป้า" (ขยับ 10 → 6 ก.ค. เพราะมียอดจริง)
+        incentiveStartDate: "2026-07-10",// วันเริ่มนับ "incentive" (โปร incentive เริ่ม 10 ก.ค. — 6-9 ก.ค. ไม่ได้เงิน)
+        endDate:   "2026-09-30",         // วันสิ้นสุดโปร (นับรวมวันนี้)
+        incentivePerDish: 5              // incentive ฿ ต่อจาน
       };
       // ยอดสะสม "ทั้งแคมเปญ" (ทุกสาขา · ไม่ขึ้นกับ date filter ของ dashboard)
-      let _promoCampaign = { loaded: false, totalQty: 0, byBranch: {} };
+      // totalQty = ยอดตั้งแต่ startDate (สำหรับเป้า) · incentiveQty = ยอดตั้งแต่ incentiveStartDate (สำหรับ ฿)
+      // byBranch[code] = { qty, incQty }
+      let _promoCampaign = { loaded: false, totalQty: 0, incentiveQty: 0, byBranch: {} };
       function _loadPromoCampaign(cb) {
         const today  = todayStr();
         const endCap = (today < PROMO_CAMPAIGN.endDate) ? today : PROMO_CAMPAIGN.endDate;
-        const url = SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,total_qty"
+        const iStart = PROMO_CAMPAIGN.incentiveStartDate;
+        const url = SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,submit_date,total_qty"
           + "&submit_date=gte." + PROMO_CAMPAIGN.startDate
           + "&submit_date=lte." + endCap;
         fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
           .then(r => r.ok ? r.json() : [])
           .then(rows => {
-            const byBranch = {}; let total = 0;
+            const byBranch = {}; let total = 0, incTotal = 0;
             (rows || []).forEach(r => {
               const q = parseInt(r.total_qty) || 0;
-              total += q;
               const bc = String(r.branch_code);
-              byBranch[bc] = (byBranch[bc] || 0) + q;
+              const isInc = String(r.submit_date) >= iStart;   // นับ incentive เฉพาะตั้งแต่ 10 ก.ค.
+              total += q;
+              if (isInc) incTotal += q;
+              if (!byBranch[bc]) byBranch[bc] = { qty: 0, incQty: 0 };
+              byBranch[bc].qty += q;
+              if (isInc) byBranch[bc].incQty += q;
             });
-            _promoCampaign = { loaded: true, totalQty: total, byBranch };
+            _promoCampaign = { loaded: true, totalQty: total, incentiveQty: incTotal, byBranch };
           })
           .catch(() => {})
           .then(() => { if (cb) cb(); });
@@ -13661,16 +13669,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const C = PROMO_CAMPAIGN;
         const bcode = (_ddView && _ddView.branch) || (typeof S !== "undefined" && S && S.branch) || "";
         const bname = (typeof S !== "undefined" && S && S.branch) || bcode || "สาขา";
-        const pQty  = (_currentPromoAgg && _currentPromoAgg.qty) || 0;   // ตามแท็บ + สาขา
-        const pInc  = pQty * C.incentivePerDish;
-        const cumQty = _promoCampaign.byBranch[String(bcode)] || 0;      // สะสมทั้งโปร
-        const cumInc = cumQty * C.incentivePerDish;
+        const bAgg  = _promoCampaign.byBranch[String(bcode)] || { qty: 0, incQty: 0 };
+        const pQty     = (_currentPromoAgg && _currentPromoAgg.qty)    || 0;   // ตามแท็บ + สาขา (ทุกวันในช่วง)
+        const pIncQty  = (_currentPromoAgg && _currentPromoAgg.incQty) || 0;   // ตามแท็บ + สาขา (เฉพาะ ≥ 10 ก.ค.)
+        const pInc     = pIncQty * C.incentivePerDish;
+        const cumQty = bAgg.qty;                              // สะสมทั้งโปร (≥ 6 ก.ค.)
+        const cumInc = bAgg.incQty * C.incentivePerDish;      // incentive สะสม (≥ 10 ก.ค.)
         const P = _promoPeriodInfo();
         const tiles = [
-          { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: P.sub || "&nbsp;",                                     hero: true },
-          { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pQty) + " จาน", hero: true },
-          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "6 ก.ค. – วันนี้",                                     hero: false },
-          { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(cumQty) + " จาน", hero: false }
+          { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: P.sub || "&nbsp;",                                        hero: true },
+          { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pIncQty) + " จาน",  hero: true },
+          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "6 ก.ค. – วันนี้",                                        hero: false },
+          { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(bAgg.incQty) + " จาน", hero: false }
         ];
         const tilesHtml = tiles.map(t => `
           <div style="flex:1 1 130px;min-width:120px;padding:10px 12px;background:${t.hero ? '#fff7ed' : '#f8fafc'};border:1px solid ${t.hero ? '#fdba74' : '#e2e8f0'};border-radius:10px">
@@ -13700,9 +13710,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         let daysLeft = Math.floor((dEnd - dToday) / msDay) + 1;   // นับรวมวันนี้
         if (daysLeft < 0) daysLeft = 0;
         const sold      = _promoCampaign.totalQty;
+        const incQty    = _promoCampaign.incentiveQty || 0;   // ยอดที่ได้ incentive (≥ 10 ก.ค.)
         const remaining = Math.max(0, C.goal - sold);
         const reqPerDay = daysLeft > 0 ? Math.ceil(remaining / daysLeft) : 0;
-        const incentive = sold * C.incentivePerDish;
+        const incentive = incQty * C.incentivePerDish;
         const goalPct   = C.goal > 0 ? sold / C.goal : 0;
         const totalDays = Math.max(1, Math.round((dEnd - dStart) / msDay) + 1);
         let elapsed = Math.round((dToday - dStart) / msDay) + 1;
@@ -13724,7 +13735,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           { lbl: "เหลืออีก",       val: fmt(remaining) + " จาน",  sub: "จากเป้า " + fmt(C.goal) },
           { lbl: "เหลือเวลา",      val: fmt(daysLeft) + " วัน",   sub: "ถึง 30 ก.ย. 2026" },
           { lbl: "ต้องขาย/วัน",    val: fmt(reqPerDay) + " จาน",  sub: daysLeft > 0 ? "เพื่อให้ทันเป้า" : "—" },
-          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(sold) + " จาน" }
+          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(incQty) + " จาน (ตั้งแต่ 10 ก.ค.)" }
         ];
         const miniHtml = mini.map(m => `
           <div style="flex:1 1 110px;min-width:100px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
@@ -13734,9 +13745,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>`).join("");
         let branchLine = "";
         if (_ddView && _ddView.level === "branch" && _ddView.branch) {
-          const bq = _promoCampaign.byBranch[String(_ddView.branch)] || 0;
+          const bo = _promoCampaign.byBranch[String(_ddView.branch)] || { qty: 0, incQty: 0 };
           branchLine = `<div style="margin-top:10px;padding:8px 12px;background:#fffbeb;border:1px dashed #fbbf24;border-radius:10px;font-size:12.5px;color:#92400e">
-            🏪 สาขานี้สะสม <b style="color:#c2410c">${fmt(bq)}</b> จาน · incentive สะสม <b style="color:#c2410c">฿${fmt(bq * C.incentivePerDish)}</b></div>`;
+            🏪 สาขานี้สะสม <b style="color:#c2410c">${fmt(bo.qty)}</b> จาน · incentive สะสม <b style="color:#c2410c">฿${fmt(bo.incQty * C.incentivePerDish)}</b></div>`;
         }
         return `<div class="dash2-card dash3-card dash3-promo-campaign" style="padding:14px 16px;margin:12px 0 16px;border:1px solid #fdba74">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
@@ -14862,7 +14873,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             }) : [];
           // Aggregate promo (เชียร์ขาย) + breakdown per item
           // Defense-in-depth: server กรองแล้ว + client กรองอีกรอบ + _ddView filter
-          const promoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };
+          const promoAgg = { count: 0, qty: 0, incQty: 0, amt: 0, byItem: {} };
           // Layer 1: queryCodes จาก dropdown
           const _qcSet = Array.isArray(queryCodes) ? new Set(queryCodes.map(String)) : null;
           // Layer 2: _ddView drill state (zone / branch) — สำหรับกรณีที่ dropdown ไม่ sync
@@ -14879,7 +14890,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               if (_qcSet && !_qcSet.has(bc)) return;
               if (_viewSet && !_viewSet.has(bc)) return;
               promoAgg.count += 1;
-              promoAgg.qty  += parseInt(pr2.total_qty) || 0;
+              const _pq = parseInt(pr2.total_qty) || 0;
+              promoAgg.qty  += _pq;
+              if (String(pr2.submit_date) >= PROMO_CAMPAIGN.incentiveStartDate) promoAgg.incQty += _pq; // incentive ≥ 10 ก.ค.
               promoAgg.amt  += parseFloat(pr2.total_amount) || 0;
               // per-item breakdown
               const items = (typeof pr2.items === "string") ? JSON.parse(pr2.items) : (pr2.items || []);
