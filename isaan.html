@@ -627,9 +627,10 @@ function renderTable(ag){
     <th onclick="sortBy('m1')">${MENUS[0].ico} สเต๊ก</th>
     <th onclick="sortBy('m2')">${MENUS[1].ico} ข้าวยำ</th>
     <th onclick="sortBy('m3')">${MENUS[2].ico} น้ำตก</th>
-    <th onclick="sortBy('total')">รวม ▾</th>
+    <th onclick="sortBy('total')">รวมทั้งหมด<br><span style="font-size:10px;color:#7c8894;font-weight:500">ตั้งแต่ 6 ก.ค.</span> ▾</th>
     <th onclick="sortBy('total')">% แชร์</th>
-    <th onclick="sortBy('inc')">อินเซนทีฟ</th>
+    <th onclick="sortBy('incQty')">ได้ incentive<br><span style="font-size:10px;color:#7c8894;font-weight:500">จาน · ตั้งแต่ 10 ก.ค.</span></th>
+    <th onclick="sortBy('inc')">อินเซนทีฟ<br><span style="font-size:10px;color:#7c8894;font-weight:500">฿ · ตั้งแต่ 10 ก.ค.</span></th>
     <th onclick="sortBy('last')">อัปเดตล่าสุด</th>
   </tr></thead>`;
   const body=rows.map(r=>{
@@ -639,13 +640,14 @@ function renderTable(ag){
       <td>${fmt(r.m1)}</td><td>${fmt(r.m2)}</td><td>${fmt(r.m3)}</td>
       <td class="big">${fmt(r.total)}</td>
       <td class="muted">${share.toFixed(1)}%</td>
+      <td>${fmt(r.incQty||0)}</td>
       <td>฿${fmt(r.inc)}</td>
       <td class="muted">${relTime(r.last)}${r.lastBy?'<br><span style="font-size:11px;color:#c7d0da">'+r.lastBy+'</span>':''}</td>
     </tr>`;
   }).join("");
   const foot=`<tfoot><tr>
     <td>รวมทั้งหมด</td><td>${fmt(g.m1)}</td><td>${fmt(g.m2)}</td><td>${fmt(g.m3)}</td>
-    <td>${fmt(g.total)}</td><td>100%</td><td>฿${fmt(g.inc)}</td><td></td>
+    <td>${fmt(g.total)}</td><td>100%</td><td>${fmt(g.incQty)}</td><td>฿${fmt(g.inc)}</td><td></td>
   </tr></tfoot>`;
   $("#mgrTable").innerHTML=head+"<tbody>"+body+"</tbody>"+foot;
 }
@@ -693,10 +695,10 @@ function todayFromDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).pad
 
 function exportCSV(){
   const ag=aggregate(salesCache);
-  let csv="รหัสสาขา,สาขา,"+MENUS.map(m=>m.name).join(",")+",รวม,อินเซนทีฟ(บาท),อัปเดตล่าสุด\n";
+  let csv="รหัสสาขา,สาขา,"+MENUS.map(m=>m.name).join(",")+",รวมทั้งหมด(6ก.ค.),ได้incentive จาน(10ก.ค.),อินเซนทีฟ บาท(10ก.ค.),อัปเดตล่าสุด\n";
   CONFIG.branches.forEach(b=>{ const r=ag.byBranch[b.code];
-    csv+=[b.code,'"'+b.name+'"',r.m1,r.m2,r.m3,r.total,r.inc,r.last?new Date(r.last).toLocaleString("th-TH"):""].join(",")+"\n"; });
-  const g=ag.grand; csv+=["","รวมทั้งหมด",g.m1,g.m2,g.m3,g.total,g.inc,""].join(",")+"\n";
+    csv+=[b.code,'"'+b.name+'"',r.m1,r.m2,r.m3,r.total,r.incQty,r.inc,r.last?new Date(r.last).toLocaleString("th-TH"):""].join(",")+"\n"; });
+  const g=ag.grand; csv+=["","รวมทั้งหมด",g.m1,g.m2,g.m3,g.total,g.incQty,g.inc,""].join(",")+"\n";
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="isaan_sales_"+todayStr()+".csv"; a.click();
