@@ -591,14 +591,15 @@ function renderMgrData(){
   const pacePct=tot?elapsed/tot*100:0;
   const onPace=pct>=pacePct;
   const salesCombined=`
-    <div class="kpi" style="grid-column:span 2;display:flex;align-items:stretch;gap:10px">
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
+    <div class="kpi" style="grid-column:span 2;display:flex;align-items:stretch;gap:0">
+      <div style="flex:1;min-width:0;padding-right:12px">
         <div class="k">ยอดขายสะสม <small style="font-size:10px">(ตั้งแต่ 6 ก.ค.)</small></div>
         <div class="v">${fmt(g.total)} <small>จาน</small></div>
       </div>
-      <div style="flex:1.15;min-width:0;padding:8px 12px;background:linear-gradient(135deg,#2a1606,#1a1206);border:1px solid #5a4018;border-radius:12px;display:flex;flex-direction:column;justify-content:center">
-        <div class="k" style="color:var(--brand2)">⭐ ยอดขายรวม <small style="font-size:10px">(ตั้งแต่ 10 ก.ค.)</small></div>
-        <div class="v" style="color:var(--brand2);font-size:27px">${fmt(g.incQty)} <small style="color:var(--brand2);opacity:.85">จาน</small></div>
+      <div style="width:1px;background:var(--line);flex-shrink:0"></div>
+      <div style="flex:1;min-width:0;padding-left:12px">
+        <div class="k">ยอดขายรวม <small style="font-size:10px">(ตั้งแต่ 10 ก.ค.)</small></div>
+        <div class="v">${fmt(g.incQty)} <small>จาน</small></div>
       </div>
     </div>`;
   $("#mgrKpis").innerHTML=`
