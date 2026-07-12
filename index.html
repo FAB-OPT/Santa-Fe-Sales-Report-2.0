@@ -13677,10 +13677,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const cumInc = bAgg.incQty * C.incentivePerDish;      // incentive สะสม (≥ 10 ก.ค.)
         const P = _promoPeriodInfo();
         const tiles = [
-          { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: P.sub || "&nbsp;",                                        hero: true },
-          { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pIncQty) + " จาน",  hero: true },
-          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "6 ก.ค. – วันนี้",                                        hero: false },
-          { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(bAgg.incQty) + " จาน", hero: false }
+          { lbl: "ขาย" + P.name,          val: fmt(pQty) + " จาน",  sub: (P.sub ? P.sub + " · " : "") + "ได้ incentive " + fmt(pIncQty) + " จาน", hero: true },
+          { lbl: "Incentive " + P.name,   val: "฿" + fmt(pInc),     sub: "฿" + C.incentivePerDish + " × " + fmt(pIncQty) + " จาน · ตั้งแต่ 10 ก.ค.",  hero: true },
+          { lbl: "สะสมทั้งโปร",           val: fmt(cumQty) + " จาน", sub: "6 ก.ค. – วันนี้ · ได้ incentive " + fmt(bAgg.incQty) + " จาน",           hero: false },
+          { lbl: "Incentive สะสม",        val: "฿" + fmt(cumInc),   sub: "฿" + C.incentivePerDish + " × " + fmt(bAgg.incQty) + " จาน · ตั้งแต่ 10 ก.ค.", hero: false }
         ];
         const tilesHtml = tiles.map(t => `
           <div style="flex:1 1 130px;min-width:120px;padding:10px 12px;background:${t.hero ? '#fff7ed' : '#f8fafc'};border:1px solid ${t.hero ? '#fdba74' : '#e2e8f0'};border-radius:10px">
