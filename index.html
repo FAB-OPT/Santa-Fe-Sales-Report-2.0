@@ -13669,12 +13669,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const C = PROMO_CAMPAIGN;
         const bcode = (_ddView && _ddView.branch) || (typeof S !== "undefined" && S && S.branch) || "";
         const bname = (typeof S !== "undefined" && S && S.branch) || bcode || "สาขา";
-        const bAgg  = _promoCampaign.byBranch[String(bcode)] || { qty: 0, incQty: 0 };
         const pQty     = (_currentPromoAgg && _currentPromoAgg.qty)    || 0;   // ตามแท็บ + สาขา (ทุกวันในช่วง)
         const pIncQty  = (_currentPromoAgg && _currentPromoAgg.incQty) || 0;   // ตามแท็บ + สาขา (เฉพาะ ≥ 10 ก.ค.)
         const pInc     = pIncQty * C.incentivePerDish;
-        const cumQty = bAgg.qty;                              // สะสมทั้งโปร (≥ 6 ก.ค.)
-        const cumInc = bAgg.incQty * C.incentivePerDish;      // incentive สะสม (≥ 10 ก.ค.)
         const P = _promoPeriodInfo();
         // เล่าเป็นเรื่อง: ขาย[ช่วง] → ในนั้นได้ incentive กี่จาน (≥10 ก.ค.) → เป็นเงิน
         const tiles = [
@@ -13689,16 +13686,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <div style="font-size:10.5px;color:#94a3b8">${t.sub}</div>
           </div>`).join("");
         // สรุปทั้งโปร (ตั้งแต่ 6 ก.ค.) 1 บรรทัด
-        const cumLine = `<div style="margin-top:10px;padding:8px 12px;background:#fffbeb;border:1px dashed #fbbf24;border-radius:10px;font-size:12.5px;color:#92400e">
-          📊 รวมทั้งโปร (ตั้งแต่ 6 ก.ค.): ขาย <b style="color:#c2410c">${fmt(cumQty)}</b> จาน · ได้ incentive <b style="color:#c2410c">฿${fmt(cumInc)}</b> (${fmt(bAgg.incQty)} จาน · ตั้งแต่ 10 ก.ค.)
-        </div>`;
         return `<div class="dash2-card dash3-card dash3-promo-campaign" style="padding:14px 16px;margin:12px 0 16px;border:1px solid #fdba74">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
             <h3 style="font-size:14.5px;margin:0;color:#9a3412">🎯 โปรอีสาน ซีรีย์ — ${escHtml(String(bname))}</h3>
             <span style="margin-left:auto;font-size:11.5px;color:#94a3b8">incentive ฿${C.incentivePerDish}/จาน · ตั้งแต่ 10 ก.ค.</span>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">${tilesHtml}</div>
-          ${cumLine}
         </div>`;
       }
 
