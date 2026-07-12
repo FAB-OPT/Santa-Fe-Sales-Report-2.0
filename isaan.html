@@ -607,7 +607,10 @@ function renderMgrData(){
     ${salesCombined}
     ${kpi("คงเหลือถึงเป้า",fmt(rem)+' <small>จาน</small>')}
     ${kpi("ต้องขาย/วัน",fmt(reqDay)+' <small>จาน</small>')}
-    ${kpi("อินเซนทีฟสะสม (ตั้งแต่ 10 ก.ค.)",'฿'+fmt(g.inc),'hl')}
+    <div class="kpi hl">
+      <div class="k" style="white-space:nowrap">อินเซนทีฟสะสม <small style="font-size:9.5px">(ตั้งแต่ 10 ก.ค.)</small></div>
+      <div class="v">${'฿'+fmt(g.inc)}</div>
+    </div>
   `;
   $("#progBar").style.width=Math.min(100,pct)+"%";
   $("#progCap").innerHTML=`ขายแล้ว <b>${fmt(g.total)}</b> จาน · ควรถึง <b>${fmt(CONFIG.target*pacePct/100)}</b> จานตามกำหนดเวลา (${pacePct.toFixed(0)}% ของช่วงเวลา) → <span class="pill ${onPace?'g':'r'}">${onPace?'ตามเป้า/เกินเป้า':'ต่ำกว่าเป้า '+ (pacePct-pct).toFixed(1)+'%'}</span>`;
