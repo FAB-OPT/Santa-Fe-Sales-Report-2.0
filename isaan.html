@@ -592,11 +592,11 @@ function renderMgrData(){
   const onPace=pct>=pacePct;
   $("#mgrKpis").innerHTML=`
     ${kpi("วันเหลือ",dl+' <small>/ '+tot+' วัน</small>')}
-    ${kpi("ยอดขายรวม",fmt(g.total)+' <small>จาน</small>')}
+    ${kpi("ยอดขายสะสม (จาก 6 ก.ค.)",fmt(g.total)+' <small>จาน</small>')}
+    ${kpi("ยอดขายรวม (จาก 10 ก.ค.)",fmt(g.incQty)+' <small>จาน</small>')}
     ${kpi("คงเหลือถึงเป้า",fmt(rem)+' <small>จาน</small>')}
-    ${kpi("% ของเป้า",pct.toFixed(1)+'<small>%</small>',onPace?'':'')}
     ${kpi("ต้องขาย/วัน",fmt(reqDay)+' <small>จาน</small>')}
-    ${kpi("อินเซนทีฟสะสม",'฿'+fmt(g.inc),'hl')}
+    ${kpi("อินเซนทีฟสะสม (จาก 10 ก.ค.)",'฿'+fmt(g.inc),'hl')}
   `;
   $("#progBar").style.width=Math.min(100,pct)+"%";
   $("#progCap").innerHTML=`ขายแล้ว <b>${fmt(g.total)}</b> จาน · ควรถึง <b>${fmt(CONFIG.target*pacePct/100)}</b> จานตามกำหนดเวลา (${pacePct.toFixed(0)}% ของช่วงเวลา) → <span class="pill ${onPace?'g':'r'}">${onPace?'ตามเป้า/เกินเป้า':'ต่ำกว่าเป้า '+ (pacePct-pct).toFixed(1)+'%'}</span>`;

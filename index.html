@@ -13731,11 +13731,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                   ? `<span style="${badgeStyle}background:#dcfce7;color:#166534">🟢 ทันเป้า</span>`
                   : `<span style="${badgeStyle}background:#fef3c7;color:#92400e">🟠 ต่ำกว่าเป้า</span>`));
         const mini = [
-          { lbl: "ยอดสะสม",       val: fmt(sold) + " จาน",       sub: (goalPct * 100).toFixed(1) + "% ของเป้า" },
+          { lbl: "ยอดขายสะสม",     val: fmt(sold) + " จาน",       sub: "ตั้งแต่ 6 ก.ค. · " + (goalPct * 100).toFixed(1) + "% ของเป้า" },
+          { lbl: "ยอดขายรวม",      val: fmt(incQty) + " จาน",     sub: "ตั้งแต่ 10 ก.ค. (ได้ incentive)" },
           { lbl: "เหลืออีก",       val: fmt(remaining) + " จาน",  sub: "จากเป้า " + fmt(C.goal) },
           { lbl: "เหลือเวลา",      val: fmt(daysLeft) + " วัน",   sub: "ถึง 30 ก.ย. 2026" },
           { lbl: "ต้องขาย/วัน",    val: fmt(reqPerDay) + " จาน",  sub: daysLeft > 0 ? "เพื่อให้ทันเป้า" : "—" },
-          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(incQty) + " จาน (ตั้งแต่ 10 ก.ค.)" }
+          { lbl: "Incentive สะสม", val: "฿" + fmt(incentive),     sub: "฿" + C.incentivePerDish + " × " + fmt(incQty) + " จาน (10 ก.ค.)" }
         ];
         const miniHtml = mini.map(m => `
           <div style="flex:1 1 110px;min-width:100px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
