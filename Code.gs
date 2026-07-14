@@ -390,3 +390,78 @@ function rowToObj(r, rowNum) {
     last_edited:      String(r[24] || "")
   };
 }
+
+// ════════════════════════════════════════════════════════════
+//  SYNC: Supabase plan_sale → แท็บ Plan (Google Sheet)
+//  ดึง plan จาก Supabase มา merge เข้าแท็บ Plan ที่ dashboard อ่าน (getPlan)
+//  รันจากเมนู "🔄 Santa Fe → Sync Plan จาก Supabase" หรือกด Run ในตัว editor
+// ════════════════════════════════════════════════════════════
+var SUPABASE_URL = "https://zroqklbobvixyohfaimc.supabase.co";
+var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb3FrbGJvYnZpeHlvaGZhaW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTUzNjMsImV4cCI6MjA5NDIzMTM2M30.BSwbqeQ1jsyvATpOkJ-wV04TGZacagaNpj6S4fPC-J4";
+
+function syncPlanFromSupabase() {
+  // 1) ดึง plan_sale ทั้งหมดจาก Supabase (แบ่งหน้า 1000 แถว/รอบ)
+  var all = [], from = 0, size = 1000;
+  while (true) {
+    var res = UrlFetchApp.fetch(
+      SUPABASE_URL + "/rest/v1/plan_sale?select=branch_code,plan_date,plan_amount,updated_at&order=branch_code.asc,plan_date.asc",
+      { method: "get",
+        headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY,
+                   "Range-Unit": "items", "Range": from + "-" + (from + size - 1) },
+        muteHttpExceptions: true });
+    if (res.getResponseCode() >= 300) {
+      throw new Error("Supabase " + res.getResponseCode() + ": " + res.getContentText().slice(0, 200));
+    }
+    var batch = JSON.parse(res.getContentText() || "[]");
+    all = all.concat(batch);
+    if (batch.length < size) break;
+    from += size;
+  }
+
+  // 2) อ่านแท็บ Plan เดิม → index ตาม "code|date" (กันลบข้อมูลที่ไม่มีใน Supabase)
+  var sheet = getPlanSheet();
+  var data  = sheet.getDataRange().getValues();
+  var byKey = {};
+  for (var i = 1; i < data.length; i++) {
+    var code = String(data[i][0]).replace(/^'/, "");
+    var date = toDateStr(data[i][1]);
+    if (code) byKey[code + "|" + date] = i;
+  }
+
+  // 3) merge: มีอยู่แล้ว → ทับ plan/updated · ยังไม่มี → เพิ่มแถวใหม่
+  var added = 0, updated = 0, now = new Date().toISOString();
+  all.forEach(function (r) {
+    var code = String(r.branch_code);
+    var date = String(r.plan_date);
+    var amt  = Number(r.plan_amount) || 0;
+    var key  = code + "|" + date;
+    if (byKey[key] !== undefined) {
+      var row = data[byKey[key]];
+      row[2] = amt;
+      row[4] = r.updated_at || now;
+      updated++;
+    } else {
+      data.push(["'" + code, date, amt, "supabase-sync", r.updated_at || now]);
+      byKey[key] = data.length - 1;
+      added++;
+    }
+  });
+
+  // 4) เขียนกลับทั้งหมด (บังคับ 5 คอลัมน์ตาม PLAN_HDR)
+  var out = data.map(function (row) { return [row[0], row[1], row[2], row[3], row[4]]; });
+  sheet.clearContents();
+  sheet.getRange(1, 1, out.length, 5).setValues(out);
+
+  var msg = "Sync Plan สำเร็จ · +" + added + " ใหม่ · " + updated + " อัปเดต · รวม " + (out.length - 1) + " แถว";
+  try { SpreadsheetApp.getActive().toast(msg, "✅ Plan", 8); } catch (e) {}
+  Logger.log(msg);
+  return { ok: true, added: added, updated: updated, total: out.length - 1 };
+}
+
+// เมนูในชีท (กดรัน sync ได้ง่าย)
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("🔄 Santa Fe")
+    .addItem("Sync Plan จาก Supabase", "syncPlanFromSupabase")
+    .addToUi();
+}
