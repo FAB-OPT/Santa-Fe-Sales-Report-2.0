@@ -8419,6 +8419,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (s.crossBrand && (s.role === 'admin' || s.role === 'coo')) return true;
         return false;
       }
+      // BRANCH_DM_MAP เก็บชื่อเป็น "5035 เซ็นทรัลพัทยา บีช" (มีรหัสนำหน้า) แต่ตาราง branches
+      // เก็บสะอาด "เซ็นทรัลพัทยา บีช" → ตัดรหัสนำหน้าออกก่อนใช้เป็น S.branch เสมอ
+      // กัน sales_data.branch_name เพี้ยนตามทาง login (auto-login vs login ปกติ)
+      function _cleanBranchName(n) { return String(n || "").replace(/^\d+\s+/, ""); }
+
       // map Hub session → Santa Fe internal S object
       function _stateFromFabSession(s) {
         if (!s) return null;
@@ -8447,7 +8452,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const bname = s.branchName || s.name || '';
           const info  = (typeof BRANCH_DM_MAP !== 'undefined') ? BRANCH_DM_MAP[bcode] : null;
           const dm    = (info && info.dm) || (s.bzm || '');
-          return { code: bcode, branch: bname || (info ? info.branch : ''), dm: dm, role: 'branch' };
+          return { code: bcode, branch: _cleanBranchName(bname || (info ? info.branch : '')), dm: dm, role: 'branch' };
         }
         return null;
       }
@@ -8542,7 +8547,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const su = SPECIAL_USERS[code];
           if (su) { S = _stateFromSpecialUser(code, su); enterApp(); return true; }
           const info = BRANCH_DM_MAP[code];
-          if (info) { S = { code: code, branch: info.branch, dm: info.dm, role: "branch" }; enterApp(); return true; }
+          if (info) { S = { code: code, branch: _cleanBranchName(info.branch), dm: info.dm, role: "branch" }; enterApp(); return true; }
         } catch (e) {}
         return false;
       }
@@ -8672,7 +8677,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         if (u.role === "branch" || u.role === "franchise") {
           const bc = u.branch_code || u.code;
-          return { code: bc, branch: u.branch_name || u.name || "", dm: u.dm || "", role: "branch" };
+          return { code: bc, branch: _cleanBranchName(u.branch_name || u.name || ""), dm: u.dm || "", role: "branch" };
         }
         return null;
       }
@@ -8934,10 +8939,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         const info = BRANCH_DM_MAP[code];
         if (!info) { _clearLoginOtp(); showAlert('❌', 'รหัสไม่ถูกต้อง', 'ไม่พบรหัสสาขา ' + code); return; }
-        S = { code: code, branch: info.branch, dm: info.dm, role: "branch" };
+        const _bn = _cleanBranchName(info.branch);
+        S = { code: code, branch: _bn, dm: info.dm, role: "branch" };
         localStorage.setItem(LS_CODE, code);
-        _logLoginEventDeduped({ code: code, role: "branch", branch_code: code, branch_name: info.branch, dm: info.dm });
-        showAlert('👋', 'ยินดีต้อนรับ!', `${code} ${info.branch}`, enterApp);
+        _logLoginEventDeduped({ code: code, role: "branch", branch_code: code, branch_name: _bn, dm: info.dm });
+        showAlert('👋', 'ยินดีต้อนรับ!', `${code} ${_bn}`, enterApp);
       }
 
       // กลับเมนูหลัก Hub โดย "ไม่" logout (session ค้างไว้ → กลับมาไม่ต้อง login ใหม่)
