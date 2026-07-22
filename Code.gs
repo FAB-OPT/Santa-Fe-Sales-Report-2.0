@@ -458,10 +458,50 @@ function syncPlanFromSupabase() {
   return { ok: true, added: added, updated: updated, total: out.length - 1 };
 }
 
-// เมนูในชีท (กดรัน sync ได้ง่าย)
+// ── Auto-sync: ตั้ง trigger ให้ syncPlanFromSupabase รันเองทุกชั่วโมง ──
+// กดครั้งเดียว แล้วมันจะ sync ให้ตลอดโดยไม่ต้องกดอีก
+function createPlanSyncTrigger() {
+  removePlanSyncTrigger();  // ลบของเดิมก่อน กันซ้อนกัน
+  ScriptApp.newTrigger("syncPlanFromSupabase").timeBased().everyHours(1).create();
+  var msg = "เปิด auto-sync แล้ว · ระบบจะดึง Plan จาก Supabase ให้เองทุก 1 ชั่วโมง";
+  try { SpreadsheetApp.getUi().alert("✅ เปิด Auto-sync", msg, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
+  return msg;
+}
+
+function removePlanSyncTrigger() {
+  var n = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "syncPlanFromSupabase") { ScriptApp.deleteTrigger(t); n++; }
+  });
+  return n;
+}
+
+function stopPlanSyncTrigger() {
+  var n = removePlanSyncTrigger();
+  try { SpreadsheetApp.getUi().alert("⏹ ปิด Auto-sync", "ยกเลิก auto-sync แล้ว (" + n + " รายการ)", SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
+  return n;
+}
+
+// เช็คว่าตอนนี้ auto-sync เปิดอยู่ไหม
+function checkPlanSyncStatus() {
+  var on = ScriptApp.getProjectTriggers().filter(function (t) {
+    return t.getHandlerFunction() === "syncPlanFromSupabase";
+  }).length;
+  var msg = on > 0
+    ? "🟢 Auto-sync เปิดอยู่ — ดึง Plan จาก Supabase ทุก 1 ชั่วโมง"
+    : "🔴 Auto-sync ปิดอยู่ — กด \"เปิด Auto-sync\" เพื่อให้ลิงค์ตลอด";
+  try { SpreadsheetApp.getUi().alert("สถานะ Auto-sync", msg, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
+  return msg;
+}
+
+// เมนูในชีท (กดรัน sync / เปิด-ปิด auto-sync ได้ง่าย)
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("🔄 Santa Fe")
-    .addItem("Sync Plan จาก Supabase", "syncPlanFromSupabase")
+    .addItem("Sync Plan เดี๋ยวนี้ (ครั้งเดียว)", "syncPlanFromSupabase")
+    .addSeparator()
+    .addItem("🟢 เปิด Auto-sync (ทุก 1 ชม.)", "createPlanSyncTrigger")
+    .addItem("🔴 ปิด Auto-sync", "stopPlanSyncTrigger")
+    .addItem("ℹ️ เช็คสถานะ Auto-sync", "checkPlanSyncStatus")
     .addToUi();
 }
