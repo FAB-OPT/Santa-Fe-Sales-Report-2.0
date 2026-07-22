@@ -621,11 +621,11 @@ function _colLetter(n) {
 function setupTriggers() {
   ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger("syncSales").timeBased().everyMinutes(30).create();
-  ScriptApp.newTrigger("syncFast").timeBased().everyMinutes(5).create();
+  ScriptApp.newTrigger("syncFast").timeBased().everyMinutes(30).create();   // Plan + Manpower
   ScriptApp.newTrigger("syncSlow").timeBased().everyMinutes(15).create();
   ScriptApp.newTrigger("syncPromoHourly").timeBased().everyHours(1).create();
   ScriptApp.newTrigger("nightlyFullSync").timeBased().atHour(2).everyDays(1).create();
-  Logger.log("✅ Sales 30 min · Fast 5 min · Slow 15 min · Promo 1 hr · Nightly 2 AM");
+  Logger.log("✅ Sales 30 min · Fast 30 min · Slow 15 min · Promo 1 hr · Nightly 2 AM");
 }
 
 function stopTriggers() {
@@ -648,7 +648,7 @@ function onOpen() {
     .addSeparator()
     .addItem("🌙 Full sync (reset delta)", "nightlyFullSync")
     .addSeparator()
-    .addItem("Setup auto (Sales 30m / Fast 5m / Slow 15m)", "setupTriggers")
+    .addItem("Setup auto (Sales 30m / Fast 30m / Slow 15m)", "setupTriggers")
     .addItem("Stop auto-sync", "stopTriggers")
     .addToUi();
 }
