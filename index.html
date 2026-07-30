@@ -8472,6 +8472,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       let _pendingPayload = null;
       let _editRow = null;
       let _currentPlan   = 0;  // Plan Sale ที่ดึงจาก DB สำหรับวันที่ที่เลือก
+      const MAX_BRANCH_EDITS = 3;  // สาขาแก้ไขได้ไม่เกินกี่ครั้ง (admin ไม่จำกัด) — ปรับที่นี่ที่เดียว
       let _planCache     = {}; // cache: "branch|date" → plan_sale
       let _planFetchCbs  = {}; // callback queue: "branch|date" → [fn,...] (ป้องกัน fetch ซ้ำ)
 
@@ -17010,8 +17011,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const isEod = r.submit_time_slot === "สิ้นวัน";
           const editCnt = parseInt(r.edit_count) || 0;
           const isAdmin = (S.role === "admin" || S.code === "ADMIN");
-          // branch (และ role อื่นที่ไม่ใช่ admin) แก้ได้ครั้งเดียว — admin แก้ได้ไม่จำกัด
-          const canEdit = isAdmin || editCnt < 1;
+          // branch (และ role อื่นที่ไม่ใช่ admin) แก้ได้ไม่เกิน MAX_BRANCH_EDITS ครั้ง — admin ไม่จำกัด
+          const canEdit = isAdmin || editCnt < MAX_BRANCH_EDITS;
 
           const slotBadge = isEod
             ? '<span class="badge badge-green slot-badge slot-eod">สิ้นวัน</span>'
@@ -17021,12 +17022,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const editInfo = editCnt > 0
             ? `<div class="hist-edit-info">✏️ แก้ไข ${editCnt} ครั้ง · ล่าสุด ${fmtThaiDateTime(r.last_edited_at)}</div>`
             : "";
-          const editLabel = editCnt > 0 ? `✏️ แก้ไขรอบที่ ${editCnt}` : `✏️ แก้ไข`;
+          const _editsLeft = MAX_BRANCH_EDITS - editCnt;
+          const editLabel = editCnt > 0 ? `✏️ แก้ไข (เหลือ ${_editsLeft} ครั้ง)` : `✏️ แก้ไข`;
           const editBtn = canEdit
             ? `<button class="btn-edit-row btn btn-sm"
       style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa"
       onclick="openEdit(${JSON.stringify(r).replace(/"/g, "&quot;")})">${editLabel}</button>`
-            : `<span class="hist-lock-badge" title="แก้ไขได้ครั้งเดียว — ติดต่อแอดมินหากต้องแก้เพิ่ม">🔒 แก้ไขแล้ว</span>`;
+            : `<span class="hist-lock-badge" title="แก้ไขได้ไม่เกิน ${MAX_BRANCH_EDITS} ครั้ง — ติดต่อแอดมินหากต้องแก้เพิ่ม">🔒 แก้ครบ ${MAX_BRANCH_EDITS} ครั้งแล้ว</span>`;
           // Admin เท่านั้น — ปุ่มลบ
           const delBtn = (S.code === "ADMIN") ? `<button class="btn btn-sm"
       style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px"
@@ -17120,9 +17122,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function openEdit(row) {
         const editCnt = parseInt(row.edit_count) || 0;
         const isAdmin = (S.role === "admin" || S.code === "ADMIN");
-        if (!isAdmin && editCnt >= 1) {
-          showAlert("🔒", "แก้ไขได้ครั้งเดียว",
-            "รายการนี้ถูกแก้ไขไปแล้ว ไม่สามารถแก้ซ้ำได้\nหากจำเป็นต้องแก้ไขเพิ่ม กรุณาติดต่อแอดมิน");
+        if (!isAdmin && editCnt >= MAX_BRANCH_EDITS) {
+          showAlert("🔒", `แก้ไขได้ไม่เกิน ${MAX_BRANCH_EDITS} ครั้ง`,
+            `รายการนี้ถูกแก้ไขครบ ${MAX_BRANCH_EDITS} ครั้งแล้ว ไม่สามารถแก้ซ้ำได้\nหากจำเป็นต้องแก้ไขเพิ่ม กรุณาติดต่อแอดมิน`);
           return;
         }
         _editRow = row;
@@ -17531,14 +17533,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (mode === "edit") {
             const id = parseInt(params._row);
             if (!id) { cb({ ok: false, error: "missing row id" }); return; }
-            // ── ล็อกการแก้ไข: branch (ไม่ใช่ admin) แก้ได้ครั้งเดียว ──
+            // ── ล็อกการแก้ไข: branch (ไม่ใช่ admin) แก้ได้ไม่เกิน MAX_BRANCH_EDITS ครั้ง ──
             const isAdmin = (S.role === "admin" || S.code === "ADMIN");
             if (!isAdmin) {
               const { data: cur, error: curErr } = await sb
                 .from("sales_data").select("edit_count").eq("id", id).single();
-              if (!curErr && cur && (parseInt(cur.edit_count) || 0) >= 1) {
+              if (!curErr && cur && (parseInt(cur.edit_count) || 0) >= MAX_BRANCH_EDITS) {
                 cb({ ok: false, locked: true,
-                     userMessage: "รายการนี้ถูกแก้ไขไปแล้ว 1 ครั้ง ไม่สามารถแก้ซ้ำได้ — กรุณาติดต่อแอดมิน" });
+                     userMessage: `รายการนี้ถูกแก้ไขครบ ${MAX_BRANCH_EDITS} ครั้งแล้ว ไม่สามารถแก้ซ้ำได้ — กรุณาติดต่อแอดมิน` });
                 return;
               }
             }
