@@ -289,14 +289,27 @@ function syncPromo() {
   // True mirror mode: ดึงจาก Supabase ทั้งหมด แล้ว rewrite sheet ทุกครั้ง
   // → รับประกันว่า sheet = Supabase เป๊ะๆ (รวม delete)
   try {
-    const allUrl = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*&order=created_at.asc&limit=50000`;
-    const allResp = UrlFetchApp.fetch(allUrl, {
-      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-      muteHttpExceptions: true
-    });
-    const code = allResp.getResponseCode();
-    if (code !== 200 && code !== 206) throw new Error(`[Promo] HTTP ${code}`);
-    const allSubs = JSON.parse(allResp.getContentText());
+    // PostgREST จำกัด db-max-rows = 1000 แถว/คำขอ — &limit=50000 ไม่มีผล
+    // ต้องวนดึงด้วย Range header จนครบ ไม่งั้นชีทจะค้างอยู่ที่ 1000 รายการแรกตลอดไป
+    const PAGE = 1000;
+    const allSubs = [];
+    for (let from = 0; from < 100000; from += PAGE) {
+      const allUrl = `${SUPABASE_URL}/rest/v1/promo_submissions?select=*&order=id.asc`;
+      const allResp = UrlFetchApp.fetch(allUrl, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY,
+          Range: `${from}-${from + PAGE - 1}`
+        },
+        muteHttpExceptions: true
+      });
+      const code = allResp.getResponseCode();
+      if (code === 416) break;   // จำนวนแถวหารด้วย PAGE ลงตัว → เพจถัดไปว่าง = หมดแล้ว
+      if (code !== 200 && code !== 206) throw new Error(`[Promo] HTTP ${code}`);
+      const page = JSON.parse(allResp.getContentText()) || [];
+      Array.prototype.push.apply(allSubs, page);
+      if (page.length < PAGE) break;   // ได้ไม่ครบเพจ = หมดแล้ว
+    }
 
     // Expand: 1 submission → หลายแถว (1 แถวต่อ item)
     const rows = [];
@@ -323,6 +336,7 @@ function syncPromo() {
 
     // เขียน sheet แยก (full replace — clear ก่อน + write header + rows)
     _promoReplace(rows);
+    try { _promoWriteSummary(_promoBuildSummary(allSubs)); } catch (e) { Logger.log(`[Promo] summary FAILED: ${e.message}`); }
 
     // update lastSync = latest updated_at ล่าสุด (สำหรับ log/ตรวจสอบ)
     const latest = allSubs
@@ -338,6 +352,92 @@ function syncPromo() {
     Logger.log(`[Promo] FAILED: ${err.message}`);
   }
 }
+
+// ── สรุปรายสาขา (สร้างจากข้อมูลจริงทั้งหมด — ไม่มีลิสต์สาขาฮาร์ดโค้ด) ──
+// เขียนลงแท็บ "PromoSummary" (แท็บใหม่ ไม่ทับสูตร/แท็บสรุปเดิมของผู้ใช้)
+// กติกาเดียวกับแดชบอร์ด: ยอดรวมนับตั้งแต่ PROMO_START · incentive นับตั้งแต่ PROMO_INC_START
+const PROMO_SUMMARY_SHEET = "PromoSummary";
+const PROMO_START     = "2026-07-06";
+const PROMO_INC_START = "2026-07-10";
+const PROMO_INC_BAHT  = 5;
+const PROMO_MENUS = [
+  { id: "P3", name: "สเต๊กสันคอหมูย่างแจ่วข้าวคั่ว" },
+  { id: "P2", name: "ข้าวยำสันคอหมูย่าง" },
+  { id: "P1", name: "ข้าวน้ำตกสันคอหมูย่าง" }
+];
+
+function _promoBuildSummary(allSubs) {
+  const byBranch = {};   // code -> { name, all:{P1,P2,P3}, inc:{P1,P2,P3}, allTotal, incTotal }
+  allSubs.forEach(s => {
+    const d = String(s.submit_date || "");
+    if (d < PROMO_START) return;
+    const code = String(s.branch_code || "").trim();
+    if (!code) return;
+    if (!byBranch[code]) {
+      byBranch[code] = { name: s.branch_name || "", all: {}, inc: {}, allTotal: 0, incTotal: 0 };
+    }
+    const b = byBranch[code];
+    if (!b.name && s.branch_name) b.name = s.branch_name;
+    const isInc = d >= PROMO_INC_START;
+    const items = (typeof s.items === "string") ? JSON.parse(s.items) : (s.items || []);
+    items.forEach(it => {
+      const key = it.id || it.name || "";
+      const q = parseInt(it.qty) || 0;
+      b.all[key] = (b.all[key] || 0) + q;
+      if (isInc) b.inc[key] = (b.inc[key] || 0) + q;
+    });
+    const tq = parseInt(s.total_qty) || 0;
+    b.allTotal += tq;
+    if (isInc) b.incTotal += tq;
+  });
+
+  const headers = ["รหัสสาขา", "สาขา"]
+    .concat(PROMO_MENUS.map(m => m.name + " (รวม)"))
+    .concat(["รวมทั้งหมด (" + PROMO_START + "+)"])
+    .concat(PROMO_MENUS.map(m => m.name + " (incentive)"))
+    .concat(["ได้ incentive จาน (" + PROMO_INC_START + "+)", "อินเซนทีฟ บาท"]);
+
+  const codes = Object.keys(byBranch).sort();
+  const rows = codes.map(code => {
+    const b = byBranch[code];
+    return [code, b.name]
+      .concat(PROMO_MENUS.map(m => (b.all[m.id] || 0) + (b.all[m.name] || 0)))
+      .concat([b.allTotal])
+      .concat(PROMO_MENUS.map(m => (b.inc[m.id] || 0) + (b.inc[m.name] || 0)))
+      .concat([b.incTotal, b.incTotal * PROMO_INC_BAHT]);
+  });
+
+  // แถวรวมท้ายตาราง
+  const grand = ["รวมทั้งหมด", codes.length + " สาขา"];
+  for (let c = 2; c < headers.length; c++) {
+    let sum = 0;
+    rows.forEach(r => { sum += (parseInt(r[c]) || 0); });
+    grand.push(sum);
+  }
+  return [headers].concat(rows).concat([grand]);
+}
+
+function _promoWriteSummary(values) {
+  const ss = SpreadsheetApp.openById(PROMO_SHEET_ID);
+  let sheet = ss.getSheetByName(PROMO_SUMMARY_SHEET);
+  if (!sheet) sheet = ss.insertSheet(PROMO_SUMMARY_SHEET);
+
+  const lastCol = _colLetter(values[0].length);
+  try {
+    Sheets.Spreadsheets.Values.clear({}, PROMO_SHEET_ID,
+      `${PROMO_SUMMARY_SHEET}!A1:${_colLetter(sheet.getMaxColumns())}${sheet.getMaxRows()}`);
+  } catch (e) {}
+  Sheets.Spreadsheets.Values.update(
+    { values: values }, PROMO_SHEET_ID,
+    `${PROMO_SUMMARY_SHEET}!A1:${lastCol}${values.length}`,
+    { valueInputOption: "RAW" }
+  );
+  try { sheet.setFrozenRows(1); sheet.setFrozenColumns(2); } catch (e) {}
+  Logger.log(`[Promo] summary written: ${values.length - 2} branches`);
+}
+
+// เรียกเดี่ยวๆ ได้จากเมนู (ดึงข้อมูลใหม่แล้วเขียนเฉพาะแท็บสรุป)
+function syncPromoSummary() { syncPromo(); }
 
 function _promoReplace(rows) {
   const ss = SpreadsheetApp.openById(PROMO_SHEET_ID);
@@ -645,6 +745,7 @@ function onOpen() {
     .addItem("Sync Slow (Users/Logs)", "syncSlow")
     .addSeparator()
     .addItem("🎯 Sync Promo (เชียร์ขาย)", "syncPromo")
+    .addItem("📊 Sync Promo Summary (สรุปรายสาขา)", "syncPromoSummary")
     .addSeparator()
     .addItem("🌙 Full sync (reset delta)", "nightlyFullSync")
     .addSeparator()

@@ -9291,6 +9291,35 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         endDate:   "2026-09-30",         // วันสิ้นสุดโปร (นับรวมวันนี้)
         incentivePerDish: 5              // incentive ฿ ต่อจาน
       };
+      // ── Supabase paginated fetch ────────────────────────────────────────
+      // PostgREST มีเพดาน db-max-rows = 1000 แถว/คำขอ (ใส่ &limit=50000 ก็ไม่ช่วย)
+      // → ต้องวนดึงด้วย Range header จนกว่าจะหมด ไม่งั้นยอดสะสมจะขาดแบบเงียบๆ
+      // ต้องมี order ที่ stable (id.asc) ไม่งั้นแต่ละเพจอาจได้แถวซ้ำ/ตกหล่น
+      const _SB_PAGE = 1000;
+      function _sbFetchAll(url, cb) {
+        const out = [];
+        const sep = url.indexOf("?") === -1 ? "?" : "&";
+        const pagedUrl = /[?&]order=/.test(url) ? url : url + sep + "order=id.asc";
+        (function page(from) {
+          fetch(pagedUrl, {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: "Bearer " + SUPABASE_KEY,
+              Range: from + "-" + (from + _SB_PAGE - 1)
+            }
+          })
+            .then(r => r.ok ? r.json() : [])
+            .then(rows => {
+              const n = (rows || []).length;
+              for (let i = 0; i < n; i++) out.push(rows[i]);
+              // ได้ครบเพจ → อาจยังมีต่อ · ได้ไม่ครบ → จบ
+              if (n === _SB_PAGE && from + _SB_PAGE < 100000) page(from + _SB_PAGE);
+              else cb(out);
+            })
+            .catch(() => cb(out));
+        })(0);
+      }
+
       // ยอดสะสม "ทั้งแคมเปญ" (ทุกสาขา · ไม่ขึ้นกับ date filter ของ dashboard)
       // totalQty = ยอดตั้งแต่ startDate (สำหรับเป้า) · incentiveQty = ยอดตั้งแต่ incentiveStartDate (สำหรับ ฿)
       // byBranch[code] = { qty, incQty }
@@ -9302,24 +9331,21 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const url = SUPABASE_URL + "/rest/v1/promo_submissions?select=branch_code,submit_date,total_qty"
           + "&submit_date=gte." + PROMO_CAMPAIGN.startDate
           + "&submit_date=lte." + endCap;
-        fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
-          .then(r => r.ok ? r.json() : [])
-          .then(rows => {
-            const byBranch = {}; let total = 0, incTotal = 0;
-            (rows || []).forEach(r => {
-              const q = parseInt(r.total_qty) || 0;
-              const bc = String(r.branch_code);
-              const isInc = String(r.submit_date) >= iStart;   // นับ incentive เฉพาะตั้งแต่ 10 ก.ค.
-              total += q;
-              if (isInc) incTotal += q;
-              if (!byBranch[bc]) byBranch[bc] = { qty: 0, incQty: 0 };
-              byBranch[bc].qty += q;
-              if (isInc) byBranch[bc].incQty += q;
-            });
-            _promoCampaign = { loaded: true, totalQty: total, incentiveQty: incTotal, byBranch };
-          })
-          .catch(() => {})
-          .then(() => { if (cb) cb(); });
+        _sbFetchAll(url, function (rows) {
+          const byBranch = {}; let total = 0, incTotal = 0;
+          (rows || []).forEach(r => {
+            const q = parseInt(r.total_qty) || 0;
+            const bc = String(r.branch_code);
+            const isInc = String(r.submit_date) >= iStart;   // นับ incentive เฉพาะตั้งแต่ 10 ก.ค.
+            total += q;
+            if (isInc) incTotal += q;
+            if (!byBranch[bc]) byBranch[bc] = { qty: 0, incQty: 0 };
+            byBranch[bc].qty += q;
+            if (isInc) byBranch[bc].incQty += q;
+          });
+          _promoCampaign = { loaded: true, totalQty: total, incentiveQty: incTotal, byBranch };
+          if (cb) cb();
+        });
       }
 
       // Global toggle + branches list — โหลดจาก app_settings
@@ -14970,11 +14996,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           _promo = []; done();
           return;
         }
-        fetch(_promoUrl,
-              { headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY } })
-          .then(r => r.ok ? r.json() : [])
-          .then(data => { _promo = data || []; done(); })
-          .catch(() => { _promo = []; done(); });
+        // ช่วงปี/ปีเกิน 1000 submissions ได้ง่าย → ต้องดึงแบบแบ่งหน้า
+        _sbFetchAll(_promoUrl, function (data) { _promo = data || []; done(); });
       }
 
       // เลื่อนช่วงของพาร์ท (เลื่อนเฉพาะพาร์ทนั้น · เอนทิตีคงเดิม)

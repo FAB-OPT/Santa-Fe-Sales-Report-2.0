@@ -262,14 +262,40 @@ function fireLogs(){ logListeners.forEach(fn=>{try{fn(logsCache)}catch(e){}}); }
 function onLogsChange(fn){ logListeners.push(fn); fn(logsCache); }
 
 // ดึง promo_submissions แล้วแปลงเป็นโครง salesCache: {code:{date:{m1,m2,m3,byName,ts}}}
+// PostgREST มีเพดาน db-max-rows = 1000 แถว/คำขอ (ใส่ &limit=... ก็ไม่ช่วย)
+// → ต้องวนดึงด้วย Range header จนกว่าจะหมด ไม่งั้นยอดสะสมจะขาดแบบเงียบๆ
+const SB_PAGE = 1000;
+async function sbFetchAll(url){
+  const out=[];
+  for(let from=0; from<100000; from+=SB_PAGE){
+    const res = await fetch(url, { headers:{
+      apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY,
+      Range: from+"-"+(from+SB_PAGE-1)
+    }});
+    if(res.status===416) break;                 // จำนวนแถวหารด้วย PAGE ลงตัว → เพจถัดไปว่าง = หมดแล้ว
+    if(!res.ok && res.status!==206) throw new Error("Supabase "+res.status);
+    const page = await res.json();
+    out.push(...(page||[]));
+    if(!page || page.length < SB_PAGE) break;   // ได้ไม่ครบเพจ = หมดแล้ว
+  }
+  return out;
+}
+
+// เพิ่มสาขาที่มียอดจริงแต่ไม่มีใน CONFIG.branches — กันยอดหายเพราะลิสต์ฮาร์ดโค้ดตกหล่น
+function mergeBranch(code, name){
+  code = String(code||"").trim();
+  if(!code || CONFIG.branches.some(b=>b.code===code)) return;
+  CONFIG.branches.push({ code, name: (name||"").trim() || ("สาขา "+code), pin: code });
+  CONFIG.branches.sort((a,b)=>a.code.localeCompare(b.code));
+}
+
 async function fetchSupabase(){
   const url = SUPABASE_URL + "/rest/v1/promo_submissions"
-    + "?select=branch_code,submit_date,items,total_qty,submitter_name,created_at,updated_at,edit_count"
+    + "?select=branch_code,branch_name,submit_date,items,total_qty,submitter_name,created_at,updated_at,edit_count"
     + "&submit_date=gte." + CONFIG.startDate + "&submit_date=lte." + CONFIG.endDate
-    + "&order=submit_date.asc";
-  const res = await fetch(url, { headers:{ apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY } });
-  if(!res.ok) throw new Error("Supabase "+res.status);
-  const rows = await res.json();
+    + "&order=id.asc";
+  const rows = await sbFetchAll(url);
+  (rows||[]).forEach(row=>mergeBranch(row.branch_code, row.branch_name));
   const cache = {}, logs = [];
   (rows||[]).forEach(row=>{
     const code=String(row.branch_code), date=row.submit_date;
@@ -322,7 +348,8 @@ function aggregate(cache){
   const iStart=CONFIG.incentiveStartDate;
   CONFIG.branches.forEach(b=>byBranch[b.code]={m1:0,m2:0,m3:0,total:0,incQty:0,inc:0,last:0,lastBy:"",entries:0});
   Object.keys(cache||{}).forEach(code=>{
-    const bb=byBranch[code]; if(!bb)return;
+    // กันข้อมูลหาย: สาขาที่ไม่มีใน CONFIG.branches → สร้าง bucket ให้ ไม่ทิ้ง
+    const bb=byBranch[code]||(byBranch[code]={m1:0,m2:0,m3:0,total:0,incQty:0,inc:0,last:0,lastBy:"",entries:0});
     Object.keys(cache[code]||{}).forEach(date=>{
       const r=cache[code][date]||{}; const m1=+r.m1||0,m2=+r.m2||0,m3=+r.m3||0,t=m1+m2+m3;
       bb.m1+=m1;bb.m2+=m2;bb.m3+=m3;bb.total+=t;bb.entries++;
