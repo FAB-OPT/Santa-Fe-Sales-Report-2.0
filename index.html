@@ -8478,9 +8478,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       const HIST_LOOKBACK_DAYS       = 30;  // สาขา / BZM / VP — ย้อนหลังได้กี่วัน
       const HIST_LOOKBACK_DAYS_ADMIN = 90;  // admin — ย้อนหลังได้กี่วัน
       const HIST_DEFAULT_DAYS        = 30;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role — ไม่กระโดดไป 90 วัน)
-      const HIST_MAX_SPAN_DAYS       = 30;  // เลือกช่วงกว้างสุดกี่วันต่อครั้ง (กันโหลด/เรนเดอร์หนัก)
+      const HIST_MAX_SPAN_DAYS       = 30;  // สาขา / BZM / VP — เลือกช่วงกว้างสุดกี่วันต่อครั้ง
+      const HIST_MAX_SPAN_DAYS_ADMIN = 90;  // admin — เท่ากับ lookback เพื่อให้ลากดูรวดเดียวได้ 90 วัน
       function isAdminUser()      { return S.role === "admin" || S.code === "ADMIN"; }
       function histLookbackDays() { return isAdminUser() ? HIST_LOOKBACK_DAYS_ADMIN : HIST_LOOKBACK_DAYS; }
+      function histMaxSpanDays()  { return isAdminUser() ? HIST_MAX_SPAN_DAYS_ADMIN : HIST_MAX_SPAN_DAYS; }
       function _dateBack(n) {
         const d = new Date(); d.setDate(d.getDate() - n);
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -12459,7 +12461,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!body) return;
         const fromEl = document.getElementById("ehDateFrom");
         const toEl   = document.getElementById("ehDateTo");
-        // validate ช่วงไม่เกิน HIST_MAX_SPAN_DAYS วัน (popup ถ้าเกิน + clamp + reload)
+        // validate ช่วงไม่เกินเพดานตาม role (popup ถ้าเกิน + clamp + reload)
         if (!_validateDateSpan(fromEl, toEl, loadEditHistory)) return;
         body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</td></tr>`;
         const dFrom = fromEl.value, dTo = toEl.value;
@@ -16908,9 +16910,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       /* ─────────────────────────────────────────
-         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกิน HIST_MAX_SPAN_DAYS วัน
+         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกินเพดานตาม role (admin 90 วัน · role อื่น 30 วัน)
          ถ้าเกิน → popup + clamp ฝั่งที่ "ไม่ได้" เพิ่งถูกแก้
-           แก้ช่อง "จาก" → เลื่อน "ถึง" ตามลงมา (สำคัญ: admin เลื่อน "จาก" ไป 90 วันแล้วต้องไม่โดนดีดกลับ)
+           แก้ช่อง "จาก" → เลื่อน "ถึง" ตามลงมา
            แก้ช่อง "ถึง" → เลื่อน "จาก" ตามขึ้นมา
       ───────────────────────────────────────── */
       function _validateDateSpan(fromEl, toEl, reloadFn) {
@@ -16921,18 +16923,19 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const dFrom = new Date(fromEl.value + "T00:00:00");
         const dTo   = new Date(toEl.value   + "T00:00:00");
         const diff  = Math.round((dTo - dFrom) / 86400000);
-        if (diff > HIST_MAX_SPAN_DAYS) {
+        const maxSpan = histMaxSpanDays();
+        if (diff > maxSpan) {
           if (_lastDateElId && _lastDateElId === fromEl.id) {
             const today = todayStr();
-            const c = new Date(dFrom); c.setDate(c.getDate() + HIST_MAX_SPAN_DAYS);
+            const c = new Date(dFrom); c.setDate(c.getDate() + maxSpan);
             const v = _fmt(c);
             toEl.value = (v > today) ? today : v;
           } else {
-            const c = new Date(dTo); c.setDate(c.getDate() - HIST_MAX_SPAN_DAYS);
+            const c = new Date(dTo); c.setDate(c.getDate() - maxSpan);
             fromEl.value = _fmt(c);
           }
-          showAlert("⚠️", `เลือกได้สูงสุด ${HIST_MAX_SPAN_DAYS} วัน`,
-            `เลือกช่วงเกิน ${HIST_MAX_SPAN_DAYS} วัน (${diff} วัน) — ระบบจะปรับให้เลือกได้สูงสุด ${HIST_MAX_SPAN_DAYS} วัน\nจาก ${fromEl.value} ถึง ${toEl.value}`,
+          showAlert("⚠️", `เลือกได้สูงสุด ${maxSpan} วัน`,
+            `เลือกช่วงเกิน ${maxSpan} วัน (${diff} วัน) — ระบบจะปรับให้เลือกได้สูงสุด ${maxSpan} วัน\nจาก ${fromEl.value} ถึง ${toEl.value}`,
             function() { if (typeof reloadFn === "function") reloadFn(); });
           return false;
         }
