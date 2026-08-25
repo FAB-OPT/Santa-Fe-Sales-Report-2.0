@@ -7181,12 +7181,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <select id="histBranchFilter" onchange="loadHistory()" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;min-width:180px"></select>
           <button class="btn btn-sm btn-outline" onclick="showForm()">← ส่งยอด</button>
         </div>
-        <!-- ช่วงวันที่ (30 วันย้อนหลัง) + รอบ -->
+        <!-- ช่วงวันที่ (30 วันย้อนหลัง · admin ย้อนได้ 90 วัน) + รอบ -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">📅 จาก</label>
-          <input type="date" id="histDateFrom" onchange="loadHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
+          <input type="date" id="histDateFrom" onchange="onHistDateChange(this, loadHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">ถึง</label>
-          <input type="date" id="histDateTo" onchange="loadHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
+          <input type="date" id="histDateTo" onchange="onHistDateChange(this, loadHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
           <div class="hist-slot-group" style="display:flex;align-items:center;gap:8px;margin-left:8px">
             <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">🕓 รอบ</label>
             <select id="histSlotFilter" onchange="_renderHistoryCached()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
@@ -7717,9 +7717,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <!-- Date range — จาก / ถึง (จำกัด 30 วัน) — รูปแบบเดียวกับหน้าประวัติ -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">📅 จาก</label>
-          <input type="date" id="ehDateFrom" onchange="loadEditHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
+          <input type="date" id="ehDateFrom" onchange="onHistDateChange(this, loadEditHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">ถึง</label>
-          <input type="date" id="ehDateTo"   onchange="loadEditHistory()" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
+          <input type="date" id="ehDateTo"   onchange="onHistDateChange(this, loadEditHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
         </div>
         <!-- Search + count — แถวใต้ปุ่มวันที่ -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
@@ -8473,6 +8473,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       let _editRow = null;
       let _currentPlan   = 0;  // Plan Sale ที่ดึงจาก DB สำหรับวันที่ที่เลือก
       const MAX_BRANCH_EDITS = 3;  // สาขาแก้ไขได้ไม่เกินกี่ครั้ง (admin ไม่จำกัด) — ปรับที่นี่ที่เดียว
+      /* ── ช่วงวันที่ย้อนหลังของหน้าประวัติ + ประวัติการแก้ไข — ปรับที่นี่ที่เดียว ──
+         admin ย้อนได้ไกลกว่า role อื่น เพื่อตามแก้ข้อมูลเก่าที่ตกหล่นได้ */
+      const HIST_LOOKBACK_DAYS       = 30;  // สาขา / BZM / VP — ย้อนหลังได้กี่วัน
+      const HIST_LOOKBACK_DAYS_ADMIN = 90;  // admin — ย้อนหลังได้กี่วัน
+      const HIST_DEFAULT_DAYS        = 30;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role — ไม่กระโดดไป 90 วัน)
+      const HIST_MAX_SPAN_DAYS       = 30;  // เลือกช่วงกว้างสุดกี่วันต่อครั้ง (กันโหลด/เรนเดอร์หนัก)
+      function isAdminUser()      { return S.role === "admin" || S.code === "ADMIN"; }
+      function histLookbackDays() { return isAdminUser() ? HIST_LOOKBACK_DAYS_ADMIN : HIST_LOOKBACK_DAYS; }
+      function _dateBack(n) {
+        const d = new Date(); d.setDate(d.getDate() - n);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      }
+      // จำว่าผู้ใช้เพิ่งแก้ช่อง "จาก" หรือ "ถึง" — ใช้ตัดสินว่าจะ clamp ฝั่งไหนเวลาช่วงเกินลิมิต
+      var _lastDateElId = "";
+      function onHistDateChange(el, reloadFn) {
+        _lastDateElId = (el && el.id) || "";
+        if (typeof reloadFn === "function") reloadFn();
+      }
       let _planCache     = {}; // cache: "branch|date" → plan_sale
       let _planFetchCbs  = {}; // callback queue: "branch|date" → [fn,...] (ป้องกัน fetch ซ้ำ)
 
@@ -12420,13 +12438,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (isBzm) { hint.textContent = `โซน: ${S.dm || "—"}`; hint.style.display = ""; }
           else { hint.textContent = ""; hint.style.display = "none"; }
         }
-        // default: 30 วันย้อนหลัง → วันนี้ + ล็อก min/max ให้เลือกได้แค่ในช่วง
+        // default: 30 วันย้อนหลัง → วันนี้ · ย้อนได้ไกลสุดตาม role (admin 90 วัน) + ล็อก min/max
         const fromEl = document.getElementById("ehDateFrom");
         const toEl   = document.getElementById("ehDateTo");
-        const _fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         const today = todayStr();
-        const minDate = (function(){ const d = new Date(); d.setDate(d.getDate() - 30); return _fmt(d); })();
-        if (fromEl) { fromEl.min = minDate; fromEl.max = today; if (!fromEl.value || fromEl.value < minDate) fromEl.value = minDate; }
+        const minDate = _dateBack(histLookbackDays());
+        const defFrom = _dateBack(HIST_DEFAULT_DAYS);
+        if (fromEl) {
+          fromEl.min = minDate; fromEl.max = today;
+          if (!fromEl.value || fromEl.value < minDate) fromEl.value = defFrom;
+          fromEl.title = `เลือกย้อนหลังได้ถึง ${minDate} (${histLookbackDays()} วัน)`;
+        }
         if (toEl)   { toEl.min   = minDate; toEl.max   = today; if (!toEl.value   || toEl.value   > today)   toEl.value   = today; }
         if (fromEl.value > toEl.value) { const t = fromEl.value; fromEl.value = toEl.value; toEl.value = t; }
         loadEditHistory();
@@ -12437,8 +12459,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!body) return;
         const fromEl = document.getElementById("ehDateFrom");
         const toEl   = document.getElementById("ehDateTo");
-        // validate ช่วงไม่เกิน 30 วัน (popup ถ้าเกิน + clamp + reload)
-        if (!_validateDateSpan30(fromEl, toEl, loadEditHistory)) return;
+        // validate ช่วงไม่เกิน HIST_MAX_SPAN_DAYS วัน (popup ถ้าเกิน + clamp + reload)
+        if (!_validateDateSpan(fromEl, toEl, loadEditHistory)) return;
         body.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--txt2)">⏳ กำลังโหลด...</td></tr>`;
         const dFrom = fromEl.value, dTo = toEl.value;
         const params = { mode: "listEditedSales", date_from: dFrom, date_to: dTo };
@@ -16886,10 +16908,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       /* ─────────────────────────────────────────
-         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกิน 30 วัน
-         ถ้าเกิน → popup + clamp from = to - 30 วัน
+         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกิน HIST_MAX_SPAN_DAYS วัน
+         ถ้าเกิน → popup + clamp ฝั่งที่ "ไม่ได้" เพิ่งถูกแก้
+           แก้ช่อง "จาก" → เลื่อน "ถึง" ตามลงมา (สำคัญ: admin เลื่อน "จาก" ไป 90 วันแล้วต้องไม่โดนดีดกลับ)
+           แก้ช่อง "ถึง" → เลื่อน "จาก" ตามขึ้นมา
       ───────────────────────────────────────── */
-      function _validateDateSpan30(fromEl, toEl, reloadFn) {
+      function _validateDateSpan(fromEl, toEl, reloadFn) {
         if (!fromEl || !toEl || !fromEl.value || !toEl.value) return true;
         const _fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         // sanity: from > to → สลับ
@@ -16897,12 +16921,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const dFrom = new Date(fromEl.value + "T00:00:00");
         const dTo   = new Date(toEl.value   + "T00:00:00");
         const diff  = Math.round((dTo - dFrom) / 86400000);
-        if (diff > 30) {
-          // clamp from = to - 30
-          const clamped = new Date(dTo); clamped.setDate(clamped.getDate() - 30);
-          fromEl.value = _fmt(clamped);
-          showAlert("⚠️", "เลือกได้สูงสุด 30 วัน",
-            `เลือกช่วงเกิน 30 วัน (${diff} วัน) — ระบบจะปรับให้เลือกได้สูงสุด 30 วัน\nจาก ${fromEl.value} ถึง ${toEl.value}`,
+        if (diff > HIST_MAX_SPAN_DAYS) {
+          if (_lastDateElId && _lastDateElId === fromEl.id) {
+            const today = todayStr();
+            const c = new Date(dFrom); c.setDate(c.getDate() + HIST_MAX_SPAN_DAYS);
+            const v = _fmt(c);
+            toEl.value = (v > today) ? today : v;
+          } else {
+            const c = new Date(dTo); c.setDate(c.getDate() - HIST_MAX_SPAN_DAYS);
+            fromEl.value = _fmt(c);
+          }
+          showAlert("⚠️", `เลือกได้สูงสุด ${HIST_MAX_SPAN_DAYS} วัน`,
+            `เลือกช่วงเกิน ${HIST_MAX_SPAN_DAYS} วัน (${diff} วัน) — ระบบจะปรับให้เลือกได้สูงสุด ${HIST_MAX_SPAN_DAYS} วัน\nจาก ${fromEl.value} ถึง ${toEl.value}`,
             function() { if (typeof reloadFn === "function") reloadFn(); });
           return false;
         }
@@ -16918,16 +16948,20 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         populateBranchFilter("histBranchFilter");
         const queryCodes = getQueryBranchCodes("histBranchFilter"); // array | null
 
-        // ช่วง 30 วันย้อนหลัง → วันนี้ — ล็อก min/max
+        // ย้อนหลังได้ตาม role (admin 90 วัน · role อื่น 30 วัน) → วันนี้ — ล็อก min/max
         const fromEl = document.getElementById("histDateFrom");
         const toEl   = document.getElementById("histDateTo");
-        const _fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         const today = todayStr();
-        const minDate = (function(){ const d = new Date(); d.setDate(d.getDate() - 30); return _fmt(d); })();
-        if (fromEl) { fromEl.min = minDate; fromEl.max = today; if (!fromEl.value || fromEl.value < minDate) fromEl.value = minDate; }
+        const minDate = _dateBack(histLookbackDays());
+        const defFrom = _dateBack(HIST_DEFAULT_DAYS);
+        if (fromEl) {
+          fromEl.min = minDate; fromEl.max = today;
+          if (!fromEl.value || fromEl.value < minDate) fromEl.value = defFrom;
+          fromEl.title = `เลือกย้อนหลังได้ถึง ${minDate} (${histLookbackDays()} วัน)`;
+        }
         if (toEl)   { toEl.min   = minDate; toEl.max   = today; if (!toEl.value   || toEl.value   > today)   toEl.value   = today; }
         if (fromEl.value > toEl.value) { const t = fromEl.value; fromEl.value = toEl.value; toEl.value = t; }
-        if (!_validateDateSpan30(fromEl, toEl, loadHistory)) return;
+        if (!_validateDateSpan(fromEl, toEl, loadHistory)) return;
         const since = fromEl.value;
         const until = toEl.value;
         const titleEl = document.getElementById("histTitle");
