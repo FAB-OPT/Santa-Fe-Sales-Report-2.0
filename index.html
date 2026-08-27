@@ -9387,6 +9387,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             }
             _togglePromoCard();
             _syncPromoToggleUI();
+            // ลิสต์สาขามาทีหลังการ์ดแดชบอร์ดได้ → วาดใหม่ กันการ์ดของสาขานอกลิสต์ค้างอยู่
+            if (typeof _refreshPromoCampaignCard === "function") _refreshPromoCampaignCard();
           })
           .catch(() => {});
       }
@@ -9557,12 +9559,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (aEl) aEl.textContent = "฿" + fmt(totalAmt);
       }
 
+      // สาขานี้อยู่ในลิสต์เชียร์ขายไหม — เช็คลิสต์ล้วน ๆ ไม่เกี่ยวกับว่าใครเป็นคนดู
+      function _isPromoBranch(code) {
+        if (_promoBranches === "ALL") return true;
+        return Array.isArray(_promoBranches) && _promoBranches.indexOf(String(code)) >= 0;
+      }
+
       // เช็คว่า S.code นี้เห็น promo card ได้ไหม
       function _isPromoAllowedForBranch() {
         if (!_promoEnabled) return false;
         if (S.code === "ADMIN") return true;  // admin เห็นเสมอ (ทดสอบ)
-        if (_promoBranches === "ALL") return true;
-        return Array.isArray(_promoBranches) && _promoBranches.indexOf(String(S.code)) >= 0;
+        return _isPromoBranch(S.code);
       }
 
       // toggle promo card ตาม slot: โชว์เฉพาะสิ้นวัน + สาขานี้เปิด promo
@@ -13756,7 +13763,16 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _renderPromoCampaign() {
         if (!_promoEnabled || !_promoCampaign.loaded) return "";
         const _role = (typeof S !== "undefined" && S && S.role) || "";
-        if (_role === "branch" || _role === "franchise") return _renderPromoCampaignBranch();
+        const _branchRole = (_role === "branch" || _role === "franchise");
+        /* สาขาที่ไม่ได้อยู่ในลิสต์เชียร์ขาย → ไม่ต้องขึ้นการ์ดเลย
+           เดิมขึ้นให้ทุกสาขาแล้วโชว์ 0 จาน ทั้งที่สาขานั้นไม่ได้ร่วมโปรตั้งแต่แรก
+           เช็คจาก "สาขาที่กำลังดูอยู่" ไม่ใช่คนดู — admin/BZM ที่ดริลไปสาขานอกลิสต์
+           ก็ไม่ควรเห็นเหมือนกัน (ระดับบริษัท/โซนยังขึ้นตามปกติ) */
+        const _viewCode = _branchRole
+          ? ((typeof S !== "undefined" && S && S.code) || "")
+          : ((_ddView && _ddView.level === "branch") ? _ddView.branch : null);
+        if (_viewCode && !_isPromoBranch(_viewCode)) return "";
+        if (_branchRole) return _renderPromoCampaignBranch();
         const C = PROMO_CAMPAIGN;
         const msDay  = 86400000;
         const dStart = new Date(C.startDate + "T00:00:00");
@@ -17230,10 +17246,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
 
         // สิ้นวัน + promo เปิดอยู่ + สาขาของ row นี้เข้าข่าย → เพิ่มแถวเชียร์ขาย
-        const _rowBranchAllowed = _promoEnabled && (
-          _promoBranches === "ALL" ||
-          (Array.isArray(_promoBranches) && _promoBranches.indexOf(String(row.branch_code)) >= 0)
-        );
+        const _rowBranchAllowed = _promoEnabled && _isPromoBranch(row.branch_code);
         if (isEod && _rowBranchAllowed) {
           gridHtml += `<div id="_editPromoWrap" style="grid-column:1/-1;margin-top:12px;padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px">
             <div style="font-weight:800;color:#9a3412;margin-bottom:10px;font-size:14px">🎯 รายการเชียร์ขาย</div>
@@ -17403,10 +17416,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         showAlert("⏳", "กำลังบันทึก...", "กรุณารอสักครู่");
 
         // snapshot promo ก่อนล้าง _editRow
-        const _rowBranchAllowedEdit = _promoEnabled && (
-          _promoBranches === "ALL" ||
-          (Array.isArray(_promoBranches) && _promoBranches.indexOf(String(editBranchCode)) >= 0)
-        );
+        const _rowBranchAllowedEdit = _promoEnabled && _isPromoBranch(editBranchCode);
         const _isEodEdit = (payload.submit_time_slot === "สิ้นวัน") && _rowBranchAllowedEdit;
         const _promoEditData = _isEodEdit ? _readEditPromoPayload() : null;
         const _promoExistingId = _editPromoExistingId;
