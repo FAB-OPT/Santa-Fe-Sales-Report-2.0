@@ -757,6 +757,15 @@
       body.is-touch input[type="month"].dash3-pick + .dash3-pick-ov {
         font-size: 11.5px; /* ชื่อเดือนเล็กลงตามที่ขอ */
       }
+      /* ── แถบแจ้ง "ยังไม่ปิดร้าน" (ส่งรอบ 16:00 แล้ว แต่ยังไม่ส่งรอบสิ้นวัน) ── */
+      .dd-pending {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 12px 14px; font-size: 13px; line-height: 1.55; color: #7c2d12;
+        background: var(--brand-ll); border-color: #fed7aa;
+      }
+      .dd-pending b { color: #9a3412; }
+      .dd-pending-ico { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+
       /* ── แท็บ "กำหนดเอง": แถบเลือกช่วงวันที่ ── */
       .dash3-range {
         display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px;
@@ -14510,12 +14519,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // ใช้ actual_sale เป็นยอดรวมหลัก (ตรงกับ KPI ด้านบน) — ถ้าช่องทางรวมขาด → เพิ่ม "ไม่ระบุช่องทาง"
         const total = a.actual > 0 ? a.actual : breakdownSum;
         if (total <= 0) {
-          // แยก 2 กรณี: ยังไม่ส่งเลย vs ส่งรอบ 16.00 มาแล้วแต่ยังไม่ปิดร้าน
-          const _has16 = (rows || []).some(r => r.submit_time_slot === "16.00");
-          box.innerHTML = _has16
-            ? `<div class="dd-empty">🕓 ยังไม่ปิดร้าน<br><span style="font-size:12px;font-weight:600;color:var(--txt2)">
-                 แดชบอร์ดยึดยอดรอบสิ้นวัน · ยอดรอบ 16:00 ที่ส่งมาแล้วจะนับเมื่อสาขาส่งรอบปิดร้าน</span></div>`
-            : `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
+          // ปกติไม่ถึงตรงนี้ — renderSection ซ่อนการ์ดนี้ไปแล้วเมื่อไม่มีข้อมูลช่องทาง
+          box.innerHTML = `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
           return;
         }
         const unspec = Math.max(0, Math.round(a.actual - breakdownSum));
@@ -14887,7 +14892,20 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         const isDayMode = (sec === 'day');
         const _isBranchRole = (role === 'branch' || role === 'franchise');
-        kpiEl.innerHTML = _ddKpiCards(_ddAgg(rows), codes, map);
+        const _agg = _ddAgg(rows);
+        // มีข้อมูลช่องทางจริงไหม — รอบ 16.00 กรอกแต่ยอดรวม ช่องทางเป็น 0 ทั้งก้อน
+        // ไม่มีข้อมูล = ไม่ต้องขึ้นการ์ดช่องทางเลย (ดีกว่าโชว์โดนัทเทาว่างๆ)
+        const _hasChan = CHANNEL_DEFS.reduce((s, c) => s + (_agg.sale[c.key] || 0), 0) > 0;
+        // ยังไม่ปิดร้าน = มีรอบ 16.00 ส่งมาแล้ว แต่ยังไม่มีรอบสิ้นวันในช่วงนี้
+        const _pendingEod = !rows.some(r => r.submit_time_slot === "สิ้นวัน")
+                         &&  rows.some(r => r.submit_time_slot === "16.00");
+        const _pendingRow = _pendingEod
+          ? `<div class="dash3-row dash3-row-full"><div class="dash2-card dash3-card dd-pending">
+               <span class="dd-pending-ico">🕓</span>
+               <span><b>ยังไม่ปิดร้าน</b> — แดชบอร์ดยึดยอดรอบสิ้นวัน ยอดรอบ 16:00 ที่ส่งมาแล้วจะนับเมื่อสาขาส่งรอบปิดร้าน</span>
+             </div></div>`
+          : '';
+        kpiEl.innerHTML = _ddKpiCards(_agg, codes, map);
         // ── Promo strip (แนวยาว · โชว์ item breakdown) ──
         // ลบ strip เก่าก่อน (ป้องกัน accumulate ตอน re-render)
         // ลบการ์ดโปรเก่า (campaign + strip · อาจมี 0-2 ใบ) กัน accumulate ตอน re-render
@@ -14983,28 +15001,35 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           }
         }
         if (isDayMode) {
-          const channelMega = _ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox"></div>`);
+          const channelMega = _hasChan
+            ? `<div class="dash3-row">${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox"></div>`)}</div>`
+            : '';
           bodyEl.innerHTML = `
+            ${_pendingRow}
             <div class="dash3-row">${topPanel}</div>
-            <div class="dash3-row">${channelMega}</div>`;
+            ${channelMega}`;
         } else {
           // w/m/y → สรุปยอดขาย · (สรุปรายสัปดาห์/รายเดือน · admin) · สัดส่วนช่องทางการขาย · กราฟแนวโน้ม
-          const channelPanel = _ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่า · บิล · เฉลี่ย/บิล",
-            `<div id="sec${C}ChanBox"></div>`);
+          const channelRow = _hasChan
+            ? `<div class="dash3-row dash3-row-full">${_ddPanel("🍽️ สัดส่วนช่องทางการขาย", "มูลค่า · บิล · เฉลี่ย/บิล", `<div id="sec${C}ChanBox"></div>`)}</div>`
+            : '';
           const trendRow =
             `<div class="dash3-row dash3-row-full">
               ${_ddPanel(trendTitle, trendSub, `<div id="sec${C}TrendBox" style="position:relative;min-height:280px"></div>`)}
             </div>`;
           const periodRow = _periodPanel ? `<div class="dash3-row dash3-row-full">${_periodPanel}</div>` : '';
           bodyEl.innerHTML =
-            `<div class="dash3-row dash3-row-full">${topPanel}</div>
+            `${_pendingRow}
+             <div class="dash3-row dash3-row-full">${topPanel}</div>
              ${periodRow}
-             <div class="dash3-row dash3-row-full">${channelPanel}</div>
+             ${channelRow}
              ${trendRow}`;
         }
         // ── Charts ──
-        if (sec === 'day') _ddRenderDayChannels(rows, sec);
-        else _ddRenderDayChannels(rows, sec, "ChanBox");
+        if (_hasChan) {
+          if (sec === 'day') _ddRenderDayChannels(rows, sec);
+          else _ddRenderDayChannels(rows, sec, "ChanBox");
+        }
         if (sec === 'week') _ddRenderBranchTrend(rows, codes, sec, d);
         else if (sec === 'year') _ddRenderTrend(rows, sec, d);
         else if (isBranch && sec !== 'day') _ddRenderBranchTrend(rows, codes, sec, d);
