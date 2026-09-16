@@ -757,6 +757,44 @@
       body.is-touch input[type="month"].dash3-pick + .dash3-pick-ov {
         font-size: 11.5px; /* ชื่อเดือนเล็กลงตามที่ขอ */
       }
+      /* ── แท็บ "กำหนดเอง": แถบเลือกช่วงวันที่ ── */
+      .dash3-range {
+        display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px;
+        background: var(--bg-2); border: 1px solid var(--bd);
+        border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+      }
+      .dash3-range-fields { display: flex; align-items: flex-end; gap: 8px; }
+      .dash3-range-field { display: flex; flex-direction: column; gap: 5px; }
+      .dash3-range-lbl {
+        font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+        text-transform: uppercase; color: var(--txt2);
+      }
+      .dash3-range-sep { font-size: 12.5px; font-weight: 700; color: var(--txt2); padding-bottom: 8px; }
+      .dash3-range-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+      .dash3-chip {
+        background: var(--surface); border: 1px solid var(--bd); color: var(--txt2);
+        height: 30px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+        transition: all .15s var(--ease);
+      }
+      .dash3-chip:hover { border-color: var(--brand); color: var(--brand); }
+      .dash3-chip.active { background: var(--brand-grad); border-color: transparent; color: #fff; }
+      .dash3-range-hint {
+        flex-basis: 100%; font-size: 11.5px; line-height: 1.55; color: var(--txt2);
+      }
+      .dash3-range-hint.is-warn { color: #b45309; font-weight: 700; }
+      @media (max-width: 900px) {
+        /* 5 แท็บบนจอแคบ: เต็มความกว้าง แล้ว wrap เป็น 3 + 2 ให้ดูตั้งใจ ไม่ใช่ล้น */
+        #dashSecTabs { display: flex; width: 100%; row-gap: 3px; }
+        #dashSecTabs .dash3-seg-btn { flex: 1 1 28%; }
+        .dash3-range { padding: 10px 12px; gap: 8px 10px; }
+        .dash3-range-fields { width: 100%; }
+        .dash3-range-field { flex: 1; min-width: 0; }
+        .dash3-range-field .dash3-pick-wrap { display: block; }
+        .dash3-range-field .dash3-pick { width: 100%; min-width: 0; }
+        .dash3-range-presets { margin-left: 0; width: 100%; }
+        .dash3-chip { flex: 1 1 auto; padding: 0 10px; font-size: 11.5px; }
+      }
       .dash3-branch {
         background: var(--surface);
         border: 1px solid var(--bd);
@@ -7240,6 +7278,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <button class="dash3-seg-btn" id="tabWeek" onclick="showSecTab('week')">🗓️ รายสัปดาห์</button>
           <button class="dash3-seg-btn" id="tabMonth" onclick="showSecTab('month')">📆 รายเดือน</button>
           <button class="dash3-seg-btn" id="tabYear" onclick="showSecTab('year')">📅 รายปี</button>
+          <button class="dash3-seg-btn" id="tabCustom" onclick="showSecTab('custom')">🎯 กำหนดเอง</button>
         </div>
 
         <!-- breadcrumb เอนทิตี (บริษัท › โซน › สาขา) — ใช้ร่วมทุกช่วง -->
@@ -7305,6 +7344,45 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>
           <div class="dash3-kpis dd-kpis" id="secYearKpis"></div>
           <div id="secYearBody"></div>
+        </section>
+
+        <section class="dash3-section" id="secCustomWrap" style="display:none">
+          <div class="dash2-cardhdr dsum-hdr" style="margin-bottom:12px">
+            <div><h3 style="margin:0">🎯 กำหนดเอง</h3><div class="dash2-cardsub" id="secCustomSub"></div></div>
+            <div class="dash3-nav">
+              <button class="dash3-nav-btn" id="secCustomPrev" onclick="dashSecNav('custom',-1)" title="ถอยหลัง 1 ช่วง (เท่าความยาวช่วงที่ดูอยู่)">◀</button>
+              <button class="dash3-nav-btn" id="secCustomNext" onclick="dashSecNav('custom',1)" title="ไปข้างหน้า 1 ช่วง">▶</button>
+            </div>
+          </div>
+          <div class="dash3-range">
+            <div class="dash3-range-fields">
+              <label class="dash3-range-field">
+                <span class="dash3-range-lbl">จากวันที่</span>
+                <span class="dash3-pick-wrap">
+                  <input type="date" class="dash3-pick" id="secCustomFrom" onchange="dashCustomApply()">
+                  <span class="dash3-pick-ov" id="secCustomFromOv"></span>
+                </span>
+              </label>
+              <span class="dash3-range-sep">ถึง</span>
+              <label class="dash3-range-field">
+                <span class="dash3-range-lbl">ถึงวันที่</span>
+                <span class="dash3-pick-wrap">
+                  <input type="date" class="dash3-pick" id="secCustomTo" onchange="dashCustomApply()">
+                  <span class="dash3-pick-ov" id="secCustomToOv"></span>
+                </span>
+              </label>
+            </div>
+            <div class="dash3-range-presets">
+              <button type="button" class="dash3-chip" data-preset="7"   onclick="dashCustomPreset(7)">7 วันล่าสุด</button>
+              <button type="button" class="dash3-chip" data-preset="30"  onclick="dashCustomPreset(30)">30 วัน</button>
+              <button type="button" class="dash3-chip" data-preset="90"  onclick="dashCustomPreset(90)">90 วัน</button>
+              <button type="button" class="dash3-chip" data-preset="mtd" onclick="dashCustomPreset('mtd')">เดือนนี้</button>
+              <button type="button" class="dash3-chip" data-preset="ytd" onclick="dashCustomPreset('ytd')">ปีนี้</button>
+            </div>
+            <div class="dash3-range-hint" id="secCustomHint">เลือกวันเริ่มและวันสิ้นสุด หรือกดปุ่มลัด แล้วทุกการ์ดและกราฟด้านล่างจะคิดจากช่วงนั้น</div>
+          </div>
+          <div class="dash3-kpis dd-kpis" id="secCustomKpis"></div>
+          <div id="secCustomBody"></div>
         </section>
       </div>
     </div>
@@ -9597,7 +9675,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         showScreen("sDash");
         setMobTab("mnDash");
         // เปิดแดชบอร์ดมา = ทุกพาร์ทกลับมาช่วงปัจจุบันเสมอ + เริ่ม session ใหม่ (ปลดล็อก view ให้ใช้ default ของ role)
-        _secAnchor = { day: new Date(), week: new Date(), month: new Date(), year: new Date() };
+        _secAnchor = { day: new Date(), week: new Date(), month: new Date(), year: new Date(), custom: new Date() };
+        _secCustom = _secCustomDefault(); _secCustomPreset = '7'; _secCustomNote = '';
         _ddViewLocked = false;
         _applyDashRoleView();
         loadDash();
@@ -13567,22 +13646,45 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // ── 3 พาร์ทตามช่วงเวลา (วัน / สัปดาห์ / เดือน) ──
       let _secActive = 'day';   // แท็บที่กำลังแสดง (ดีฟอลต์ = รายวัน)
-      let _secAnchor = { day: new Date(), week: new Date(), month: new Date(), year: new Date() };
+      const _SEC_ALL = ['day', 'week', 'month', 'year', 'custom'];
+      let _secAnchor = { day: new Date(), week: new Date(), month: new Date(), year: new Date(), custom: new Date() };
       let _secData = {
-        day:   { rows: [], planByDate: {}, planByBranch: {}, range: null },
-        week:  { rows: [], planByDate: {}, planByBranch: {}, range: null },
-        month: { rows: [], planByDate: {}, planByBranch: {}, range: null },
-        year:  { rows: [], planByDate: {}, planByBranch: {}, range: null }
+        day:    { rows: [], planByDate: {}, planByBranch: {}, range: null },
+        week:   { rows: [], planByDate: {}, planByBranch: {}, range: null },
+        month:  { rows: [], planByDate: {}, planByBranch: {}, range: null },
+        year:   { rows: [], planByDate: {}, planByBranch: {}, range: null },
+        custom: { rows: [], planByDate: {}, planByBranch: {}, range: null }
       };
-      let _secCharts = { day: { trend: null, donut: null }, week: { trend: null, donut: null }, month: { trend: null, donut: null }, year: { trend: null, donut: null } };
-      let _secItems = { day: { zones: [], branches: [] }, week: { zones: [], branches: [] }, month: { zones: [], branches: [] }, year: { zones: [], branches: [] } };
+      let _secCharts = { day: { trend: null, donut: null }, week: { trend: null, donut: null }, month: { trend: null, donut: null }, year: { trend: null, donut: null }, custom: { trend: null, donut: null } };
+      let _secItems = { day: { zones: [], branches: [] }, week: { zones: [], branches: [] }, month: { zones: [], branches: [] }, year: { zones: [], branches: [] }, custom: { zones: [], branches: [] } };
+      // -- แท็บ "กำหนดเอง": ช่วงวันที่ที่ผู้ใช้เลือกเอง --
+      const _SEC_CUSTOM_MAX_DAYS = 366;   // เพดานช่วง (กันดึงข้อมูลหนักจนหน้าค้าง)
+      function _secCustomDefault() {
+        const e = new Date(); e.setHours(0, 0, 0, 0);
+        const s = new Date(e); s.setDate(e.getDate() - 6);   // ดีฟอลต์ = 7 วันล่าสุด
+        return { start: _fmtDate(s), end: _fmtDate(e) };
+      }
+      let _secCustom = _secCustomDefault();
+      let _secCustomPreset = '7';   // ชิปปุ่มลัดที่ active (null = ผู้ใช้เลือกวันเอง)
+      let _secCustomNote = '';      // ข้อความเมื่อระบบปรับช่วงให้ (สลับวัน / เกินวันนี้ / เกินเพดาน)
       function _cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
       function _secPlan(map, codes) { return (codes || []).reduce((s, bc) => s + (parseFloat((map || {})[bc]) || 0), 0); }
       // คำนวณช่วงของพาร์ท: day=วันเดียว · week=จ–อา · month=ทั้งเดือน
       function _secPeriodRange(sec, anchor) {
         const a = new Date(anchor); a.setHours(0, 0, 0, 0);
         let start, end, label;
-        if (sec === 'day') {
+        if (sec === 'custom') {
+          // ช่วงอิสระจาก _secCustom (ไม่ยึด anchor) — normalize ไว้แล้วที่ _applyCustomRange
+          const _cs = new Date((_secCustom.start || _fmtDate(a)) + 'T00:00:00');
+          const _ce = new Date((_secCustom.end   || _fmtDate(a)) + 'T00:00:00');
+          start = isNaN(_cs.getTime()) ? new Date(a)     : _cs;
+          end   = isNaN(_ce.getTime()) ? new Date(start) : _ce;
+          if (end < start) { const _t = start; start = end; end = _t; }
+          const _n = Math.round((end - start) / 86400000) + 1;
+          label = (_n === 1)
+            ? fmtThaiDate(_fmtDate(start))
+            : fmtThaiDate(_fmtDate(start)) + ' ถึง ' + fmtThaiDate(_fmtDate(end)) + '  ·  ' + _n + ' วัน';
+        } else if (sec === 'day') {
           start = new Date(a); end = new Date(a);
           label = fmtThaiDate(_fmtDate(a));
         } else if (sec === 'week') {
@@ -13715,7 +13817,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // แปลง _secActive → ชื่อช่วง + ป้ายวันที่ (ใช้กับการ์ดสาขา)
       function _promoPeriodInfo() {
-        const names = { day: "รายวัน", week: "รายสัปดาห์", month: "รายเดือน", year: "รายปี" };
+        const names = { day: "รายวัน", week: "รายสัปดาห์", month: "รายเดือน", year: "รายปี", custom: "ช่วงที่กำหนดเอง" };
         const name  = names[_secActive] || "ช่วงที่เลือก";
         const rng   = (_secData[_secActive] && _secData[_secActive].range) || null;
         let sub = "";
@@ -14389,7 +14491,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // เลือกวันเดียว — แสดงช่องทางการขายเป็นแท่งแนวนอน (HTML, ไม่ใช้ Chart.js)
       //   แต่ละแถว: ชื่อช่องทาง + บิลเฉลี่ย · แท่งสัดส่วน · ฿ + %
-      var _secChanCharts = { day:{}, week:{}, month:{}, year:{} };
+      var _secChanCharts = { day:{}, week:{}, month:{}, year:{}, custom:{} };
       function _ddRenderDayChannels(rows, sec, targetSuffix) {
         sec = sec || 'day';
         const C = _cap(sec);
@@ -14921,7 +15023,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           sub.textContent = prefix;
         }
         // รีเซ็ตทุกช่วงเป็น "ยังไม่โหลด" + กลับมาแท็บรายวันเสมอ (โหลดเฉพาะแท็บที่กด)
-        ['day','week','month','year'].forEach(s => { _secData[s] = { rows: [], planByDate: {}, planByBranch: {}, range: null }; });
+        _SEC_ALL.forEach(s => { _secData[s] = { rows: [], planByDate: {}, planByBranch: {}, range: null }; });
         _currentPromoAgg = { count: 0, qty: 0, amt: 0, byItem: {} };  // reset ทันที กัน strip ค้าง
         _loadPromoCampaign(_refreshPromoCampaignCard);  // ยอดสะสมทั้งแคมเปญ (async · company-wide)
         _secActive = 'day';
@@ -14932,7 +15034,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       // สลับแท็บช่วงเวลา — โชว์เฉพาะช่วงนั้น · โหลดถ้ายังไม่เคยโหลด (กดถึงจะแสดง)
       function showSecTab(sec) {
         _secActive = sec;
-        ['day','week','month','year'].forEach(s => {
+        _SEC_ALL.forEach(s => {
           const C = _cap(s);
           const btn = document.getElementById('tab' + C);
           if (btn) btn.classList.toggle('active', s === sec);
@@ -15042,6 +15144,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       // เลื่อนช่วงของพาร์ท (เลื่อนเฉพาะพาร์ทนั้น · เอนทิตีคงเดิม)
       function dashSecNav(sec, dir) {
+        if (sec === 'custom') { _customShift(dir); return; }   // custom เลื่อนทั้งหน้าต่าง ไม่ใช่ anchor
         const a = new Date(_secAnchor[sec]);
         if (sec === 'day') a.setDate(a.getDate() + dir);
         else if (sec === 'week') a.setDate(a.getDate() + dir * 7);
@@ -15066,10 +15169,87 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         loadSection(sec, true);
       }
 
+      /* ═══════ แท็บ "กำหนดเอง" — ช่วงวันที่อิสระ ═══════ */
+
+      // อ่านค่าจากช่อง จาก/ถึง แล้วโหลดใหม่ (เรียกจาก onchange ของ input)
+      function dashCustomApply() {
+        const fEl = document.getElementById('secCustomFrom');
+        const tEl = document.getElementById('secCustomTo');
+        const s = (fEl && fEl.value) || _secCustom.start;
+        const e = (tEl && tEl.value) || _secCustom.end;
+        _secCustomPreset = null;
+        _applyCustomRange(s, e);
+      }
+
+      // normalize ช่วงก่อนใช้: สลับถ้ากลับด้าน · ไม่เลยวันนี้ · ไม่เกินเพดาน แล้วค่อยโหลด
+      function _applyCustomRange(s, e) {
+        const today = (typeof todayStr === 'function') ? todayStr() : _fmtDate(new Date());
+        _secCustomNote = '';
+        if (s > e) { const t = s; s = e; e = t; _secCustomNote = 'สลับวันให้อัตโนมัติ (วันเริ่มต้องมาก่อนวันสิ้นสุด)'; }
+        if (e > today) { e = today; _secCustomNote = 'ยังไม่มีข้อมูลของอนาคต จึงปรับวันสิ้นสุดเป็นวันนี้'; }
+        if (s > today) s = today;
+        const span = Math.round((new Date(e + 'T00:00:00') - new Date(s + 'T00:00:00')) / 86400000) + 1;
+        if (span > _SEC_CUSTOM_MAX_DAYS) {
+          const ns = new Date(e + 'T00:00:00');
+          ns.setDate(ns.getDate() - (_SEC_CUSTOM_MAX_DAYS - 1));
+          s = _fmtDate(ns);
+          _secCustomNote = 'ดูได้ครั้งละไม่เกิน ' + _SEC_CUSTOM_MAX_DAYS + ' วัน จึงปรับวันเริ่มให้';
+        }
+        _secCustom = { start: s, end: e };
+        loadSection('custom', true);
+      }
+
+      // ปุ่มลัด: 7 / 30 / 90 วันล่าสุด · เดือนนี้ · ปีนี้
+      function dashCustomPreset(kind) {
+        const t = new Date(); t.setHours(0, 0, 0, 0);
+        let s;
+        if (kind === 'mtd')      s = new Date(t.getFullYear(), t.getMonth(), 1);
+        else if (kind === 'ytd') s = new Date(t.getFullYear(), 0, 1);
+        else { s = new Date(t); s.setDate(t.getDate() - (parseInt(kind, 10) - 1)); }
+        _secCustomPreset = String(kind);
+        _applyCustomRange(_fmtDate(s), _fmtDate(t));
+      }
+
+      // ◀ ▶ เลื่อนทั้งหน้าต่างไปข้างหน้า/ถอยหลังเท่ากับความยาวช่วงที่ดูอยู่
+      function _customShift(dir) {
+        const s = new Date(_secCustom.start + 'T00:00:00');
+        const e = new Date(_secCustom.end   + 'T00:00:00');
+        const n = Math.round((e - s) / 86400000) + 1;
+        s.setDate(s.getDate() + dir * n);
+        e.setDate(e.getDate() + dir * n);
+        _secCustomPreset = null;
+        _applyCustomRange(_fmtDate(s), _fmtDate(e));
+      }
+
+      // sync ช่อง input + overlay มือถือ + ชิป preset + บรรทัดอธิบายใต้ตัวเลือก
+      function _updateCustomRangeUI(pr, today) {
+        const fEl = document.getElementById('secCustomFrom');
+        const tEl = document.getElementById('secCustomTo');
+        if (fEl) { fEl.value = pr.startDate; fEl.max = today; }
+        if (tEl) { tEl.value = pr.endDate;   tEl.max = today; }
+        const _dmy = (ds) => { const p = String(ds).split('-'); return parseInt(p[2], 10) + '/' + p[1] + '/' + p[0]; };
+        const ovF = document.getElementById('secCustomFromOv');
+        const ovT = document.getElementById('secCustomToOv');
+        if (ovF) ovF.textContent = _dmy(pr.startDate);
+        if (ovT) ovT.textContent = _dmy(pr.endDate);
+        const wrap = document.getElementById('secCustomWrap');
+        if (wrap) wrap.querySelectorAll('.dash3-chip').forEach(btn => {
+          btn.classList.toggle('active', !!_secCustomPreset && btn.dataset.preset === _secCustomPreset);
+        });
+        const hint = document.getElementById('secCustomHint');
+        if (hint) {
+          const base = 'กำลังดู ' + pr.periodDays + ' วัน · ' + fmtThaiDate(pr.startDate) + ' ถึง ' + fmtThaiDate(pr.endDate) +
+                       ' · ทุกการ์ดและกราฟด้านล่างคิดจากช่วงนี้';
+          hint.textContent = _secCustomNote ? (_secCustomNote + ' · ' + base) : base;
+          hint.classList.toggle('is-warn', !!_secCustomNote);
+        }
+      }
+
       // อัปเดตค่า input ปฏิทิน + max (กันไปอนาคต) + ปิดปุ่ม ▶ + ป้ายช่วง
       function _updateSecNav(sec, pr) {
         const C = _cap(sec);
         const today = (typeof todayStr === 'function') ? todayStr() : _fmtDate(new Date());
+        if (sec === 'custom') _updateCustomRangeUI(pr, today);
         const pick = document.getElementById('sec' + C + 'Pick');
         if (pick) {
           if (sec === 'month') { pick.value = pr.startDate.slice(0, 7); pick.max = today.slice(0, 7); }
