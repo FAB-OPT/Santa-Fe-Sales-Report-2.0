@@ -13732,10 +13732,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         return (codes || []).reduce((s, bc) => s + (parseFloat(map[bc]) || 0), 0);
       }
       function _ddAgg(rows) {
-        // จัดกลุ่ม branch+date 1 รายการต่อวัน
-        //   · วันนี้ → ยอมรับ 16.00 preliminary ได้ (ยังไม่ปิดวัน)
-        //   · วันก่อนหน้า → ต้องมีสิ้นวันเท่านั้น (16.00 อย่างเดียวไม่นับ — กันยอดค้างที่ไม่แจกแจงช่องทาง)
-        const _today = todayStr();
+        // จัดกลุ่ม branch+date 1 รายการต่อวัน แล้วนับเฉพาะรอบ "สิ้นวัน" (ปิดร้าน)
+        // เหตุผล: รอบ 16.00 เป็นการอัปเดตยอดระหว่างวัน มีแต่ยอดรวม ไม่แจกแจงช่องทาง/บิล
+        //   · ถ้านับเข้ามา ยอดทั้งก้อนจะไปโผล่เป็น "ไม่ระบุช่องทาง" ในโดนัท และบิลเป็น 0
+        //   · KPI จะไม่ตรงกับกราฟแนวโน้ม ซึ่งกรองสิ้นวันอยู่แล้ว
+        // ยอดรอบ 16.00 ยังดูได้จากชิป/แท่งรอบของหน้าสาขา ซึ่งอ่าน rows ดิบ ไม่ผ่าน _ddAgg
         const byKey = {};
         (rows || []).forEach(r => {
           const k = (r.branch_code || "") + "|" + (r.submit_date || "");
@@ -13744,11 +13745,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           // ถ้า prev = 16.00 และ r = สิ้นวัน → แทนที่ (EOD ชนะ)
           if (prev.submit_time_slot !== "สิ้นวัน" && r.submit_time_slot === "สิ้นวัน") byKey[k] = r;
         });
-        // กรอง: ถ้าเป็นวันเก่า (ไม่ใช่วันนี้) และไม่มีสิ้นวัน → drop ทิ้ง
-        const picked = Object.values(byKey).filter(r => {
-          if (r.submit_time_slot === "สิ้นวัน") return true;
-          return r.submit_date === _today; // 16.00 preliminary รับเฉพาะวันนี้
-        });
+        const picked = Object.values(byKey).filter(r => r.submit_time_slot === "สิ้นวัน");
         const a = { actual: 0, bills: 0, cust: 0, labHr: 0, labBaht: 0, sale: {}, trans: {} };
         CHANNEL_DEFS.forEach(c => { a.sale[c.key] = 0; a.trans[c.key] = 0; });
         picked.forEach(r => {
@@ -14513,7 +14510,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         // ใช้ actual_sale เป็นยอดรวมหลัก (ตรงกับ KPI ด้านบน) — ถ้าช่องทางรวมขาด → เพิ่ม "ไม่ระบุช่องทาง"
         const total = a.actual > 0 ? a.actual : breakdownSum;
         if (total <= 0) {
-          box.innerHTML = `<div class="dd-empty">📭 วันนี้ยังไม่มียอดขาย</div>`;
+          // แยก 2 กรณี: ยังไม่ส่งเลย vs ส่งรอบ 16.00 มาแล้วแต่ยังไม่ปิดร้าน
+          const _has16 = (rows || []).some(r => r.submit_time_slot === "16.00");
+          box.innerHTML = _has16
+            ? `<div class="dd-empty">🕓 ยังไม่ปิดร้าน<br><span style="font-size:12px;font-weight:600;color:var(--txt2)">
+                 แดชบอร์ดยึดยอดรอบสิ้นวัน · ยอดรอบ 16:00 ที่ส่งมาแล้วจะนับเมื่อสาขาส่งรอบปิดร้าน</span></div>`
+            : `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
           return;
         }
         const unspec = Math.max(0, Math.round(a.actual - breakdownSum));
