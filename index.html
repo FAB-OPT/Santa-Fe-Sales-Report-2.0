@@ -6388,8 +6388,6 @@ body { background: var(--bg); color: var(--txt); }
   box-shadow: 0 6px 14px -6px rgba(15,23,42,.10);
 }
 .dd-chan-stat.is-empty { opacity: .45; }
-.dd-chan-stat.is-unspec { background: repeating-linear-gradient(135deg, #fafafa, #fafafa 8px, #f1f5f9 8px, #f1f5f9 16px); border-style: dashed; }
-.dd-chan-stat.is-unspec .dd-chan-stat-name b { color: #64748b; font-style: italic; }
 
 .dd-chan-stat-name {
   display: inline-flex; align-items: center; gap: 10px;
@@ -6472,8 +6470,6 @@ body { background: var(--bg); color: var(--txt); }
   .dd-chan-stat-amount .dd-chan-stat-val { font-size: 18px; color: var(--c, var(--txt)); }
   .dd-chan-stat-val { font-size: 14px; }
   .dd-chan-stat-lbl { font-size: 11px; }
-  /* dashed/striped สำหรับ unspec ก็อยู่บนมือถือด้วย */
-  .dd-chan-stat.is-unspec { background: repeating-linear-gradient(135deg, #fafafa, #fafafa 8px, #f1f5f9 8px, #f1f5f9 16px); border-style: dashed; }
   /* Summary row */
   .dd-chan-summary { grid-template-columns: 1fr 1fr 1fr; padding: 12px 6px; gap: 6px; }
   .dd-chan-summary > div { padding: 0 4px; }
@@ -14516,30 +14512,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         })).sort((x, y) => y.value - x.value);
         const breakdownSum = items.reduce((s, t) => s + t.value, 0);
         const totalTrans   = items.reduce((s, t) => s + (t.trans || 0), 0);
-        // ใช้ actual_sale เป็นยอดรวมหลัก (ตรงกับ KPI ด้านบน) — ถ้าช่องทางรวมขาด → เพิ่ม "ไม่ระบุช่องทาง"
+        // ยอดหัวการ์ดใช้ actual_sale (ตรงกับ KPI ด้านบน) · % ของแต่ละช่องทางคิดจากผลบวกช่องทาง
+        // ไม่มีแถว "ไม่ระบุช่องทาง" แล้ว — โดนัทและ % จึงรวมกันได้ 100% พอดี
         const total = a.actual > 0 ? a.actual : breakdownSum;
+        const pctBase = breakdownSum;
         if (total <= 0) {
           // ปกติไม่ถึงตรงนี้ — renderSection ซ่อนการ์ดนี้ไปแล้วเมื่อไม่มีข้อมูลช่องทาง
           box.innerHTML = `<div class="dd-empty">📭 ยังไม่มียอดขายในช่วงที่เลือก</div>`;
           return;
         }
-        const unspec = Math.max(0, Math.round(a.actual - breakdownSum));
-        const segmentItems = items.slice();
-        if (unspec > 0) {
-          segmentItems.push({ label: "ไม่ระบุช่องทาง", color: "#cbd5e1", value: unspec, trans: 0, _unspec: true });
-        }
+        const segmentItems = items;
         // กราฟวงกลม (donut) ฝั่งซ้าย · ตารางสถิติฝั่งขวา (บิล · ยอด · ค่าเฉลี่ย/บิล)
         const legendRows = segmentItems.map(t => {
-          const pct = total > 0 ? (t.value / total) * 100 : 0;
+          const pct = pctBase > 0 ? (t.value / pctBase) * 100 : 0;
           const avg = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
           const isEmpty = t.value <= 0 && (!t.trans || t.trans <= 0);
-          const billCell = t._unspec
-            ? `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
-            : `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span><span class="dd-chan-stat-lbl">บิล</span></span>`;
-          const avgCell  = t._unspec
-            ? `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val" style="color:#94a3b8">—</span></span>`
-            : `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span><span class="dd-chan-stat-lbl">/บิล</span></span>`;
-          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}${t._unspec ? ' is-unspec' : ''}" style="--c:${t.color}">
+          const billCell = `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span><span class="dd-chan-stat-lbl">บิล</span></span>`;
+          const avgCell  = `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span><span class="dd-chan-stat-lbl">/บิล</span></span>`;
+          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}" style="--c:${t.color}">
             <span class="dd-chan-stat-name"><span class="dd-chan-stat-dot" style="background:${t.color}"></span><b>${escHtml(t.label)}</b></span>
             <span class="dd-chan-stat-cell dd-chan-stat-amount"><span class="dd-chan-stat-val">฿${fmt(Math.round(t.value))}</span></span>
             <span class="dd-chan-stat-pct">${pct.toFixed(1)}%</span>
@@ -14605,10 +14595,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 callbacks: {
                   label: (ctx) => {
                     const v = ctx.parsed || 0;
-                    const pc = total > 0 ? (v / total * 100).toFixed(1) + "%" : "-";
+                    const pc = pctBase > 0 ? (v / pctBase * 100).toFixed(1) + "%" : "-";
                     const it = segmentItems[ctx.dataIndex];
                     const avg = it.trans > 0 ? Math.round(v / it.trans) : 0;
-                    if (it._unspec) return [`${ctx.label}: ฿${v.toLocaleString()} (${pc})`, "ส่วนต่างจากยอดรวมที่ยังไม่ได้แยกช่องทาง"];
                     return [
                       `${ctx.label}: ฿${v.toLocaleString()} (${pc})`,
                       it.trans > 0 ? `บิล: ${fmt(it.trans)} · เฉลี่ย ฿${fmt(avg)}/บิล` : 'บิล: 0'
