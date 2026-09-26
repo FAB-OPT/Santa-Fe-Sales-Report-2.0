@@ -3968,6 +3968,10 @@
       .modal-sm {
         max-width: 440px;
       }
+      /* กล่อง alert/confirm — แคบกว่า modal-sm ให้อ่านจบในสายตาเดียว */
+      .modal-alert {
+        max-width: 380px;
+      }
 
       .modal-hdr {
         background: linear-gradient(135deg, var(--brand), #f88c3a);
@@ -4079,7 +4083,7 @@
       .alert-ico {
         font-size: 54px;
         text-align: center;
-        padding: 24px 0 8px;
+        padding: 26px 0 10px;
       }
       .alert-ico .wave {
         display: inline-block;
@@ -4097,18 +4101,47 @@
       }
 
       .alert-title {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 800;
         text-align: center;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
+        letter-spacing: -.01em;
+        text-wrap: balance;
       }
 
+      /* ตัวเลขเด่นในป็อปอัพ — ใช้สีบอกสถานะแทนการบรรยายยาวๆ
+         เหลืองอำพัน = ให้ตรวจก่อนยืนยัน · แดง = ยอดที่ผิด ส่งไม่ได้ */
+      .alert-fig {
+        margin-top: 18px; padding: 18px 14px;
+        background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px;
+      }
+      .alert-fig-val {
+        font-size: 36px; font-weight: 800; color: #b45309;
+        line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+      }
+      .alert-fig-lbl { font-size: 12.5px; font-weight: 600; color: #92400e; margin-top: 6px; }
+      .alert-cmp { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+      .alert-cmp > div {
+        flex: 1 1 0; max-width: 160px; border-radius: 12px; padding: 10px 8px;
+        background: var(--bd-2); border: 1px solid transparent;
+      }
+      .alert-cmp > div.is-bad { background: #fef2f2; border-color: #fecaca; }
+      .alert-cmp span {
+        display: block; font-size: 11.5px; font-weight: 700;
+        color: var(--txt2); margin-bottom: 1px;
+      }
+      .alert-cmp > div.is-bad span { color: #b91c1c; }
+      .alert-cmp b {
+        font-size: 22px; font-weight: 800; color: var(--txt);
+        letter-spacing: -.01em; font-variant-numeric: tabular-nums;
+      }
+      .alert-cmp > div.is-bad b { color: #dc2626; }
       .alert-msg {
-        font-size: 14px;
+        font-size: 15px;
         color: var(--txt2);
         text-align: center;
         line-height: 1.7;
-        padding: 0 12px 20px;
+        padding: 0 22px 22px;
         white-space: pre-line;
       }
 
@@ -4116,7 +4149,7 @@
         display: flex;
         justify-content: center;
         gap: 10px;
-        padding-bottom: 20px;
+        padding: 0 22px 24px;
       }
 
       /* Edit info banner */
@@ -8114,7 +8147,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
      MODAL: ALERT
 ════════════════════════════════════════ -->
     <div id="mAlert" class="modal-bg">
-      <div class="modal modal-sm" style="position:relative">
+      <div class="modal modal-sm modal-alert" style="position:relative">
         <button class="alert-close-btn" onclick="alertCloseClick()"
                 style="position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#64748b;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1"
                 aria-label="ปิด">×</button>
@@ -16444,7 +16477,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             checkSubmissionOrder(date, slot, function(check) {
               console.log("[submit] order check result:", check);
               if (!check.ok) {
-                showAlert("⛔", "ลำดับการส่งไม่ถูกต้อง", check.msg);
+                showAlert("⛔", check.title || "ลำดับการส่งไม่ถูกต้อง", check.msg,
+                  null, { html: !!check.html });
+                return;
+              }
+              // ผ่านแบบมีข้อสังเกต (เช่น ยอดเท่ารอบ 16:00) → ให้ยืนยันก่อน
+              if (check.confirm) {
+                showConfirm("⚠️", check.confirm.title, check.confirm.msg, _continueReview,
+                  { btnText: "ยืนยัน ส่งยอดนี้", cancelText: "กลับไปแก้ยอด", html: !!check.confirm.html });
                 return;
               }
               _continueReview();
@@ -16489,18 +16529,36 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 cb({ ok: false, msg: `ยังไม่ได้ส่งรอบ 16.00 ของวันที่ ${thDate} กรุณาส่งรอบ 16.00 ก่อน` });
                 return;
               }
-              // ── กฎ: ยอดสิ้นวันต้องมากกว่ารอบ 16.00 เสมอ ──
+              // ── กฎยอดสิ้นวัน เทียบกับรอบ 16.00 ──
+              //   น้อยกว่า → บล็อก (ยอดสะสมทั้งวันลดลงไม่ได้ = กรอกผิดแน่)
+              //   เท่ากัน  → ส่งได้ แต่ต้องกดยืนยัน (หลัง 16:00 ไม่มียอดเพิ่ม เกิดขึ้นจริงได้)
               const r16 = parseFloat(data[0].actual_sale) || 0;
               const eodEl = document.getElementById("actual_sale");
               const rEod  = parseFloat((eodEl ? eodEl.value : "").replace(/,/g, "")) || 0;
-              if (r16 > 0 && rEod <= r16) {
-                const fmt = (n) => Math.round(n).toLocaleString("th-TH");
-                cb({ ok: false, msg:
-                  `ยอดขายสิ้นวันต้องมากกว่ารอบ 16:00\n\n` +
-                  `🕓 ยอด 16:00 = ฿${fmt(r16)}\n` +
-                  `🌙 ยอดที่จะส่ง = ฿${fmt(rEod)}\n\n` +
-                  `กรุณาตรวจสอบยอดอีกครั้ง (ยอดสิ้นวัน = ยอดสะสมทั้งวัน ต้องมากกว่ายอดสะสมถึง 16:00)`
+              const _fmtB = (n) => Math.round(n).toLocaleString("th-TH");
+              if (r16 > 0 && rEod < r16) {
+                cb({ ok: false, html: true,
+                  title: "ยอดน้อยกว่ารอบ 16:00",
+                  msg:
+                    `ยอดสะสมทั้งวันลดลงไม่ได้` +
+                    `<div class="alert-cmp">` +
+                      `<div><span>🕓 รอบ 16:00</span><b>฿${_fmtB(r16)}</b></div>` +
+                      `<div class="is-bad"><span>🌙 ที่จะส่ง</span><b>฿${_fmtB(rEod)}</b></div>` +
+                    `</div>`
                 });
+                return;
+              }
+              if (r16 > 0 && rEod === r16) {
+                cb({ ok: true, confirm: {
+                  title: "ยอดเท่ากับรอบ 16:00",
+                  html: true,
+                  msg:
+                    `หลัง 16:00 ไม่มียอดขายเพิ่มเลย` +
+                    `<div class="alert-fig">` +
+                      `<div class="alert-fig-val">฿${_fmtB(rEod)}</div>` +
+                      `<div class="alert-fig-lbl">🕓 รอบ 16:00 และ 🌙 สิ้นวัน เท่ากัน</div>` +
+                    `</div>`
+                } });
                 return;
               }
               cb({ ok: true });
@@ -18282,6 +18340,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           btnText:    opts.btnText    || "ยืนยัน",
           cancelText: opts.cancelText || "ยกเลิก",
           danger:     !!opts.danger,
+          html:       !!opts.html,
           onCancel:   opts.onCancel || null
         });
       }
