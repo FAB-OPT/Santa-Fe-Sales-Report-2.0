@@ -759,12 +759,13 @@
       }
       /* ── แถบแจ้ง "ยังไม่ปิดร้าน" (ส่งรอบ 16:00 แล้ว แต่ยังไม่ส่งรอบสิ้นวัน) ── */
       .dd-pending {
-        display: flex; align-items: flex-start; gap: 10px;
-        padding: 12px 14px; font-size: 13px; line-height: 1.55; color: #7c2d12;
-        background: var(--brand-ll); border-color: #fed7aa;
+        display: flex; flex-direction: row; align-items: center; gap: 7px;
+        padding: 7px 11px; margin-bottom: 12px;
+        font-size: 12px; line-height: 1.45; color: #9a3412;
+        background: var(--brand-ll); border: 1px solid #fed7aa; border-radius: 9px;
       }
-      .dd-pending b { color: #9a3412; }
-      .dd-pending-ico { font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+      .dd-pending b { color: #7c2d12; font-weight: 800; }
+      .dd-pending-ico { font-size: 12.5px; line-height: 1; flex-shrink: 0; }
 
       /* ── แท็บ "กำหนดเอง": แถบเลือกช่วงวันที่ ── */
       .dash3-range {
@@ -14922,10 +14923,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const _pendingEod = !rows.some(r => r.submit_time_slot === "สิ้นวัน")
                          &&  rows.some(r => r.submit_time_slot === "16.00");
         const _pendingRow = _pendingEod
-          ? `<div class="dash3-row dash3-row-full"><div class="dash2-card dash3-card dd-pending">
-               <span class="dd-pending-ico">🕓</span>
-               <span><b>ยังไม่ปิดร้าน</b> — แดชบอร์ดยึดยอดรอบสิ้นวัน ยอดรอบ 16:00 ที่ส่งมาแล้วจะนับเมื่อสาขาส่งรอบปิดร้าน</span>
-             </div></div>`
+          ? `<div class="dd-pending"><span class="dd-pending-ico">🕓</span>` +
+            `<span><b>ยังไม่ปิดร้าน</b> · ยอดรอบ 16:00 จะนับเมื่อสาขาส่งรอบปิดร้าน</span></div>`
           : '';
         kpiEl.innerHTML = _ddKpiCards(_agg, codes, map);
         // ── Promo strip (แนวยาว · โชว์ item breakdown) ──
