@@ -757,6 +757,22 @@
       body.is-touch input[type="month"].dash3-pick + .dash3-pick-ov {
         font-size: 11.5px; /* ชื่อเดือนเล็กลงตามที่ขอ */
       }
+      /* ── ติ๊ก "ปิดร้านแล้ว" ในรอบ 16.00 ── */
+      .early-close {
+        display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+        margin-top: 14px; padding: 11px 13px;
+        background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+      }
+      .early-close input {
+        width: 18px; height: 18px; margin: 1px 0 0;
+        flex-shrink: 0; accent-color: var(--brand); cursor: pointer;
+      }
+      .early-close-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+      .early-close-txt b { font-size: 13.5px; font-weight: 800; color: #7c2d12; }
+      .early-close-txt em {
+        font-style: normal; font-size: 11.5px; color: #92400e; line-height: 1.45;
+      }
+
       /* ── แถบแจ้ง "ยังไม่ปิดร้าน" (ส่งรอบ 16:00 แล้ว แต่ยังไม่ส่งรอบสิ้นวัน) ── */
       .dd-pending {
         display: flex; flex-direction: row; align-items: center; gap: 7px;
@@ -7111,6 +7127,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 <input id="submitter_name" type="text" placeholder="ชื่อ-นามสกุล">
               </div>
             </div>
+            <label class="early-close" id="earlyCloseWrap" style="display:none">
+              <input type="checkbox" id="early_close" onchange="onEarlyCloseChange()">
+              <span class="early-close-txt">
+                <b>🏪 วันนี้ปิดร้านแล้ว ไม่มียอดเพิ่มอีก</b>
+                <em>กรอกให้ครบทุกช่อง ส่งครั้งเดียว ระบบบันทึกรอบสิ้นวันให้เอง</em>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -8593,6 +8616,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       ════════════════════════════════════════════ */
       let S = { code: "", branch: "", dm: "", role: "" };
       let _pendingPayload = null;
+      let _pendingEarlyClose = false;   // true = รอบ 16.00 ที่ติ๊ก "ปิดร้านแล้ว" → ต้องบันทึกรอบสิ้นวันต่อ
       let _editRow = null;
       let _currentPlan   = 0;  // Plan Sale ที่ดึงจาก DB สำหรับวันที่ที่เลือก
       const MAX_BRANCH_EDITS = 3;  // สาขาแก้ไขได้ไม่เกินกี่ครั้ง (admin ไม่จำกัด) — ปรับที่นี่ที่เดียว
@@ -9700,7 +9724,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const slot = document.getElementById("submit_time_slot")?.value;
         const card = document.getElementById("promoCard");
         if (!card) return;
-        if (slot === "สิ้นวัน" && _isPromoAllowedForBranch()) {
+        if ((slot === "สิ้นวัน" || _isEarlyClose()) && _isPromoAllowedForBranch()) {
           card.style.display = "";
           renderPromoItems();
         } else {
@@ -16343,18 +16367,42 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         "customer", "labour_hour", "labour_baht"
       ];
 
+      // ติ๊ก "ปิดร้านแล้ว" เปิดใช้เฉพาะรอบ 16.00 — ถือว่ายอดชุดนี้คือยอดปิดวันแล้ว
+      function _isEarlyClose() {
+        const el = document.getElementById("early_close");
+        const slotEl = document.getElementById("submit_time_slot");
+        return !!(el && el.checked && slotEl && slotEl.value === "16.00");
+      }
+
+      // ล็อกช่องของรอบ 16.00 — แต่ถ้าติ๊กปิดร้านแล้ว ต้องปลดให้กรอกครบเหมือนสิ้นวัน
+      function _applySlotLock() {
+        const slotEl = document.getElementById("submit_time_slot");
+        const lock = !!(slotEl && slotEl.value === "16.00") && !_isEarlyClose();
+        LOCK_1600.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.disabled = lock;
+          if (lock) el.value = "";
+        });
+      }
+
+      function onEarlyCloseChange() {
+        _applySlotLock();
+        _togglePromoCard();
+      }
+
       function onSlotChange() {
         const slot = document.getElementById("submit_time_slot").value;
         const is1600 = slot === "16.00";
         const isEod = slot === "สิ้นวัน";
 
-        // lock/unlock ช่อง 16.00
-        LOCK_1600.forEach(id => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.disabled = is1600;
-          if (is1600) el.value = "";
-        });
+        // ติ๊ก "ปิดร้านแล้ว" โชว์เฉพาะรอบ 16.00 · เปลี่ยนรอบเมื่อไหร่ให้เคลียร์ก่อน
+        const ecWrap = document.getElementById("earlyCloseWrap");
+        const ecEl   = document.getElementById("early_close");
+        if (ecEl && !is1600) ecEl.checked = false;
+        if (ecWrap) ecWrap.style.display = is1600 ? "flex" : "none";
+
+        _applySlotLock();
 
         // plan_sale: ซ่อนทุกรอบ — ดึงจาก DB อัตโนมัติ ไม่ให้ user กรอกเอง
         const planWrap = document.getElementById("plan_sale")?.closest(".field");
@@ -16389,7 +16437,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
 
         // ── Validation — เก็บทุก error ก่อน โชว์ popup เดียว ──
-        const isEod = slot === "สิ้นวัน";
+        // ปิดร้านก่อนเวลา = ข้อมูลชุดนี้คือยอดทั้งวัน จึงตรวจเข้มเท่ารอบสิ้นวัน
+        const isEod = (slot === "สิ้นวัน") || _isEarlyClose();
         const errs = [];
 
         // Actual Sale บังคับทุกรอบ
@@ -16440,6 +16489,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         localStorage.setItem(LS_NAME, name);
 
+        _pendingEarlyClose = _isEarlyClose();
         const p = {
           mode: "submit",
           submitter_name: name,
@@ -16819,12 +16869,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (res.ok) {
             // log action: ส่งยอด รอบ 16:00 / สิ้นวัน
             const _slot = _pendingPayload.submit_time_slot;
+            const _earlyClose = _pendingEarlyClose;
             const _act = _slot === "16.00" ? "submit_sales_16" : "submit_sales_eod";
             const _det = `${S.code || ""} ${S.branch || ""} · ${_pendingPayload.submit_date}`.trim();
             _logUserAction(_act, _det);
             // ── บันทึกรายการเชียร์ขาย (สิ้นวัน + promo เปิดอยู่ + มีรายการ) ──
             // ใช้ UPSERT (merge-duplicates) — ถ้าส่งซ้ำวันเดียวกัน จะ update แทน insert ใหม่
-            if (_slot === "สิ้นวัน" && _isPromoAllowedForBranch() && _promoSnapshot && _promoSnapshot.items?.length) {
+            if ((_slot === "สิ้นวัน" || _earlyClose) && _isPromoAllowedForBranch() && _promoSnapshot && _promoSnapshot.items?.length) {
               const pr = _promoSnapshot;
               const promoPayload = {
                 branch_code: _pendingPayload.branch_code,
@@ -16853,8 +16904,28 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 }
               }).catch(e => console.warn("[promo upsert]", e));
             }
+            // ── ปิดร้านก่อนเวลา → บันทึกรอบสิ้นวันต่อด้วยข้อมูลชุดเดียวกัน ──
+            if (_earlyClose) {
+              const _eodDate = _pendingPayload.submit_date;
+              const _eodPayload = { ..._cleanPayload, submit_time_slot: "สิ้นวัน" };
+              _pendingPayload = null;
+              _pendingEarlyClose = false;
+              clearForm();
+              apiCall(_eodPayload, function (res2) {
+                if (res2 && res2.ok) {
+                  _logUserAction("submit_sales_eod", `${S.code || ""} ${S.branch || ""} · ${_eodDate} (ปิดร้านก่อนเวลา)`.trim());
+                  _showSubmitSuccess(S.branch || "", _eodDate, "16.00 + สิ้นวัน");
+                } else {
+                  // รอบ 16.00 บันทึกแล้ว แต่รอบสิ้นวันไม่ผ่าน — บอกให้ส่งเอง จะได้ไม่ค้าง
+                  showAlert("⚠️", "บันทึกรอบสิ้นวันไม่สำเร็จ",
+                    `รอบ 16:00 บันทึกแล้ว แต่รอบสิ้นวันยังไม่เข้า\n\nกรุณาส่งรอบสิ้นวันของวันที่ ${_eodDate} อีกครั้งด้วยยอดชุดเดิม`);
+                }
+              });
+              return;
+            }
             _showSubmitSuccess(S.branch || "", _pendingPayload.submit_date, _pendingPayload.submit_time_slot);
             _pendingPayload = null;
+            _pendingEarlyClose = false;
             clearForm();
           } else if (res.code === "BUSY_PEAK") {
             showAlert("⏳", "ระบบยุ่ง", res.userMessage || "กรุณารอสักครู่แล้วลองใหม่");
@@ -16875,6 +16946,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         });
         document.getElementById("submit_time_slot").value = "";
         document.getElementById("submit_date").value = todayStr();
+        const _ec = document.getElementById("early_close");
+        if (_ec) _ec.checked = false;
+        const _ecw = document.getElementById("earlyCloseWrap");
+        if (_ecw) _ecw.style.display = "none";
         _currentPlan = 0;
         _planCache   = {};
         // reset promo qty inputs + ซ่อน card
