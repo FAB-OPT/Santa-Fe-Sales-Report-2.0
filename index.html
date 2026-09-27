@@ -757,6 +757,73 @@
       body.is-touch input[type="month"].dash3-pick + .dash3-pick-ov {
         font-size: 11.5px; /* ชื่อเดือนเล็กลงตามที่ขอ */
       }
+      /* ── แถบเตือนยอดค้างส่ง (หัวหน้าส่งยอด · เฉพาะสาขา) ── */
+      .pend {
+        background: #fffbeb; border: 1px solid #fde68a;
+        border-radius: var(--radius); margin-bottom: 12px; overflow: hidden;
+      }
+      .pend-hd {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 14px; background: #fef3c7;
+        font-size: 13px; font-weight: 800; color: #7c2d12;
+      }
+      .pend-hd .pend-count {
+        margin-left: auto; font-weight: 700; color: #92400e; font-size: 12px;
+      }
+      .pend-row {
+        display: flex; align-items: center; gap: 8px 10px;
+        padding: 9px 14px; font-size: 13px; flex-wrap: wrap;
+      }
+      .pend-row + .pend-row, .pend-row + .pend-closed { border-top: 1px solid #fef08a; }
+      .pend-date {
+        font-weight: 800; color: #7c2d12; flex-shrink: 0;
+        font-variant-numeric: tabular-nums; min-width: 84px;
+      }
+      .pend-slots { color: #92400e; flex: 1 1 110px; min-width: 0; font-size: 12.5px; }
+      .pend-btns { display: flex; gap: 6px; flex-shrink: 0; }
+      .pend-go, .pend-shut {
+        border-radius: 999px; padding: 5px 12px; cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 800; white-space: nowrap;
+        transition: background .15s, color .15s, border-color .15s;
+      }
+      .pend-go { border: 1px solid #f59e0b; background: #fff; color: #b45309; }
+      .pend-go:hover { background: #b45309; color: #fff; border-color: #b45309; }
+      .pend-shut { border: 1px solid var(--bd); background: #fff; color: var(--txt2); }
+      .pend-shut:hover { border-color: #94a3b8; color: #334155; }
+      .pend-closed {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 14px; font-size: 12.5px; background: #fafafa; color: var(--txt2);
+      }
+      .pend-closed + .pend-closed { border-top: 1px solid var(--bd-2); }
+      .pend-closed .pend-date { color: var(--txt2); font-weight: 700; }
+      .pend-undo {
+        margin-left: auto; border: none; background: none; cursor: pointer; padding: 0;
+        font-family: inherit; font-size: 12px; font-weight: 700;
+        color: var(--brand); text-decoration: underline;
+      }
+      .pend-foot {
+        padding: 8px 14px; font-size: 11.5px; color: #92400e;
+        border-top: 1px solid #fef08a; background: #fffdf5;
+      }
+      .pend-clear {
+        display: flex; align-items: center; gap: 8px;
+        background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius);
+        padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: #15803d;
+        margin-bottom: 12px;
+      }
+      /* select เหตุผลในป็อปอัพปิดร้าน */
+      .alert-reason { margin-top: 16px; text-align: left; }
+      .alert-reason label {
+        display: block; font-size: 11.5px; font-weight: 800; letter-spacing: .05em;
+        text-transform: uppercase; color: var(--txt2); margin-bottom: 5px;
+      }
+      .alert-reason select {
+        width: 100%; padding: 10px 12px; border: 1.5px solid var(--bd); border-radius: 10px;
+        font-family: inherit; font-size: 14.5px; color: var(--txt);
+        background: var(--surface-2); outline: none;
+      }
+      .alert-reason select:focus { border-color: var(--brand); }
+
       /* ── ติ๊ก "ปิดร้านแล้ว" ในรอบ 16.00 ── */
       .early-close {
         display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
@@ -7088,7 +7155,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               </div>
             </div>
           </div>
-          <div class="login-footer">© 2026 Santa Fe · Sales Report v2.2.0</div>
+          <div class="login-footer">© 2026 Santa Fe · Sales Report v2.3.0</div>
         </div>
       </div>
     </div>
@@ -7098,6 +7165,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 ════════════════════════════════════════ -->
     <div id="sForm" class="screen">
       <div class="form-wrap">
+
+        <!-- แถบเตือนยอดค้างส่ง (เติมด้วย JS · เฉพาะ role สาขา) -->
+        <div id="pendBanner"></div>
 
         <!-- ส่วนที่ 1: ข้อมูลการส่ง -->
         <div class="card">
@@ -9433,6 +9503,183 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         document.getElementById("submit_date").value = todayStr();
         showScreen("sForm");
         setMobTab("mnForm");
+        loadPendingRounds();
+      }
+
+      /* ═══════════════════════════════════════════════════
+         แถบเตือนยอดค้างส่ง — หัวหน้าส่งยอด (เฉพาะ role สาขา)
+         ย้อนดู 7 วัน ไม่นับวันนี้ (วันนี้ยังส่งทัน)
+         วันไหนกดปิดร้านไว้ ไม่นับเป็นยอดค้าง
+      ═══════════════════════════════════════════════════ */
+      const PEND_LOOKBACK_DAYS = 7;
+      const CLOSE_REASONS = ["น้ำท่วม", "ไฟฟ้าดับ", "ห้างปิด", "ปรับปรุงร้าน", "อื่นๆ"];
+      let _pendBusy = false;
+      let _pendClosuresReady = true;   // false = ยังไม่ได้รันไฟล์ branch_closures_schema.sql
+
+      function _pendIsBranchUser() {
+        return S.role === "branch" || S.role === "franchise";
+      }
+      function _pendThai(ds) {
+        const p = String(ds).split("-");
+        return parseInt(p[2], 10) + "/" + parseInt(p[1], 10) + "/" + (parseInt(p[0], 10) + 543);
+      }
+      function _pendSlotLabel(sl) { return sl === "16.00" ? "🕓 16:00" : "🌙 สิ้นวัน"; }
+
+      async function loadPendingRounds() {
+        const box = document.getElementById("pendBanner");
+        if (!box) return;
+        if (!_pendIsBranchUser() || !S.code) { box.innerHTML = ""; return; }
+
+        // ช่วง: เมื่อวาน ย้อนไป PEND_LOOKBACK_DAYS วัน
+        const end = new Date(); end.setHours(0, 0, 0, 0); end.setDate(end.getDate() - 1);
+        const start = new Date(end); start.setDate(end.getDate() - (PEND_LOOKBACK_DAYS - 1));
+        const startStr = _fmtDate(start), endStr = _fmtDate(end);
+
+        try {
+          const [sent, closed] = await Promise.all([
+            sb.from("sales_data").select("submit_date, submit_time_slot")
+              .eq("branch_code", S.code).gte("submit_date", startStr).lte("submit_date", endStr),
+            sb.from("branch_closures").select("closed_date, reason")
+              .eq("branch_code", S.code).gte("closed_date", startStr).lte("closed_date", endStr)
+          ]);
+          if (sent.error) { console.warn("[pending] sales", sent.error); box.innerHTML = ""; return; }
+          // ตาราง branch_closures ยังไม่ได้สร้าง → ถือว่าไม่มีวันปิด (แถบยังใช้ได้)
+          _pendClosuresReady = !(closed && closed.error);
+          const closedRows = _pendClosuresReady && closed.data ? closed.data : [];
+          if (!_pendClosuresReady) console.warn("[pending] ยังไม่มีตาราง branch_closures — ซ่อนปุ่มปิดร้าน", closed.error);
+
+          const have = {};
+          (sent.data || []).forEach(r => {
+            (have[r.submit_date] = have[r.submit_date] || {})[r.submit_time_slot] = true;
+          });
+          const closedMap = {};
+          closedRows.forEach(c => { closedMap[c.closed_date] = c.reason || "ปิดร้าน"; });
+
+          const pending = [];
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const key = _fmtDate(d);
+            if (closedMap[key]) continue;
+            const got = have[key] || {};
+            const miss = [];
+            if (!got["16.00"])  miss.push("16.00");
+            if (!got["สิ้นวัน"]) miss.push("สิ้นวัน");
+            if (miss.length) pending.push({ date: key, slots: miss });
+          }
+          const closedList = Object.keys(closedMap).sort().map(k => ({ date: k, reason: closedMap[k] }));
+          _renderPendingRounds(pending, closedList);
+        } catch (e) {
+          console.warn("[pending] failed", e);
+          box.innerHTML = "";
+        }
+      }
+
+      function _renderPendingRounds(pending, closedList) {
+        const box = document.getElementById("pendBanner");
+        if (!box) return;
+        if (!pending.length && !closedList.length) {
+          box.innerHTML = "";
+          return;
+        }
+        if (!pending.length) {
+          box.innerHTML = `<div class="pend-clear"><span>✅</span><span>จัดการครบทุกวันใน ${PEND_LOOKBACK_DAYS} วันล่าสุด</span></div>`;
+          return;
+        }
+        const rows = pending.map(p => `
+          <div class="pend-row">
+            <span class="pend-date">${_pendThai(p.date)}</span>
+            <span class="pend-slots">${p.slots.map(_pendSlotLabel).join(" · ")}</span>
+            <span class="pend-btns">
+              ${_pendClosuresReady ? `<button type="button" class="pend-shut" onclick="pendCloseDay('${p.date}')">ปิดร้าน</button>` : ``}
+              <button type="button" class="pend-go" onclick="pendGoSubmit('${p.date}','${p.slots[0]}')">ส่งเลย</button>
+            </span>
+          </div>`).join("");
+        const closedRows = closedList.map(c => `
+          <div class="pend-closed">
+            <span class="pend-date">${_pendThai(c.date)}</span>
+            <span>🏪 ปิดร้าน · ${escHtml(c.reason)}</span>
+            <button type="button" class="pend-undo" onclick="pendUndoClose('${c.date}')">แก้ไข</button>
+          </div>`).join("");
+        box.innerHTML = `
+          <div class="pend">
+            <div class="pend-hd"><span>⚠️</span><span>ยอดค้างส่ง</span>
+              <span class="pend-count">${pending.length} วัน</span></div>
+            ${rows}${closedRows}
+            <div class="pend-foot">ย้อนดู ${PEND_LOOKBACK_DAYS} วันล่าสุด · แถบนี้จะหายเองเมื่อจัดการครบ</div>
+          </div>`;
+      }
+
+      // "ส่งเลย" — เติมวันที่ + รอบ ให้แล้วเลื่อนไปที่ฟอร์ม
+      function pendGoSubmit(date, slot) {
+        const d = document.getElementById("submit_date");
+        const sl = document.getElementById("submit_time_slot");
+        if (d) d.value = date;
+        if (sl) sl.value = slot;
+        if (typeof fetchPlanForDate === "function" && date) fetchPlanForDate(date);
+        onSlotChange();
+        const card = document.querySelector("#sForm .card");
+        if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      // "ปิดร้าน" — เลือกเหตุผลแล้วบันทึกลง branch_closures
+      function pendCloseDay(date) {
+        const opts = CLOSE_REASONS.map(r => `<option>${escHtml(r)}</option>`).join("");
+        showConfirm("🏪", "วันนี้ปิดร้าน",
+          `วันที่เลือกจะไม่ถูกนับเป็นยอดค้างอีก` +
+          `<div class="alert-fig">` +
+            `<div class="alert-fig-val is-long">${_pendThai(date)}</div>` +
+            `<div class="alert-fig-lbl">🏪 ทั้งวัน ไม่มียอดขาย</div>` +
+          `</div>` +
+          `<div class="alert-reason"><label for="closeReason">เหตุผล</label>` +
+          `<select id="closeReason">${opts}</select></div>`,
+          function () {
+            const sel = document.getElementById("closeReason");
+            const reason = (sel && sel.value) || CLOSE_REASONS[0];
+            _pendSaveClosure(date, reason);
+          },
+          { btnText: "ยืนยันปิดร้าน", cancelText: "ยกเลิก", html: true });
+      }
+
+      async function _pendSaveClosure(date, reason) {
+        if (_pendBusy) return;
+        _pendBusy = true;
+        try {
+          const who = (document.getElementById("submitter_name") || {}).value
+                   || localStorage.getItem(LS_NAME) || "";
+          const { error } = await sb.from("branch_closures").insert({
+            branch_code: S.code, branch_name: S.branch, district_manager: S.dm,
+            closed_date: date, reason: reason, closed_by: who
+          });
+          if (error) {
+            console.warn("[closure insert]", error);
+            showAlert("❌", "บันทึกไม่สำเร็จ",
+              "ปิดวันนี้ไม่ได้ ลองใหม่อีกครั้ง\n\n" + (error.message || ""));
+            return;
+          }
+          _logUserAction("branch_closed", `${S.code || ""} ${S.branch || ""} · ${date} · ${reason}`.trim());
+          await loadPendingRounds();
+        } finally { _pendBusy = false; }
+      }
+
+      // "แก้ไข" — ถอยวันที่ปิดไว้ กลับมาเป็นยอดค้าง
+      function pendUndoClose(date) {
+        showConfirm("↩️", "ยกเลิกปิดร้าน",
+          `วันที่ ${_pendThai(date)} จะกลับมาเป็นยอดค้างส่งอีกครั้ง`,
+          async function () {
+            if (_pendBusy) return;
+            _pendBusy = true;
+            try {
+              const { error } = await sb.from("branch_closures").delete()
+                .eq("branch_code", S.code).eq("closed_date", date);
+              if (error) {
+                console.warn("[closure delete]", error);
+                showAlert("❌", "ยกเลิกไม่สำเร็จ", error.message || "ลองใหม่อีกครั้ง");
+                return;
+              }
+              _logUserAction("branch_closed_undo", `${S.code || ""} ${S.branch || ""} · ${date}`.trim());
+              await loadPendingRounds();
+            } finally { _pendBusy = false; }
+          },
+          { btnText: "ยืนยัน", cancelText: "ยกเลิก" });
       }
 
       function showHistory() {
@@ -16915,6 +17162,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 if (res2 && res2.ok) {
                   _logUserAction("submit_sales_eod", `${S.code || ""} ${S.branch || ""} · ${_eodDate} (ปิดร้านก่อนเวลา)`.trim());
                   _showSubmitSuccess(S.branch || "", _eodDate, "16.00 + สิ้นวัน");
+                  loadPendingRounds();
                 } else {
                   // รอบ 16.00 บันทึกแล้ว แต่รอบสิ้นวันไม่ผ่าน — บอกให้ส่งเอง จะได้ไม่ค้าง
                   showAlert("⚠️", "บันทึกรอบสิ้นวันไม่สำเร็จ",
@@ -16927,6 +17175,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             _pendingPayload = null;
             _pendingEarlyClose = false;
             clearForm();
+            loadPendingRounds();
           } else if (res.code === "BUSY_PEAK") {
             showAlert("⏳", "ระบบยุ่ง", res.userMessage || "กรุณารอสักครู่แล้วลองใหม่");
           } else if (res.duplicate) {
