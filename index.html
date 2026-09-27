@@ -4123,6 +4123,10 @@
       .alert-fig-lbl { font-size: 12.5px; font-weight: 600; color: #92400e; margin-top: 6px; }
       /* ค่าที่ยาวกว่าเลขเงิน (เช่น วันที่) — ย่อลงไม่ให้ล้นกรอบ */
       .alert-fig-val.is-long { font-size: 30px; }
+      /* โทนแดง — ใช้กับเคสที่ส่งไม่ได้ (อำพัน = ยืนยันแล้วไปต่อได้) */
+      .alert-fig.is-bad { background: #fef2f2; border-color: #fecaca; }
+      .alert-fig.is-bad .alert-fig-val { color: #b91c1c; }
+      .alert-fig.is-bad .alert-fig-lbl { color: #991b1b; }
       .alert-cmp { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
       .alert-cmp > div {
         flex: 1 1 0; max-width: 160px; border-radius: 12px; padding: 10px 8px;
@@ -16479,7 +16483,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               console.log("[submit] order check result:", check);
               if (!check.ok) {
                 showAlert("⛔", check.title || "ลำดับการส่งไม่ถูกต้อง", check.msg,
-                  null, { html: !!check.html });
+                  null, { html: !!check.html, btnText: check.btnText || "ตกลง" });
                 return;
               }
               // ผ่านแบบมีข้อสังเกต (เช่น ยอดเท่ารอบ 16:00) → ให้ยืนยันก่อน
@@ -16529,7 +16533,16 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               if (!data || !data.length) {
                 const [yy, mm, dd] = date.split("-");
                 const thDate = `${parseInt(dd)}/${parseInt(mm)}/${parseInt(yy)+543}`;
-                cb({ ok: false, msg: `ยังไม่ได้ส่งรอบ 16.00 ของวันที่ ${thDate} กรุณาส่งรอบ 16.00 ก่อน` });
+                cb({ ok: false, html: true,
+                  title: "ยังไม่ได้ส่งรอบ 16:00",
+                  btnText: "ไปส่งรอบ 16:00",
+                  msg:
+                    `ต้องส่งรอบ 16:00 ก่อน จึงจะปิดวันได้` +
+                    `<div class="alert-fig is-bad">` +
+                      `<div class="alert-fig-val is-long">${thDate}</div>` +
+                      `<div class="alert-fig-lbl">🕓 รอบ 16:00 ที่ยังขาด</div>` +
+                    `</div>`
+                });
                 return;
               }
               // ── กฎยอดสิ้นวัน เทียบกับรอบ 16.00 ──
