@@ -850,11 +850,14 @@
 
       /* ── แถบแจ้งวันที่สาขาปิดร้าน (อ่านจาก branch_closures) ── */
       .dd-closed {
-        display: flex; flex-direction: row; align-items: center; gap: 7px;
-        padding: 7px 11px; margin-bottom: 12px;
-        font-size: 12px; line-height: 1.45; color: #475569;
+        display: flex; flex-direction: row; align-items: flex-start; gap: 7px;
+        padding: 8px 11px; margin-bottom: 12px;
+        font-size: 12px; line-height: 1.6; color: #475569;
         background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px;
       }
+      /* รายชื่อสาขาต่อท้าย — จางกว่าหัวข้อ เพื่อให้จำนวนเด่นกว่า */
+      .dd-closed-list { color: #64748b; font-weight: 600; }
+      .dd-closed .is-miss .dd-closed-list { color: #c2554f; }
       .dd-closed b { color: #334155; font-weight: 800; }
       .dd-closed-ico { font-size: 12.5px; line-height: 1; flex-shrink: 0; }
       .dd-closed-sep { color: #cbd5e1; margin: 0 2px; }
@@ -15330,6 +15333,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (_n > 0) { _missTotal += _n; _missBranches.add(String(bc)); }
         });
 
+        // รายชื่อสาขาต่อท้าย — บอกไปเลยว่าสาขาไหน จะได้ไม่ต้องไล่หาในตาราง
+        const _MAX_NAMES = 8;
+        const _nameList = (arr) => {
+          const names = arr.slice().sort().map(bc => {
+            const nm = (BRANCH_DM_MAP[bc] || {}).branch || "";
+            return escHtml(nm ? bc + " " + nm : bc);
+          });
+          if (names.length <= _MAX_NAMES) return names.join(" · ");
+          return names.slice(0, _MAX_NAMES).join(" · ") +
+                 " · และอีก " + (names.length - _MAX_NAMES) + " สาขา";
+        };
+
         // ── แถบสรุป: บอกทั้ง "ปิดร้าน" และ "ค้างส่ง" ในบรรทัดเดียว ──
         let _closedRow = '';
         const _segs = [];
@@ -15340,17 +15355,19 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               ? `🏪 <b>ปิดร้าน</b> · ${escHtml(_closures[0].reason || "ไม่ระบุเหตุผล")}`
               : `🏪 <b>ปิดร้าน ${_closedDates.length} วัน</b>`);
           } else {
-            const nB = Object.keys(_closedByBranch).length;
-            _segs.push(sec === 'day'
-              ? `🏪 <b>ปิดร้าน ${nB} สาขา</b>`
-              : `🏪 <b>ปิดร้าน ${nB} สาขา รวม ${_closures.length} วัน</b>`);
+            const _clCodes = Object.keys(_closedByBranch);
+            _segs.push((sec === 'day'
+              ? `🏪 <b>ปิดร้าน ${_clCodes.length} สาขา</b>`
+              : `🏪 <b>ปิดร้าน ${_clCodes.length} สาขา รวม ${_closures.length} วัน</b>`) +
+              ` <span class="dd-closed-list">${_nameList(_clCodes)}</span>`);
           }
         }
         if (_missTotal > 0) {
           const _t = _isBranchLv
             ? (sec === 'day' ? `<b>ยังไม่ส่งยอด</b>` : `<b>ค้างส่ง ${_missTotal} วัน</b>`)
             : (sec === 'day' ? `<b>ยังไม่ส่ง ${_missBranches.size} สาขา</b>`
-                             : `<b>ค้างส่ง ${_missBranches.size} สาขา รวม ${_missTotal} วัน</b>`);
+                             : `<b>ค้างส่ง ${_missBranches.size} สาขา รวม ${_missTotal} วัน</b>`) +
+              (_isBranchLv ? `` : ` <span class="dd-closed-list">${_nameList([..._missBranches])}</span>`);
           _segs.push(`<span class="is-miss">⏳ ${_t}</span>`);
         }
         if (_segs.length) {
