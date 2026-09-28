@@ -15064,7 +15064,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         if (!_ddCodes().length) {
           if (crumbEl) crumbEl.innerHTML = "";
-          const k = document.getElementById('sec' + C + 'Kpis'); if (k) k.innerHTML = "";
+          const k = document.getElementById('sec' + C + 'Kpis');
+          if (k) { k.innerHTML = ""; _syncPromoCards(k); }   // ล้างการ์ดโปรค้างของช่วงก่อนด้วย
           const b = document.getElementById('sec' + C + 'Body');
           if (b) b.innerHTML = `<div class="dash2-card dash3-card"><div class="dd-empty">📭 ยังไม่มีข้อมูลยอดขายในช่วงที่เลือก</div></div>`;
           return;
@@ -15101,6 +15102,21 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         if (crumbEl) crumbEl.innerHTML = _ddCrumb();
         renderSection(sec);
+      }
+
+      // ── การ์ดโปร (campaign + strip) เป็น element พี่น้องของ KPI ไม่ใช่ลูก
+      //    การล้าง kpiEl.innerHTML จึงไม่ได้ลบมันไปด้วย ต้องลบเองทุกครั้งที่วาดใหม่
+      //    ไม่งั้นยอดเชียร์ขายของช่วงก่อนจะค้างอยู่ทั้งที่ช่วงใหม่ไม่มีข้อมูล ──
+      function _syncPromoCards(kpiEl) {
+        if (!kpiEl) return;
+        let sib = kpiEl.nextElementSibling;
+        while (sib && sib.classList &&
+               (sib.classList.contains("dash3-promo-strip") || sib.classList.contains("dash3-promo-campaign"))) {
+          const next = sib.nextElementSibling; sib.remove(); sib = next;
+        }
+        // _renderPromoStrip คืนค่าว่างเมื่อไม่มียอด — ช่วงที่ไม่มีข้อมูลจึงไม่มีแถบโผล่
+        kpiEl.insertAdjacentHTML("afterend", _renderPromoStrip(_currentPromoAgg));
+        _refreshPromoCampaignCard();   // การ์ดเป้า/incentive สะสมทั้งแคมเปญ (ไม่ผูกกับช่วงที่เลือก)
       }
 
       // ── วาด 1 พาร์ท (วัน/สัปดาห์/เดือน) สำหรับเอนทิตีที่กำลังดู ──
@@ -15385,16 +15401,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             `<span><b>ยังไม่ปิดร้าน</b> · ยอดรอบ 16:00 จะนับเมื่อสาขาส่งรอบปิดร้าน</span></div>`
           : '';
         kpiEl.innerHTML = _ddKpiCards(_agg, codes, map);
-        // ── Promo strip (แนวยาว · โชว์ item breakdown) ──
-        // ลบ strip เก่าก่อน (ป้องกัน accumulate ตอน re-render)
-        // ลบการ์ดโปรเก่า (campaign + strip · อาจมี 0-2 ใบ) กัน accumulate ตอน re-render
-        let _promoSib = kpiEl.nextElementSibling;
-        while (_promoSib && _promoSib.classList &&
-               (_promoSib.classList.contains("dash3-promo-strip") || _promoSib.classList.contains("dash3-promo-campaign"))) {
-          const _next = _promoSib.nextElementSibling; _promoSib.remove(); _promoSib = _next;
-        }
-        kpiEl.insertAdjacentHTML("afterend", _renderPromoStrip(_currentPromoAgg));
-        _refreshPromoCampaignCard();   // แทรกการ์ดเป้า/incentive เหนือ strip
+        _syncPromoCards(kpiEl);
 
         // ── สำหรับ company/zone view บน month/year → เพิ่ม "สรุปยอดขายช่วง" (สัปดาห์ที่ 1-5 / มกราคม-ธันวาคม) ──
         let _periodPanel = '';
