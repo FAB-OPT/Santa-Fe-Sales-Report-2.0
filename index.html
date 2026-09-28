@@ -849,12 +849,21 @@
       }
       .dd-closed b { color: #334155; font-weight: 800; }
       .dd-closed-ico { font-size: 12.5px; line-height: 1; flex-shrink: 0; }
-      /* ป้าย "ปิดร้าน" ในแถวเปรียบเทียบสาขา */
-      .dd-bar.is-closed .dd-bar-fill { background: #cbd5e1 !important; }
-      .dd-bar-closed {
-        font-size: 11px; font-weight: 800; color: #475569;
-        background: #e2e8f0; border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+      .dd-closed-sep { color: #cbd5e1; margin: 0 2px; }
+      .dd-closed .is-miss { color: #b91c1c; }
+      .dd-closed .is-miss b { color: #991b1b; }
+      /* เหตุผลที่ยอดเป็น 0 — เขียนลงในแท่งที่ว่างอยู่แล้ว
+         ไม่แตะคอลัมน์ชื่อ จึงไม่มีปัญหาชื่อสาขายาวแล้วตกขอบ และแถวสูงเท่าเดิม */
+      /* แท่งต้องเป็น positioned parent ไม่งั้นข้อความข้างในจะหลุดไปอิงปุ่มแทน */
+      .dd-bar-track { position: relative; }
+      .dd-bar-why {
+        position: absolute; inset: 0; display: flex; align-items: center;
+        padding-left: 9px; font-size: 11px; font-weight: 800;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
+      .dd-bar-why.is-closed { color: #64748b; }
+      .dd-bar-why.is-missing { color: #b91c1c; }
+      .dd-bar-track.track-missing { background: #fef2f2; }
 
       /* ── แถบแจ้ง "ยังไม่ปิดร้าน" (ส่งรอบ 16:00 แล้ว แต่ยังไม่ส่งรอบสิ้นวัน) ── */
       .dd-pending {
@@ -14339,15 +14348,24 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             ? `<span class="dd-bar-name-text"><span class="dd-bar-name-full">${escHtml(i.label)}</span><span class="dd-bar-name-short">${escHtml(i.labelShort)}</span></span>`
             : `<span class="dd-bar-name-text">${escHtml(i.label)}</span>`;
           const nChip    = i.n ? `<span class="dd-bar-chip">${i.n} สาขา</span>` : "";
-          // ปิดร้าน = ยอด 0 เพราะไม่มีของให้ขาย ไม่ใช่เพราะไม่ส่ง — ต้องแยกให้เห็น
-          const closedChip = i.closedDays
-            ? `<span class="dd-bar-closed">🏪 ปิดร้าน${i.closedDays > 1 ? " " + i.closedDays + " วัน" : ""}</span>`
-            : "";
-          const closedCls = (i.closedDays && i.actual <= 0) ? " is-closed" : "";
           const hitCls = (i.pct >= 1) ? " is-hit-100" : (i.pct >= 0.80 ? " is-warn-80" : "");
-          return `<button class="dd-bar${hitCls}${closedCls}" onclick="${onClick}('${sec}',${idx})">
-            <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}${closedChip}</span>
-            <span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%;background:${fillBg}"></span></span>
+          // ยอด 0 = แท่งว่างทั้งแท่ง เอาที่ว่างนั้นมาเขียนสาเหตุเป็นภาษาไทยเต็มคำ
+          //   ปิดร้าน = ไม่มีของให้ขาย · ยังไม่ส่ง = มีของแต่สาขาไม่ส่ง ต้องตาม
+          let trackHtml;
+          if (i.actual <= 0 && (i.closedDays || i.missDays)) {
+            const isClosed = !!i.closedDays;
+            const why = isClosed
+              ? "🏪 ปิดร้าน" + (i.closedReason ? " · " + escHtml(i.closedReason)
+                                               : (i.closedDays > 1 ? " " + i.closedDays + " วัน" : ""))
+              : "⏳ ยังไม่ส่งยอด" + (i.missDays > 1 ? " " + i.missDays + " วัน" : "");
+            trackHtml = `<span class="dd-bar-track${isClosed ? "" : " track-missing"}">
+              <span class="dd-bar-why ${isClosed ? "is-closed" : "is-missing"}">${why}</span></span>`;
+          } else {
+            trackHtml = `<span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%;background:${fillBg}"></span></span>`;
+          }
+          return `<button class="dd-bar${hitCls}" onclick="${onClick}('${sec}',${idx})">
+            <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}</span>
+            ${trackHtml}
             <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${base}">${pctTxt}</i></span>
           </button>`;
         }).join("");
@@ -15081,18 +15099,33 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         } else if (_ddView.level === "zone") {
           codes = zones[_ddView.zone] || [];
           rows = d.rows.filter(r => codes.includes(r.branch_code));
-          const _clDays = {};
+          const _clDays = {}, _clReason = {};
           (d.closures || []).forEach(c => {
-            (_clDays[String(c.branch_code)] = _clDays[String(c.branch_code)] || []).push(c.closed_date);
+            const k = String(c.branch_code);
+            (_clDays[k] = _clDays[k] || []).push(c.closed_date);
+            if (!_clReason[k]) _clReason[k] = c.reason || "";
           });
+          // วันในช่วงที่ควรมีรอบสิ้นวันแล้ว — ไม่นับวันนี้ เพราะยังส่งทัน
+          const _today = todayStr();
+          const _dueDates = [];
+          for (let dt = new Date(d.range.startDate + "T00:00:00");
+               dt <= new Date(d.range.endDate + "T00:00:00"); dt.setDate(dt.getDate() + 1)) {
+            const k = _fmtDate(dt);
+            if (k < _today) _dueDates.push(k);
+          }
           _secItems[sec].branches = codes.map(bc => {
             const br = rows.filter(r => r.branch_code === bc);
             const a = _ddAgg(br);
             const pl = _secPlan(map, [bc]);
             const nm = (BRANCH_DM_MAP[bc] || {}).branch || bc;
             const cl = (_clDays[bc] || []).length;
+            const closedSet = new Set(_clDays[bc] || []);
+            const eodSet = new Set(br.filter(r => r.submit_time_slot === "สิ้นวัน").map(r => r.submit_date));
+            const miss = _dueDates.filter(k => !closedSet.has(k) && !eodSet.has(k)).length;
             return { id: bc, label: nm.replace(/^\d+\s*/, ""), code: bc, actual: a.actual,
-                     pct: pl > 0 ? a.actual / pl : 0, closedDays: cl };
+                     pct: pl > 0 ? a.actual / pl : 0,
+                     closedDays: cl, missDays: miss,
+                     closedReason: (cl === 1 ? _clReason[bc] : "") };
           }).sort((x, y) => y.actual - x.actual);
           topPanel = _ddPanel("🏬 สาขาในโซน " + escHtml(_ddView.zone), codes.length + " สาขา · คลิกที่สาขาเพื่อดูรายละเอียด", _ddBarList(_secItems[sec].branches, "_ddDrillBranch", sec));
         } else {
@@ -15241,20 +15274,59 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           (_closedByBranch[String(c.branch_code)] = _closedByBranch[String(c.branch_code)] || [])
             .push(c.closed_date);
         });
+        // ── วันที่ยังไม่ส่งยอด (ครบกำหนดแล้วแต่ไม่มีรอบสิ้นวัน และไม่ได้กดปิดร้าน) ──
+        // ไม่นับวันนี้ เพราะสาขายังส่งทัน
+        const _todayKey = todayStr();
+        const _dueList = [];
+        for (let _dt = new Date(d.range.startDate + "T00:00:00");
+             _dt <= new Date(d.range.endDate + "T00:00:00"); _dt.setDate(_dt.getDate() + 1)) {
+          const _k = _fmtDate(_dt);
+          if (_k < _todayKey) _dueList.push(_k);
+        }
+        const _eodByBranch = {};
+        rows.forEach(r => {
+          if (r.submit_time_slot !== "สิ้นวัน") return;
+          (_eodByBranch[String(r.branch_code)] = _eodByBranch[String(r.branch_code)] || new Set())
+            .add(r.submit_date);
+        });
+        let _missTotal = 0;
+        const _missBranches = new Set();
+        codes.forEach(bc => {
+          const _cs = new Set(_closedByBranch[String(bc)] || []);
+          const _es = _eodByBranch[String(bc)] || new Set();
+          const _n = _dueList.filter(k => !_cs.has(k) && !_es.has(k)).length;
+          if (_n > 0) { _missTotal += _n; _missBranches.add(String(bc)); }
+        });
+
+        // ── แถบสรุป: บอกทั้ง "ปิดร้าน" และ "ค้างส่ง" ในบรรทัดเดียว ──
         let _closedRow = '';
+        const _segs = [];
+        const _isBranchLv = (_ddView.level === "branch");
         if (_closures.length) {
-          let txt;
-          if (_ddView.level === "branch") {
-            txt = (sec === 'day')
-              ? `<b>ปิดร้าน</b> · ${escHtml(_closures[0].reason || "ไม่ระบุเหตุผล")} — วันนี้ไม่มียอดขายให้ส่ง`
-              : `<b>ปิดร้าน ${_closedDates.length} วัน</b> ในช่วงนี้ · ${_closedDates.map(fmtThaiDate).join(" · ")}`;
+          if (_isBranchLv) {
+            _segs.push(sec === 'day'
+              ? `🏪 <b>ปิดร้าน</b> · ${escHtml(_closures[0].reason || "ไม่ระบุเหตุผล")}`
+              : `🏪 <b>ปิดร้าน ${_closedDates.length} วัน</b>`);
           } else {
-            const nBranch = Object.keys(_closedByBranch).length;
-            txt = (sec === 'day')
-              ? `<b>ปิดร้าน ${nBranch} สาขา</b> วันนี้ ไม่มียอดขายให้ส่ง`
-              : `<b>ปิดร้าน ${nBranch} สาขา รวม ${_closures.length} วัน</b> ในช่วงนี้`;
+            const nB = Object.keys(_closedByBranch).length;
+            _segs.push(sec === 'day'
+              ? `🏪 <b>ปิดร้าน ${nB} สาขา</b>`
+              : `🏪 <b>ปิดร้าน ${nB} สาขา รวม ${_closures.length} วัน</b>`);
           }
-          _closedRow = `<div class="dd-closed"><span class="dd-closed-ico">🏪</span><span>${txt}</span></div>`;
+        }
+        if (_missTotal > 0) {
+          const _t = _isBranchLv
+            ? (sec === 'day' ? `<b>ยังไม่ส่งยอด</b>` : `<b>ค้างส่ง ${_missTotal} วัน</b>`)
+            : (sec === 'day' ? `<b>ยังไม่ส่ง ${_missBranches.size} สาขา</b>`
+                             : `<b>ค้างส่ง ${_missBranches.size} สาขา รวม ${_missTotal} วัน</b>`);
+          _segs.push(`<span class="is-miss">⏳ ${_t}</span>`);
+        }
+        if (_segs.length) {
+          const _tail = _closures.length && _isBranchLv && sec !== 'day'
+            ? ` <span class="dd-closed-sep">·</span> ${_closedDates.map(fmtThaiDate).join(" · ")}`
+            : '';
+          _closedRow = `<div class="dd-closed">` +
+            `<span>${_segs.join(' <span class="dd-closed-sep">·</span> ')}${_tail}</span></div>`;
         }
 
         const _pendingRow = _pendingEod
