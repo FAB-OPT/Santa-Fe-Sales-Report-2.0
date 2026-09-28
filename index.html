@@ -2068,10 +2068,12 @@
 
       .dd-grid2 { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; }
 
-      .dd-bar-head { display:grid; grid-template-columns:230px minmax(0,1fr) 130px; gap:14px; padding:2px 10px 8px; font-size:11px; color:var(--txt2); border-bottom:1px solid var(--bd); margin-bottom:6px; font-weight:600; }
+      /* คอลัมน์ชื่อยืดได้ถึง 380px — ชื่อโซนยาวๆ เช่น "ศุกร์แสง วัฒนาฟุ้งเจริญ (พี่หยี)"
+         พร้อมชิปจำนวนสาขา ไม่พอใน 230px เดิม แล้วโดนตัดด้วย ... ส่วนที่เหลือเป็นของกราฟ */
+      .dd-bar-head { display:grid; grid-template-columns:minmax(230px,380px) minmax(0,1fr) 130px; gap:14px; padding:2px 10px 8px; font-size:11px; color:var(--txt2); border-bottom:1px solid var(--bd); margin-bottom:6px; font-weight:600; }
       .dd-bar-head span:last-child { text-align:right; }
       .dd-bar-scroll { max-height:430px; overflow-y:auto; margin:0 -6px; padding:0 6px; }
-      .dd-bar { display:grid; grid-template-columns:230px minmax(0,1fr) 130px; align-items:center; gap:14px; width:100%; text-align:left; background:none; border:none; border-radius:10px; padding:10px 10px; cursor:pointer; transition:background .15s var(--ease, ease); font-family:inherit; }
+      .dd-bar { display:grid; grid-template-columns:minmax(230px,380px) minmax(0,1fr) 130px; align-items:center; gap:14px; width:100%; text-align:left; background:none; border:none; border-radius:10px; padding:10px 10px; cursor:pointer; transition:background .15s var(--ease, ease); font-family:inherit; }
       .dd-bar:hover { background:rgba(242,108,28,.07); }
       .dd-bar-name { font-size:13.5px; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:700; display:inline-flex; align-items:center; gap:8px; min-width:0; }
       .dd-bar-name-text { overflow:hidden; text-overflow:ellipsis; }
