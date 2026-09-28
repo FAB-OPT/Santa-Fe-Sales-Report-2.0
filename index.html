@@ -2163,6 +2163,12 @@
         .dd-kpis { grid-template-columns:1fr 1fr; }
         .dd-bar-head, .dd-bar { grid-template-columns:1fr auto; }
         .dd-bar-track { display:none; }
+        /* แถวที่ยอด 0 แล้วมีเหตุผลเขียนอยู่ในแท่ง — ต้องโชว์แท่งต่อ ไม่งั้นข้อความหายทั้งบรรทัด
+           จัดเป็น 2 บรรทัด: ชื่อ+ยอดบรรทัดแรก · เหตุผลเต็มความกว้างบรรทัดสอง */
+        .dd-bar.has-why { row-gap: 7px; }
+        .dd-bar.has-why .dd-bar-name  { grid-column: 1; grid-row: 1; }
+        .dd-bar.has-why .dd-bar-val   { grid-column: 2; grid-row: 1; }
+        .dd-bar.has-why .dd-bar-track { display: block; grid-column: 1 / -1; grid-row: 2; }
         .dd-hero { flex-direction:column; align-items:center; text-align:center; }
         /* หัวตาราง: ซ่อนคอลัมน์กลาง (track หาย) — เหลือ 2 คอลัมน์ ชัดเจน */
         .dd-bar-head { font-size:12.5px; font-weight:800; color:#475569; padding:6px 12px 10px; border-bottom:2px solid var(--bd); margin-bottom:8px; }
@@ -14381,7 +14387,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const hitCls = (i.pct >= 1) ? " is-hit-100" : (i.pct >= 0.80 ? " is-warn-80" : "");
           // ยอด 0 = แท่งว่างทั้งแท่ง เอาที่ว่างนั้นมาเขียนสาเหตุเป็นภาษาไทยเต็มคำ
           //   ปิดร้าน = ไม่มีของให้ขาย · ยังไม่ส่ง = มีของแต่สาขาไม่ส่ง ต้องตาม
-          let trackHtml;
+          let trackHtml, whyCls = "";
           if (i.actual <= 0 && (i.closedDays || i.missDays)) {
             const isClosed = !!i.closedDays;
             const why = isClosed
@@ -14390,10 +14396,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               : "⏳ ยังไม่ส่งยอด" + (i.missDays > 1 ? " " + i.missDays + " วัน" : "");
             trackHtml = `<span class="dd-bar-track${isClosed ? "" : " track-missing"}">
               <span class="dd-bar-why ${isClosed ? "is-closed" : "is-missing"}">${why}</span></span>`;
+            whyCls = " has-why";
           } else {
             trackHtml = `<span class="dd-bar-track"><span class="dd-bar-fill" style="width:${w}%;background:${fillBg}"></span></span>`;
           }
-          return `<button class="dd-bar${hitCls}" onclick="${onClick}('${sec}',${idx})">
+          return `<button class="dd-bar${hitCls}${whyCls}" onclick="${onClick}('${sec}',${idx})">
             <span class="dd-bar-name">${codeChip}${nameTxt}${nChip}</span>
             ${trackHtml}
             <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${base}">${pctTxt}</i></span>
