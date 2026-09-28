@@ -14059,6 +14059,22 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         return [...new Set((_dashRows || []).map(r => r.branch_code)
           .filter(bc => bc && (BRANCH_DM_MAP[bc] || {}).dm))];
       }
+      // ── ทะเบียนสาขา — ใช้เป็นฐานของ "เป้า" ──
+      // _ddCodes() สร้างจากแถวยอดขาย จึงมีแต่สาขาที่ส่งยอด ถ้าเอามาคิดเป้า
+      // สาขาที่ไม่ส่งจะหลุดออกจากตัวหาร ทำให้ %เป้าสูงกว่าความจริง
+      // BRANCH_DM_MAP ตอนล็อกอินถูกแทนที่ด้วยตาราง branches จาก DB แล้ว = สาขาที่ใช้งานจริง
+      function _ddRoster() {
+        return Object.keys(BRANCH_DM_MAP).filter(bc => (BRANCH_DM_MAP[bc] || {}).dm);
+      }
+      function _ddRosterZones() {
+        const m = {};
+        _ddRoster().forEach(bc => {
+          const z = (BRANCH_DM_MAP[bc] || {}).dm;
+          if (!z) return;
+          (m[z] = m[z] || []).push(bc);
+        });
+        return m;
+      }
       function _ddZones() {
         const m = {};
         _ddCodes().forEach(bc => {
@@ -15082,12 +15098,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!kpiEl || !bodyEl) return;
         if (!d || !d.range) return;               // พาร์ทนี้ยังไม่โหลด
         const role = (typeof S !== "undefined" && S && S.role) || "";
-        const zones = _ddZones();                 // โครงจากข้อมูลเดือน
+        // โครงโซน/สาขา อิงทะเบียน ไม่ใช่อิงว่าใครส่งยอด — เป้าจะได้นับครบทุกสาขา
+        const zones = _ddRosterZones();
         const map = d.planByBranch;
 
         let topPanel, rows, codes;
         if (_ddView.level === "company") {
-          codes = _ddCodes();
+          codes = _ddRoster();
           rows = d.rows;
           _secItems[sec].zones = Object.keys(zones).map(z => {
             const zr = d.rows.filter(r => _ddZoneOf(r.branch_code) === z);
@@ -15103,9 +15120,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           rows = d.rows.filter(r => codes.includes(r.branch_code));
           // รายชื่อในตาราง = ทุกสาขาในโซนตามทะเบียน ไม่ใช่เฉพาะสาขาที่ส่งยอด
           // เดิมสร้างจากแถวยอดขาย สาขาที่ไม่ส่งจึงหายไปทั้งแถว ทั้งที่เป็นเคสที่ต้องเห็นที่สุด
-          const _roster = Object.keys(BRANCH_DM_MAP)
-            .filter(bc => BRANCH_DM_MAP[bc].dm === _ddView.zone);
-          const _listCodes = _roster.length ? _roster : codes;
+          const _listCodes = (zones[_ddView.zone] || []).length ? zones[_ddView.zone] : codes;
+          codes = _listCodes;   // เป้าของโซน = ทุกสาขาในโซน ไม่ใช่เฉพาะสาขาที่ส่ง
           const _clDays = {}, _clReason = {};
           (d.closures || []).forEach(c => {
             const k = String(c.branch_code);
