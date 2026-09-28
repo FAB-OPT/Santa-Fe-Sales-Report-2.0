@@ -5560,7 +5560,7 @@ body { background: var(--bg); color: var(--txt); }
   .hist-table-wrap { background: var(--surface) !important; border: 1px solid var(--bd) !important; border-radius: var(--radius) !important; overflow: hidden; box-shadow: none !important; }
 
   /* ─ Dashboard ─ */
-  .dash-wrap { padding: 32px 40px 48px !important; max-width: 1200px; }
+  .dash-wrap { padding: 32px 40px 48px !important; max-width: 1760px; }
   .dash-page-title { font-size: 1.85rem !important; font-weight: 800 !important; letter-spacing: -.02em !important; color: var(--txt) !important; }
   .dash-page-sub   { font-size: 13px !important; color: var(--txt2) !important; margin-top: 4px !important; }
   .dash-upper-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
@@ -5900,7 +5900,8 @@ body { background: var(--bg); color: var(--txt); }
   }
 
   /* (1) Dashboard: single column stacked — ไม่มี "ขวาว่าง" */
-  .dash-wrap { max-width: 1280px !important; margin: 0 auto !important; }
+  /* เพดานกว้างขึ้นให้ใช้พื้นที่จอกว้างได้เต็ม ไม่เหลือขอบซ้ายขวาเยอะ */
+  .dash-wrap { max-width: 1760px !important; margin: 0 auto !important; }
   .dash-stats-row {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
