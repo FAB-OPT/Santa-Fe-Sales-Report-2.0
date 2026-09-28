@@ -766,6 +766,7 @@
         font-size: 11.5px; /* ชื่อเดือนเล็กลงตามที่ขอ */
       }
       /* ── แถบเตือนยอดค้างส่ง (หัวหน้าส่งยอด · เฉพาะสาขา) ── */
+      #pendBanner:empty { display: none; }
       .pend {
         background: #fffbeb; border: 1px solid #fde68a;
         border-radius: var(--radius); margin-bottom: 12px; overflow: hidden;
@@ -819,6 +820,12 @@
         padding: 9px 14px; font-size: 12.5px; font-weight: 700; color: #15803d;
         margin-bottom: 12px;
       }
+      /* ไม่มียอดค้างแล้ว เหลือแต่วันที่ปิดร้านไว้ → โทนเขียว */
+      .pend.is-clear { background: #f0fdf4; border-color: #bbf7d0; }
+      .pend.is-clear .pend-hd { background: #dcfce7; color: #15803d; }
+      .pend.is-clear .pend-hd .pend-count { color: #16a34a; }
+      .pend.is-clear .pend-foot { background: #f7fef9; border-top-color: #bbf7d0; color: #15803d; }
+      .pend.is-clear .pend-closed { background: #fff; }
       /* select เหตุผลในป็อปอัพปิดร้าน */
       .alert-reason { margin-top: 16px; text-align: left; }
       .alert-reason label {
@@ -1098,6 +1105,7 @@
       body.on-login #hdrHubBtn,
       body.on-login #testModeBanner,
       body.on-login #bypassOrderBanner,
+      body.on-login #viewAsBar,
       body.on-login #deskSidebar,
       body.on-login #mobNav,
       body.on-login button.hdr-logout-btn,
@@ -4869,8 +4877,10 @@
     max-width:none;
   }
   /* Card 1 (info) and card 4 (labour) span full width */
-  .form-wrap .card:nth-child(1),
-  .form-wrap .card:nth-child(4) { grid-column:1 / -1; }
+  .form-wrap > #pendBanner,
+  .form-wrap > .form-sticky-btn,
+  .form-wrap .card.span-full { grid-column:1 / -1; }
+  .form-wrap > #pendBanner .pend { margin-bottom:0; }
   .form-wrap .card { margin-bottom:0; border-radius:12px; }
   .form-wrap .card-body { padding:20px 22px; }
   .form-wrap .card-hdr  { padding:13px 22px; font-size:13px; }
@@ -5633,8 +5643,10 @@ body { background: var(--bg); color: var(--txt); }
     display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
     padding: 28px 32px 0; align-items: start; max-width: none;
   }
-  .form-wrap .card:nth-child(1),
-  .form-wrap .card:nth-child(4) { grid-column: 1 / -1; }
+  .form-wrap > #pendBanner,
+  .form-wrap > .form-sticky-btn,
+  .form-wrap .card.span-full { grid-column: 1 / -1; }
+  .form-wrap > #pendBanner .pend { margin-bottom: 0; }
   .form-wrap .card { margin-bottom: 0; }
   .form-wrap .card-body { padding: 20px 22px; }
   .field-grid { grid-template-columns: repeat(4,1fr); gap: 14px; }
@@ -6900,6 +6912,31 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
   gap: 18px;
 }
 .dd-channel-mega .dd-cc-donut, .dd-channel-mega .dd-cc-table { min-width: 0; }
+
+/* แถบ "กำลังดูแทน" — แอดมินสลับมุมมองไปบัญชีสาขา */
+#viewAsBar {
+  display: none;
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: 18px; z-index: 9997;
+  align-items: center; gap: 12px;
+  max-width: calc(100vw - 24px);
+  padding: 9px 10px 9px 16px; border-radius: 999px;
+  background: #1e293b; color: #fff;
+  box-shadow: 0 10px 30px rgba(15,23,42,.35);
+  font-size: 13px; font-weight: 700; line-height: 1.3;
+}
+#viewAsBar.on { display: flex; }
+#viewAsBar .va-who { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#viewAsBar .va-who b { color: #fdba74; }
+#viewAsBar button {
+  flex-shrink: 0; border: 0; cursor: pointer;
+  background: #f97316; color: #fff;
+  font-size: 12.5px; font-weight: 800; font-family: inherit;
+  padding: 7px 14px; border-radius: 999px;
+}
+@media (max-width: 640px) {
+  #viewAsBar { bottom: 84px; font-size: 12.5px; padding: 8px 8px 8px 14px; gap: 9px; }
+}
     </style>
   </head>
 
@@ -6938,6 +6975,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
     </div>
     <div id="testModeBanner" style="display:none !important;background:linear-gradient(90deg,#fef3c7,#fde68a);color:#92400e;text-align:center;padding:7px 10px;font-size:12.5px;font-weight:700;border-bottom:1px solid #fcd34d;position:fixed;top:0;left:0;right:0;z-index:9999;line-height:1.35;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
       🧪 โหมดทดสอบ — ระบบจะไม่บันทึกข้อมูลจริง
+    </div>
+
+    <!-- แอดมินสลับมุมมองไปบัญชีสาขา — แถบนี้คือทางกลับ -->
+    <div id="viewAsBar">
+      <span class="va-who">👁 กำลังดูแทน <b id="viewAsWho"></b></span>
+      <button type="button" onclick="exitViewAs()">กลับเป็นแอดมิน</button>
     </div>
 
 
@@ -7215,7 +7258,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         <div id="pendBanner"></div>
 
         <!-- ส่วนที่ 1: ข้อมูลการส่ง -->
-        <div class="card">
+        <div class="card span-full">
           <div class="card-hdr" style="display:flex;align-items:center;justify-content:space-between">
             <span>📋 ข้อมูลการส่ง</span>
             <label id="testModeLabel" style="display:none;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;background:rgba(0,0,0,.18);padding:5px 12px;border-radius:6px">
@@ -7298,8 +7341,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>
 
         <!-- ส่วนที่ 4: Customer & Labour -->
-        <div class="card">
-          <div class="card-hdr">👥 Customer & Labour</div>
+        <div class="card span-full">
+          <div class="card-hdr">👥 Customer &amp; Labour</div>
           <div class="card-body">
             <div class="field-grid">
               <div class="field">
@@ -7319,7 +7362,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         </div>
 
         <!-- ส่วนที่ 5: รายการเชียร์ขาย (สิ้นวันเท่านั้น) -->
-        <div class="card" id="promoCard" style="display:none">
+        <div class="card span-full" id="promoCard" style="display:none">
           <div class="card-hdr" style="background:linear-gradient(135deg,#f97316,#c2410c)">🎯 รายการเชียร์ขาย</div>
           <div class="card-body">
             <div id="promoItemsInForm" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -9056,10 +9099,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _idleLogoutNow() {
         _idleClose();
         try {
-          if (S && S.code) {
+          const L = (typeof _logIdentity === "function") ? _logIdentity() : S;
+          if (L && L.code) {
             _logLoginEvent({
-              code: S.code, name: S.name || "", role: S.role || "",
-              branch_code: S.branch_code || S.code || "", branch_name: S.branch || "", dm: S.dm || "",
+              code: L.code, name: L.name || "", role: L.role || "",
+              branch_code: L.branch_code || L.code || "", branch_name: L.branch || "", dm: L.dm || "",
               event_type: "logout"
             });
           }
@@ -9229,6 +9273,54 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         showAlert('👋', 'ยินดีต้อนรับ!', `${code} ${_bn}`, enterApp);
       }
 
+      /* ═══════════════════════════════════════════════════
+         สลับมุมมอง — แอดมินเข้าดูหน้าบัญชีของสาขา
+         • ไม่แตะ localStorage (รีเฟรช = กลับเป็นแอดมินเอง)
+         • ไม่ log login/logout ในชื่อสาขา — log ยังใช้ตัวตนแอดมินเสมอ
+         • ออกจากมุมมองได้จากแถบล่างจอ
+      ═══════════════════════════════════════════════════ */
+      var _viewAsAdminS = null;          // session เดิมของแอดมิน ระหว่างสลับมุมมอง
+      function isViewingAs() { return !!_viewAsAdminS; }
+      // ตัวตนที่ใช้เขียน login_logs — ระหว่างสลับมุมมองต้องเป็นแอดมิน ไม่ใช่สาขา
+      function _logIdentity() { return _viewAsAdminS || S; }
+
+      function _renderViewAsBar() {
+        const bar = document.getElementById("viewAsBar");
+        if (!bar) return;
+        const who = document.getElementById("viewAsWho");
+        if (isViewingAs()) {
+          if (who) who.textContent = `${S.code} ${S.branch || ""}`.trim();
+          bar.classList.add("on");
+        } else {
+          bar.classList.remove("on");
+        }
+      }
+
+      function adminViewAs(code) {
+        if (!isAdminUser()) return;
+        const u = (_adminUsers || []).find(x => String(x.code) === String(code)) ||
+                  (_USERS_DB   || []).find(x => String(x.code) === String(code));
+        if (!u) { showAlert("❌", "สลับมุมมองไม่ได้", "ไม่พบบัญชีนี้"); return; }
+        const target = _stateFromDbUser(u);
+        if (!target) { showAlert("❌", "สลับมุมมองไม่ได้", "role ของบัญชีนี้ไม่ถูกต้อง"); return; }
+        const label = `${u.branch_code || u.code} ${u.branch_name || u.name || ""}`.trim();
+        showConfirm("👁", "สลับมุมมอง",
+          `เข้าดูหน้าจอของ ${label} ตามที่สาขาเห็น\nสิ่งที่กดในมุมมองนี้จะบันทึกในชื่อสาขา`,
+          function() {
+            _viewAsAdminS = JSON.parse(JSON.stringify(S));
+            S = target;
+            enterApp().then(_renderViewAsBar, _renderViewAsBar);
+          }, { btnText: "สลับมุมมอง" });
+      }
+
+      function exitViewAs() {
+        if (!isViewingAs()) return;
+        S = _viewAsAdminS;
+        _viewAsAdminS = null;
+        _renderViewAsBar();
+        enterApp().then(function() { showAdmin("users"); }, function() {});
+      }
+
       // กลับเมนูหลัก Hub โดย "ไม่" logout (session ค้างไว้ → กลับมาไม่ต้อง login ใหม่)
       function goBackToHub() {
         try {
@@ -9244,13 +9336,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       (function _bindUnloadLogger() {
         const fire = () => {
           try {
-            if (!S || !S.code) return;
+            // ระหว่างสลับมุมมอง ให้ log เป็นแอดมิน ไม่ใช่สาขาที่กำลังดูแทน
+            const L = (typeof _logIdentity === "function") ? _logIdentity() : S;
+            if (!L || !L.code) return;
             if (sessionStorage.getItem("_logoutSent") === "1") return;
             sessionStorage.setItem("_logoutSent", "1");
             _logLoginEvent({
-              code: S.code, name: S.name || "", role: S.role || "",
-              branch_code: S.branch_code || S.code || "",
-              branch_name: S.branch || "", dm: S.dm || "",
+              code: L.code, name: L.name || "", role: L.role || "",
+              branch_code: L.branch_code || L.code || "",
+              branch_name: L.branch || "", dm: L.dm || "",
               event_type: "logout"
             });
           } catch (_) {}
@@ -9265,6 +9359,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
       function doLogout() {
         try {
+          // ออกจากมุมมองสาขาก่อน — logout ต้องบันทึกในชื่อแอดมินเสมอ
+          if (isViewingAs()) {
+            S = _viewAsAdminS;
+            _viewAsAdminS = null;
+            _renderViewAsBar();
+          }
           // หยุดจับ idle timer
           _idleStop();
           // บันทึก logout event ก่อนเคลียร์ S
@@ -9621,12 +9721,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _renderPendingRounds(pending, closedList) {
         const box = document.getElementById("pendBanner");
         if (!box) return;
+        // ไม่มียอดค้างแล้ว แต่ยังมีวันที่กดปิดร้านไว้ → ยังต้องโชว์ เผื่อกดแก้ไข
         if (!pending.length && !closedList.length) {
           box.innerHTML = "";
-          return;
-        }
-        if (!pending.length) {
-          box.innerHTML = `<div class="pend-clear"><span>✅</span><span>จัดการครบทุกวันใน ${PEND_LOOKBACK_DAYS} วันล่าสุด</span></div>`;
           return;
         }
         const rows = pending.map(p => `
@@ -9644,12 +9741,18 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <span>🔒 ปิดร้าน · ${escHtml(c.reason)}</span>
             <button type="button" class="pend-undo" onclick="pendUndoClose('${c.date}')">แก้ไข</button>
           </div>`).join("");
+        const clear = !pending.length;   // ค้างครบแล้ว เหลือแต่วันที่ปิดร้าน
+        const head = clear
+          ? `<div class="pend-hd"><span>✅</span><span>จัดการครบทุกวันใน ${PEND_LOOKBACK_DAYS} วันล่าสุด</span>
+               <span class="pend-count">ปิดร้าน ${closedList.length} วัน</span></div>`
+          : `<div class="pend-hd"><span>⚠️</span><span>ยอดค้างส่ง</span>
+               <span class="pend-count">${pending.length} วัน</span></div>`;
+        const foot = clear
+          ? `<div class="pend-foot">วันที่ปิดร้านไม่นับเป็นยอดค้าง · กดแก้ไขถ้าระบุผิด</div>`
+          : `<div class="pend-foot">ย้อนดู ${PEND_LOOKBACK_DAYS} วันล่าสุด · แถบนี้จะหายเองเมื่อจัดการครบ</div>`;
         box.innerHTML = `
-          <div class="pend">
-            <div class="pend-hd"><span>⚠️</span><span>ยอดค้างส่ง</span>
-              <span class="pend-count">${pending.length} วัน</span></div>
-            ${rows}${closedRows}
-            <div class="pend-foot">ย้อนดู ${PEND_LOOKBACK_DAYS} วันล่าสุด · แถบนี้จะหายเองเมื่อจัดการครบ</div>
+          <div class="pend${clear ? " is-clear" : ""}">
+            ${head}${rows}${closedRows}${foot}
           </div>`;
       }
 
@@ -10706,6 +10809,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             ? '<span style="color:#94a3b8;font-weight:600">ปิดอยู่</span>'
             : '<span style="color:#16a34a;font-weight:700">●</span>';
           const isAdminPrime = u.code === "601183";
+          const canView = (u.role === "branch" || u.role === "franchise") && u.active !== false;
           return `<tr>
             <td style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--brand)">${escHtml(u.code)}</td>
             <td style="font-weight:600">${escHtml(u.name || "-")}${u.nick ? ` <span style="color:var(--txt2);font-weight:600">(${escHtml(u.nick)})</span>` : ""}</td>
@@ -10713,6 +10817,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <td>${brandLbl}${crossTag}</td>
             <td>${status}</td>
             <td style="text-align:right;white-space:nowrap">
+              ${canView ? `<button class="btn btn-sm" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-right:4px" onclick="adminViewAs('${escHtml(u.code)}')">👁 สลับมุมมอง</button>` : ""}
               <button class="btn-edit-row btn btn-sm" onclick='openAdminUserModal(${JSON.stringify(u).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
               ${isAdminPrime ? "" : `<button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px" onclick="adminDeleteUser('${escHtml(u.code)}','${escHtml((u.nick || u.name || "").replace(/'/g, "\\'"))}')">🗑️ ลบ</button>`}
             </td>
@@ -10741,6 +10846,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <div class="adm-row-menu-wrap">
                 <button class="adm-row-btn" onclick="_admMenuToggle('${menuId}', event)" aria-label="เมนู">⋯</button>
                 <div class="adm-row-menu" id="${menuId}">
+                  ${(u.role === "branch" || u.role === "franchise") && u.active !== false
+                    ? `<button onclick="adminViewAs('${escHtml(u.code)}')">👁 สลับมุมมอง</button>` : ""}
                   <button onclick='openAdminUserModal(${json})'>✏️ แก้ไข</button>
                   ${isAdminPrime ? "" : `<button class="del" onclick="adminDeleteUser('${escHtml(u.code)}','${dispName}')">🗑️ ลบ</button>`}
                 </div>
