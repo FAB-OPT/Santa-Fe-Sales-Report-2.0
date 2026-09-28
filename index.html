@@ -7245,7 +7245,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <label class="early-close" id="earlyCloseWrap" style="display:none">
               <input type="checkbox" id="early_close" onchange="onEarlyCloseChange()">
               <span class="early-close-txt">
-                <b>🏪 วันนี้ปิดร้านแล้ว ไม่มียอดเพิ่มอีก</b>
+                <b>🔒 วันนี้ปิดร้านแล้ว ไม่มียอดเพิ่มอีก</b>
                 <em>กรอกให้ครบทุกช่อง ส่งครั้งเดียว ระบบบันทึกรอบสิ้นวันให้เอง</em>
               </span>
             </label>
@@ -9641,7 +9641,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const closedRows = closedList.map(c => `
           <div class="pend-closed">
             <span class="pend-date">${_pendThai(c.date)}</span>
-            <span>🏪 ปิดร้าน · ${escHtml(c.reason)}</span>
+            <span>🔒 ปิดร้าน · ${escHtml(c.reason)}</span>
             <button type="button" class="pend-undo" onclick="pendUndoClose('${c.date}')">แก้ไข</button>
           </div>`).join("");
         box.innerHTML = `
@@ -9668,11 +9668,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       // "ปิดร้าน" — เลือกเหตุผลแล้วบันทึกลง branch_closures
       function pendCloseDay(date) {
         const opts = CLOSE_REASONS.map(r => `<option>${escHtml(r)}</option>`).join("");
-        showConfirm("🏪", "วันนี้ปิดร้าน",
+        showConfirm("🔒", "วันนี้ปิดร้าน",
           `วันที่เลือกจะไม่ถูกนับเป็นยอดค้างอีก` +
           `<div class="alert-fig">` +
             `<div class="alert-fig-val is-long">${_pendThai(date)}</div>` +
-            `<div class="alert-fig-lbl">🏪 ทั้งวัน ไม่มียอดขาย</div>` +
+            `<div class="alert-fig-lbl">🔒 ทั้งวัน ไม่มียอดขาย</div>` +
           `</div>` +
           `<div class="alert-reason"><label for="closeReason">เหตุผล</label>` +
           `<select id="closeReason">${opts}</select></div>`,
@@ -14391,7 +14391,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (i.actual <= 0 && (i.closedDays || i.missDays)) {
             const isClosed = !!i.closedDays;
             const why = isClosed
-              ? "🏪 ปิดร้าน" + (i.closedReason ? " · " + escHtml(i.closedReason)
+              ? "🔒 ปิดร้าน" + (i.closedReason ? " · " + escHtml(i.closedReason)
                                                : (i.closedDays > 1 ? " " + i.closedDays + " วัน" : ""))
               : "⏳ ยังไม่ส่งยอด" + (i.missDays > 1 ? " " + i.missDays + " วัน" : "");
             trackHtml = `<span class="dd-bar-track${isClosed ? "" : " track-missing"}">
@@ -15377,13 +15377,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (_closures.length) {
           if (_isBranchLv) {
             _segs.push(sec === 'day'
-              ? `🏪 <b>ปิดร้าน</b> · ${escHtml(_closures[0].reason || "ไม่ระบุเหตุผล")}`
-              : `🏪 <b>ปิดร้าน ${_closedDates.length} วัน</b>`);
+              ? `🔒 <b>ปิดร้าน</b> · ${escHtml(_closures[0].reason || "ไม่ระบุเหตุผล")}`
+              : `🔒 <b>ปิดร้าน ${_closedDates.length} วัน</b>`);
           } else {
             const _clCodes = Object.keys(_closedByBranch);
             _segs.push((sec === 'day'
-              ? `🏪 <b>ปิดร้าน ${_clCodes.length} สาขา</b>`
-              : `🏪 <b>ปิดร้าน ${_clCodes.length} สาขา รวม ${_closures.length} วัน</b>`) +
+              ? `🔒 <b>ปิดร้าน ${_clCodes.length} สาขา</b>`
+              : `🔒 <b>ปิดร้าน ${_clCodes.length} สาขา รวม ${_closures.length} วัน</b>`) +
               ` <span class="dd-closed-list">${_nameList(_clCodes)}</span>`);
           }
         }
