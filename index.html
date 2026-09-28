@@ -9280,6 +9280,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
          • ออกจากมุมมองได้จากแถบล่างจอ
       ═══════════════════════════════════════════════════ */
       var _viewAsAdminS = null;          // session เดิมของแอดมิน ระหว่างสลับมุมมอง
+      var _viewAsFrom = "branches";      // หน้าแอดมินที่กดมา — ใช้ตอนกดกลับ
       function isViewingAs() { return !!_viewAsAdminS; }
       // ตัวตนที่ใช้เขียน login_logs — ระหว่างสลับมุมมองต้องเป็นแอดมิน ไม่ใช่สาขา
       function _logIdentity() { return _viewAsAdminS || S; }
@@ -9296,14 +9297,34 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
       }
 
+      // สลับไปดูหน้าของสาขา — สาขาไม่ได้อยู่ในตาราง users แต่อยู่ในตาราง branches
+      function adminViewAsBranch(code) {
+        if (!isAdminUser()) return;
+        _viewAsFrom = "branches";
+        const b = (_adminBranches || []).find(x => String(x.branch_code) === String(code));
+        const info = b
+          ? { branch: b.branch_name || "", dm: b.district_manager || "" }
+          : (BRANCH_DM_MAP[String(code)] || null);
+        if (!info) { showAlert("❌", "สลับมุมมองไม่ได้", "ไม่พบสาขา " + code); return; }
+        const name = _cleanBranchName(info.branch || "");
+        _viewAsStart({ code: String(code), branch: name, dm: info.dm || "", role: "branch" },
+                     `${code} ${name}`.trim());
+      }
+
+      // สลับไปดูหน้าของบัญชีในตาราง users (BZM/VP — เผื่อมีบัญชีสาขาในตารางนี้ด้วย)
       function adminViewAs(code) {
         if (!isAdminUser()) return;
+        _viewAsFrom = "users";
         const u = (_adminUsers || []).find(x => String(x.code) === String(code)) ||
                   (_USERS_DB   || []).find(x => String(x.code) === String(code));
         if (!u) { showAlert("❌", "สลับมุมมองไม่ได้", "ไม่พบบัญชีนี้"); return; }
         const target = _stateFromDbUser(u);
         if (!target) { showAlert("❌", "สลับมุมมองไม่ได้", "role ของบัญชีนี้ไม่ถูกต้อง"); return; }
         const label = `${u.branch_code || u.code} ${u.branch_name || u.name || ""}`.trim();
+        _viewAsStart(target, label);
+      }
+
+      function _viewAsStart(target, label) {
         showConfirm("👁", "สลับมุมมอง",
           `เข้าดูหน้าจอของ ${label} ตามที่สาขาเห็น\nสิ่งที่กดในมุมมองนี้จะบันทึกในชื่อสาขา`,
           function() {
@@ -9318,7 +9339,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         S = _viewAsAdminS;
         _viewAsAdminS = null;
         _renderViewAsBar();
-        enterApp().then(function() { showAdmin("users"); }, function() {});
+        enterApp().then(function() { showAdmin(_viewAsFrom); }, function() {});
       }
 
       // กลับเมนูหลัก Hub โดย "ไม่" logout (session ค้างไว้ → กลับมาไม่ต้อง login ใหม่)
@@ -11429,6 +11450,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <td style="font-weight:600">${escHtml(b.branch_name)}</td>
             <td style="color:var(--txt2)">${escHtml(b.district_manager || "—")}</td>
             <td style="text-align:right;white-space:nowrap">
+              <button class="btn btn-sm" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-right:4px" onclick="adminViewAsBranch('${escHtml(b.branch_code)}')">👁 สลับมุมมอง</button>
               <button class="btn-edit-row btn btn-sm" onclick='adminEditBranch(${JSON.stringify(b).replace(/'/g, "&apos;")})'>✏️ แก้ไข</button>
               <button class="btn btn-sm" onclick="adminDeleteBranch('${escHtml(b.branch_code)}', '${escHtml(b.branch_name).replace(/'/g, "\\'")}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;font-size:11.5px;padding:5px 10px;border-radius:7px;margin-left:4px">🗑️ ลบ</button>
             </td>
@@ -11452,6 +11474,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               <div class="adm-row-menu-wrap">
                 <button class="adm-row-btn" onclick="_admMenuToggle('${menuId}', event)" aria-label="เมนู">⋯</button>
                 <div class="adm-row-menu" id="${menuId}">
+                  <button onclick="adminViewAsBranch('${escHtml(b.branch_code)}')">👁 สลับมุมมอง</button>
                   <button onclick='adminEditBranch(${json})'>✏️ แก้ไข</button>
                   <button class="del" onclick="adminDeleteBranch('${escHtml(b.branch_code)}', '${nameSafe}')">🗑️ ลบ</button>
                 </div>
