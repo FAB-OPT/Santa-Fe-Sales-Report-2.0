@@ -13,6 +13,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Chart.js for dashboard charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+      // Chart.js ดีฟอลต์เป็น Helvetica/Arial ตัวหนังสือในกราฟจึงไม่ใช่ Sarabun
+      // โดยเฉพาะภาษาไทย (ชื่อเดือน ชื่อช่องทาง ใน tooltip/แกน) ที่ตกไปใช้ฟอนต์ระบบ
+      if (window.Chart) {
+        Chart.defaults.font.family = "'Sarabun', system-ui, -apple-system, sans-serif";
+        Chart.defaults.font.weight = 600;
+      }
+    </script>
     <!-- SheetJS — Excel export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -9842,7 +9850,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const checked = isAll || selectedSet.has(c) ? "checked" : "";
           return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;cursor:pointer">
             <input type="checkbox" class="promo-br-cb" data-code="${c}" ${checked} style="width:16px;height:16px;cursor:pointer;accent-color:#c2410c">
-            <span style="font-family:tabular-nums;font-weight:700;color:#475569;min-width:48px">${c}</span>
+            <span style="font-variant-numeric:tabular-nums;font-weight:700;color:#475569;min-width:48px">${c}</span>
             <span style="color:#0f172a">${escHtml(nm)}</span>
           </label>`;
         }).join("");
