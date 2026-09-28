@@ -15065,7 +15065,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
 
         // guard: เป้าหมายที่เจาะอยู่หายไปจากข้อมูลของช่วงนี้
         if (_ddView.level === "zone" && !zones[_ddView.zone]) _ddView = _ddDefaultView(role);
-        if (_ddView.level === "branch" && !_ddCodes().includes(_ddView.branch)) _ddView = _ddDefaultView(role);
+        // เดิมเช็คกับ _ddCodes() ซึ่งมีแต่สาขาที่ส่งยอด พอคลิกสาขาที่ยังไม่ส่งจึงเด้งกลับ
+        // เช็คกับทะเบียนสาขาแทน จะได้เจาะเข้าไปดูได้ว่าสาขานั้นค้างอะไรบ้าง
+        if (_ddView.level === "branch" && !BRANCH_DM_MAP[_ddView.branch]) _ddView = _ddDefaultView(role);
 
         if (crumbEl) crumbEl.innerHTML = _ddCrumb();
         renderSection(sec);
@@ -15099,6 +15101,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         } else if (_ddView.level === "zone") {
           codes = zones[_ddView.zone] || [];
           rows = d.rows.filter(r => codes.includes(r.branch_code));
+          // รายชื่อในตาราง = ทุกสาขาในโซนตามทะเบียน ไม่ใช่เฉพาะสาขาที่ส่งยอด
+          // เดิมสร้างจากแถวยอดขาย สาขาที่ไม่ส่งจึงหายไปทั้งแถว ทั้งที่เป็นเคสที่ต้องเห็นที่สุด
+          const _roster = Object.keys(BRANCH_DM_MAP)
+            .filter(bc => BRANCH_DM_MAP[bc].dm === _ddView.zone);
+          const _listCodes = _roster.length ? _roster : codes;
           const _clDays = {}, _clReason = {};
           (d.closures || []).forEach(c => {
             const k = String(c.branch_code);
@@ -15113,8 +15120,8 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             const k = _fmtDate(dt);
             if (k < _today) _dueDates.push(k);
           }
-          _secItems[sec].branches = codes.map(bc => {
-            const br = rows.filter(r => r.branch_code === bc);
+          _secItems[sec].branches = _listCodes.map(bc => {
+            const br = d.rows.filter(r => r.branch_code === bc);
             const a = _ddAgg(br);
             const pl = _secPlan(map, [bc]);
             const nm = (BRANCH_DM_MAP[bc] || {}).branch || bc;
@@ -15127,7 +15134,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                      closedDays: cl, missDays: miss,
                      closedReason: (cl === 1 ? _clReason[bc] : "") };
           }).sort((x, y) => y.actual - x.actual);
-          topPanel = _ddPanel("🏬 สาขาในโซน " + escHtml(_ddView.zone), codes.length + " สาขา · คลิกที่สาขาเพื่อดูรายละเอียด", _ddBarList(_secItems[sec].branches, "_ddDrillBranch", sec));
+          topPanel = _ddPanel("🏬 สาขาในโซน " + escHtml(_ddView.zone), _listCodes.length + " สาขา · คลิกที่สาขาเพื่อดูรายละเอียด", _ddBarList(_secItems[sec].branches, "_ddDrillBranch", sec));
         } else {
           codes = [_ddView.branch];
           rows = d.rows.filter(r => r.branch_code === _ddView.branch);
