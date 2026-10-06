@@ -105,10 +105,15 @@ function buildAll() {
   PLAN = fetchPlan(YEAR);
   Logger.log("ดึงเป้าจากตาราง plan_sale ได้ " + PLAN.count + " แถว");
 
+  // แท็บที่ต้องสดทุกรอบ: Daily, เดือนปัจจุบัน, Total ทั้งปี
+  const thisMonth = parseInt(Utilities.formatDate(new Date(), "Asia/Bangkok", "M"), 10);
+  const isHot = t => t.scope === "day" || t.scope === "year" ||
+                     (t.scope === "month" && t.month === thisMonth);
+
   // รายการงานทั้งหมด — แท็บรวม → สรุปสั้น → รายสาขา
   const jobs = [];
   REPORT_TABS.forEach(t => jobs.push({
-    name: t.tab, tabName: t.tab,
+    name: t.tab, tabName: t.tab, hot: isHot(t),
     run: () => {
       const range = scopeRange(t);
       const sub = rows.filter(r => r.submit_date >= range.from && r.submit_date <= range.to);
@@ -123,20 +128,27 @@ function buildAll() {
                  rows.filter(r => String(r.branch_code || "") === String(code))) + " วัน"
   }));
 
-  // Apps Script ให้เวลารันละ 6 นาที — ทำไม่ทันจะจำไว้แล้วทำต่อรอบหน้า
+  // แท็บสำคัญทำก่อนเสมอทุกรอบ จะได้สดตลอด
+  jobs.filter(j => j.hot).forEach(j => {
+    try { Logger.log("  ✓ " + j.name + "  " + j.run()); }
+    catch (e) { Logger.log("  ✗ " + j.name + " : " + e.message); }
+  });
+
+  // ที่เหลือหมุนเวียนทำไปเรื่อย ๆ — Apps Script ให้เวลารันละ 6 นาที
+  const rest = jobs.filter(j => !j.hot);
   const props = PropertiesService.getScriptProperties();
   let i = parseInt(props.getProperty("rpt_resume") || "0", 10);
-  if (isNaN(i) || i >= jobs.length) i = 0;
-  if (i > 0) Logger.log("ทำต่อจากงานที่ " + (i + 1) + " ของ " + jobs.length);
+  if (isNaN(i) || i >= rest.length) i = 0;
+  if (i > 0) Logger.log("ทำต่อจากแท็บที่ " + (i + 1) + " ของ " + rest.length);
 
-  for (; i < jobs.length; i++) {
+  for (; i < rest.length; i++) {
     if (new Date().getTime() - t0 > TIME_BUDGET_MS) {
       props.setProperty("rpt_resume", String(i));
-      Logger.log("⏸ หมดเวลารอบนี้ — เหลืออีก " + (jobs.length - i) + " แท็บ ทำต่อรอบหน้า");
+      Logger.log("⏸ หมดเวลารอบนี้ — เหลืออีก " + (rest.length - i) + " แท็บ ทำต่อรอบหน้า");
       return;
     }
-    try { Logger.log("  ✓ " + jobs[i].name + "  " + jobs[i].run()); }
-    catch (e) { Logger.log("  ✗ " + jobs[i].name + " : " + e.message); }
+    try { Logger.log("  ✓ " + rest[i].name + "  " + rest[i].run()); }
+    catch (e) { Logger.log("  ✗ " + rest[i].name + " : " + e.message); }
   }
 
   props.deleteProperty("rpt_resume");
