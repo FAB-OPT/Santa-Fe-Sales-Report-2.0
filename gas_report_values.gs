@@ -107,7 +107,7 @@ function _rptFetch(from, to) {
     "?select=branch_code,branch_name,district_manager,submit_date,submit_time_slot," +
     "plan_sale,actual_sale,sale_dine_in,sale_take_away,sale_grab,sale_lineman,sale_shopeefood," +
     "total_trans,trans_dine_in,trans_take_away,trans_grab,trans_lineman,trans_shopeefood," +
-    "customer,labour_hour,labour_baht" +
+    "customer,labour_hour,labour_baht,submitter_name" +
     "&submit_date=gte." + from + "&submit_date=lte." + to +
     "&order=submit_date.asc";
 
@@ -310,4 +310,195 @@ function setupReportTrigger() {
     .forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger("syncReports").timeBased().everyHours(1).create();
   Logger.log("✅ ตั้งให้รายงานอัปเดตทุก 1 ชั่วโมง");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   แท็บรายสาขา — แถวละวัน แบ่งหัวข้อตามเดือน + แถวรวมท้ายเดือน
+   หน้าตาเดียวกับแท็บสาขาในไฟล์แบบฟอร์มส่งยอดขาย
+   ══════════════════════════════════════════════════════════════ */
+
+/* id = ไฟล์ปลายทาง · tab = ชื่อแท็บ · code = รหัสสาขา · year = ปี
+   ตัวอย่าง:
+     { id:"xxx", tab:"5001", code:"5001", year:2026 },
+     { id:"xxx", tab:"5002", code:"5002", year:2026 },
+*/
+const BRANCH_TARGETS = [
+  { id: "ใส่รหัสไฟล์ปลายทางตรงนี้", tab: "5001", code: "5001", year: 2026 }
+];
+
+const BR_HEADER = [
+  "วันที่",
+  "Plan Sale", "Actual Sale 16.00", "Actual Sale สิ้นวัน", "%",
+  "Dine In", "Take away", "Grab", "Line Man", "Shopee Food", "Total Delivery",
+  "Trans Total", "Trans Dine In", "Trans Take away", "Trans Grab",
+  "Trans Line Man", "Trans Shopee Food", "Trans Delivery",
+  "Ticket Avg.", "Ticket Dine In", "Ticket Take away", "Ticket Delivery",
+  "Customer", "Customer Avg.", "Labour(hour)", "Labour(Baht)",
+  "%Col", "Productivity Trans", "Productivity Sale", "คนลงข้อมูล"
+];
+
+function syncBranchSheets() {
+  const t0 = new Date().getTime();
+  // ดึงปีละครั้งแล้วแจกให้ทุกสาขา — 64 สาขาก็ยิงรอบเดียว
+  const cache = {};
+  BRANCH_TARGETS.forEach(t => {
+    try {
+      if (!cache[t.year]) {
+        cache[t.year] = _rptFetch(t.year + "-01-01", t.year + "-12-31");
+        Logger.log("  ดึงปี " + t.year + " ได้ " + cache[t.year].length + " แถว");
+      }
+      const code = String(t.code);
+      const rows = cache[t.year].filter(r => String(r.branch_code || "") === code);
+      const n = _brWrite(t, rows);
+      Logger.log("  ✓ " + t.tab + " (" + t.code + ") " + n + " วัน");
+    } catch (e) {
+      Logger.log("  ✗ " + t.tab + " : " + e.message);
+    }
+  });
+  Logger.log("✅ เสร็จ " + BRANCH_TARGETS.length + " แท็บ ใช้เวลา " +
+             ((new Date().getTime() - t0) / 1000).toFixed(1) + " วินาที");
+}
+
+// รวมค่าของหนึ่งวันให้อยู่ในรูปเดียวกับ _rptRow
+function _brBucket() {
+  return {
+    plan: 0, a16: 0, aEod: 0, dine: 0, take: 0, grab: 0, line: 0, shopee: 0,
+    tTotal: 0, tDine: 0, tTake: 0, tGrab: 0, tLine: 0, tShopee: 0,
+    customer: 0, lhour: 0, lbaht: 0
+  };
+}
+function _brAdd(dst, src) {
+  Object.keys(dst).forEach(k => { dst[k] += src[k]; });
+}
+function _brFill(bucket, r) {
+  const n = v => Number(v) || 0;
+  if (r.submit_time_slot === "16.00") { bucket.a16 += n(r.actual_sale); return; }
+  bucket.plan     += n(r.plan_sale);
+  bucket.aEod     += n(r.actual_sale);
+  bucket.dine     += n(r.sale_dine_in);
+  bucket.take     += n(r.sale_take_away);
+  bucket.grab     += n(r.sale_grab);
+  bucket.line     += n(r.sale_lineman);
+  bucket.shopee   += n(r.sale_shopeefood);
+  bucket.tTotal   += n(r.total_trans);
+  bucket.tDine    += n(r.trans_dine_in);
+  bucket.tTake    += n(r.trans_take_away);
+  bucket.tGrab    += n(r.trans_grab);
+  bucket.tLine    += n(r.trans_lineman);
+  bucket.tShopee  += n(r.trans_shopeefood);
+  bucket.customer += n(r.customer);
+  bucket.lhour    += n(r.labour_hour);
+  bucket.lbaht    += n(r.labour_baht);
+}
+
+// แปลง bucket เป็นแถว (คอลัมน์แรกคือป้ายกำกับ ไม่ใช่ BZM/รหัส/สาขา)
+function _brRow(label, b, who) {
+  const delivery  = b.grab + b.line + b.shopee;
+  const tDelivery = b.tGrab + b.tLine + b.tShopee;
+  return [
+    label,
+    b.plan, b.a16, b.aEod, _rptDiv(b.aEod, b.plan),
+    b.dine, b.take, b.grab, b.line, b.shopee, delivery,
+    b.tTotal, b.tDine, b.tTake, b.tGrab, b.tLine, b.tShopee, tDelivery,
+    _rptDiv(b.aEod, b.tTotal), _rptDiv(b.dine, b.tDine),
+    _rptDiv(b.take, b.tTake), _rptDiv(delivery, tDelivery),
+    b.customer, _rptDiv(b.aEod, b.customer),
+    b.lhour, b.lbaht,
+    _rptDiv(b.lbaht, b.aEod),
+    _rptDiv(b.tTotal, b.lhour), _rptDiv(b.aEod, b.lhour),
+    who || ""
+  ];
+}
+
+// บรรทัดสัดส่วนช่องทาง ใต้แถวรวมของเดือน
+function _brMixRow(b) {
+  const delivery = b.grab + b.line + b.shopee;
+  const row = new Array(BR_HEADER.length).fill("");
+  row[0] = "สัดส่วน";
+  row[5] = _rptDiv(b.dine, b.aEod);
+  row[6] = _rptDiv(b.take, b.aEod);
+  row[7] = _rptDiv(b.grab, b.aEod);
+  row[8] = _rptDiv(b.line, b.aEod);
+  row[9] = _rptDiv(b.shopee, b.aEod);
+  row[10] = _rptDiv(delivery, b.aEod);
+  return row;
+}
+
+function _brWrite(target, rows) {
+  // วันที่ → bucket + ชื่อคนส่งของรอบสิ้นวัน
+  const byDate = {}, whoByDate = {};
+  rows.forEach(r => {
+    const d = String(r.submit_date || "");
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = _brBucket();
+    _brFill(byDate[d], r);
+    if (r.submit_time_slot !== "16.00" && r.submitter_name) whoByDate[d] = r.submitter_name;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const body = [];
+  let dayCount = 0;
+
+  for (let m = 1; m <= 12; m++) {
+    const mm = (m < 10 ? "0" + m : "" + m);
+    const inMonth = dates.filter(d => d.slice(5, 7) === mm);
+    if (!inMonth.length) continue;
+
+    const head = new Array(BR_HEADER.length).fill("");
+    head[0] = TH_MONTH_NAMES[m - 1] + " " + target.year;
+    body.push(head);
+
+    const monthSum = _brBucket();
+    inMonth.forEach(d => {
+      const b = byDate[d];
+      _brAdd(monthSum, b);
+      body.push(_brRow(_brThaiDate(d), b, whoByDate[d]));
+      dayCount++;
+    });
+
+    body.push(_brRow("รวม " + TH_MONTH_NAMES[m - 1], monthSum, ""));
+    body.push(_brMixRow(monthSum));
+    body.push(new Array(BR_HEADER.length).fill(""));
+  }
+
+  const ss = SpreadsheetApp.openById(target.id);
+  let sh = ss.getSheetByName(target.tab);
+  if (!sh) {
+    sh = ss.insertSheet(target.tab);
+    sh.setFrozenRows(2);
+    sh.setFrozenColumns(1);
+  }
+  const cols = BR_HEADER.length;
+  const need = body.length + 4;
+  if (sh.getMaxRows() < need)    sh.insertRowsAfter(sh.getMaxRows(), need - sh.getMaxRows());
+  if (sh.getMaxColumns() < cols) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
+
+  sh.getRange(1, 1, sh.getMaxRows(), cols).clearContent();
+  sh.getRange(1, 1).setValue(target.code + " — ปี " + target.year).setFontWeight("bold");
+  sh.getRange(2, 1, 1, cols).setValues([BR_HEADER]).setFontWeight("bold");
+  if (body.length) {
+    sh.getRange(3, 1, body.length, cols).setValues(body);
+    sh.getRange(3, 2, body.length, cols - 2).setNumberFormat("#,##0.00");
+    [5, 27].forEach(c => sh.getRange(3, c, body.length, 1).setNumberFormat("0.00%"));
+    // บรรทัดสัดส่วนช่องทางเป็นเปอร์เซ็นต์ทั้งแถบ
+    sh.getRange(3, 6, body.length, 6).setNumberFormat("#,##0.00");
+  }
+  sh.getRange(body.length + 4, 1).setValue(
+    "อัปเดตล่าสุด " + Utilities.formatDate(new Date(), "Asia/Bangkok", "d/M/yyyy HH:mm")
+  );
+  SpreadsheetApp.flush();
+  return dayCount;
+}
+
+function _brThaiDate(ds) {
+  const p = String(ds).split("-");
+  return parseInt(p[2], 10) + "/" + parseInt(p[1], 10) + "/" + p[0];
+}
+
+function setupBranchTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === "syncBranchSheets")
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger("syncBranchSheets").timeBased().everyHours(1).create();
+  Logger.log("✅ ตั้งให้แท็บรายสาขาอัปเดตทุก 1 ชั่วโมง");
 }
