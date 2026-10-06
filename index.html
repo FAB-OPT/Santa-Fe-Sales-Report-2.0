@@ -8802,7 +8802,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
          admin ย้อนได้ไกลกว่า role อื่น เพื่อตามแก้ข้อมูลเก่าที่ตกหล่นได้ */
       const HIST_LOOKBACK_DAYS       = 45;  // สาขา / BZM / VP — ย้อนหลังได้กี่วัน
       const HIST_LOOKBACK_DAYS_ADMIN = 60;  // admin — ย้อนหลังได้กี่วัน
-      const HIST_DEFAULT_DAYS        = 30;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role — ไม่กระโดดไปสุดเพดาน)
+      const HIST_DEFAULT_DAYS        = 45;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role) — วันเริ่มต้นย้อนไปสุด 45 วัน
       const HIST_MAX_SPAN_DAYS       = 45;  // สาขา / BZM / VP — เลือกช่วงกว้างสุดกี่วันต่อครั้ง
       const HIST_MAX_SPAN_DAYS_ADMIN = 60;  // admin — เท่ากับ lookback เพื่อให้ลากดูรวดเดียวได้ 60 วัน
       function isAdminUser()      { return S.role === "admin" || S.code === "ADMIN"; }
