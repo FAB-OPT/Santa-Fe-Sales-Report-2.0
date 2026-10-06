@@ -2835,6 +2835,10 @@
         flex-wrap: wrap;
       }
 
+      .hist-title-note {
+        font-size: 13px; font-weight: 600; color: var(--txt2);
+        letter-spacing: 0; margin-left: 2px;
+      }
       .hist-hdr h2 {
         font-size: 18px;
         font-weight: 800;
@@ -17947,7 +17951,12 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const since = fromEl.value;
         const until = toEl.value;
         const titleEl = document.getElementById("histTitle");
-        if (titleEl) titleEl.textContent = `📊 ประวัติ`;
+        if (titleEl) {
+          const _note = isAdminUser()
+            ? `ย้อนหลัง ${histLookbackDays()} วัน (แอดมินแก้ได้ไม่จำกัด)`
+            : `ย้อนหลัง ${histLookbackDays()} วัน (สามารถแก้ได้สูงสุด ${MAX_BRANCH_EDITS} ครั้ง)`;
+          titleEl.innerHTML = `📊 ประวัติ <span class="hist-title-note">${_note}</span>`;
+        }
 
         let _hist = null, _plan = null, _done = 0;
         function _onDone() {
