@@ -33,12 +33,30 @@ const YEAR = 2026;
 // แท็บรวมทุกสาขา · scope = "year" | "month" | "day"
 const REPORT_TABS = [
   { tab: "Total 2026", scope: "year" },
-  { tab: "มกราคม 69",  scope: "month", month: 1 },
-  { tab: "Daily",      scope: "day",   date: "วันนี้" }   // หรือใส่ "2026-10-05"
+  { tab: "มกราคม 69", scope: "month", month: 1 },
+  { tab: "กุมภาพันธ์ 69", scope: "month", month: 2 },
+  { tab: "มีนาคม 69", scope: "month", month: 3 },
+  { tab: "เมษายน 69", scope: "month", month: 4 },
+  { tab: "พฤษภาคม 69", scope: "month", month: 5 },
+  { tab: "มิถุนายน 69", scope: "month", month: 6 },
+  { tab: "กรกฎาคม 69", scope: "month", month: 7 },
+  { tab: "สิงหาคม 69", scope: "month", month: 8 },
+  { tab: "กันยายน 69", scope: "month", month: 9 },
+  { tab: "ตุลาคม 69", scope: "month", month: 10 },
+  { tab: "พฤศจิกายน 69", scope: "month", month: 11 },
+  { tab: "ธันวาคม 69", scope: "month", month: 12 },
+  { tab: "Daily", scope: "day", date: "วันนี้" }   // หรือใส่ "2026-10-05"
 ];
 
 // แท็บรายสาขา — ใส่รหัสสาขา ชื่อแท็บจะเท่ากับรหัส
-const BRANCH_TABS = ["5001"];
+const BRANCH_TABS = [
+  "5001", "5002", "5003", "5005", "5007", "5010", "5011", "5012", "5014", "5015", "5016",
+  "5017", "5018", "5019", "5021", "5023", "5024", "5026", "5028", "5030", "5031", "5033",
+  "5034", "5035", "5036", "5038", "5039", "5040", "5042", "5045", "5046", "5049", "5050",
+  "5052", "5054", "5055", "5057", "5061", "5062", "5063", "5064", "5065", "5066", "5068",
+  "5069", "5071", "5072", "5073", "5076", "5077", "5080", "5082", "5084", "5085", "5087",
+  "5088", "5090", "5091", "5092", "5504", "5505", "5508", "5509", "5995"
+];
 
 // แท็บสรุปสั้น สาขา × เดือน — ใส่ "" ถ้าไม่ต้องการ
 const SUMMARY_TAB = "สรุปรายเดือน";
@@ -46,6 +64,9 @@ const SUMMARY_TAB = "สรุปรายเดือน";
 // true  = สคริปต์ทาสีและจัดรูปแบบตัวเลขให้ทุกครั้งที่รัน
 // false = ไม่แตะหน้าตาเลย — แต่งชีทเองได้ตามใจ สีอยู่ถาวร สคริปต์เติมแค่ตัวเลข
 const FORMAT_TABS = true;
+
+// เวลาสูงสุดต่อการรันหนึ่งรอบ (Apps Script ตัดที่ 6 นาที) — ทำไม่ทันจะทำต่อรอบหน้า
+const TIME_BUDGET_MS = 4.5 * 60 * 1000;
 
 /* ── ไม่ต้องแก้ตั้งแต่บรรทัดนี้ลงไป ───────────────────────────── */
 
@@ -82,32 +103,48 @@ function buildAll() {
   const rows = fetchYear(YEAR);
   Logger.log("ดึงข้อมูลปี " + YEAR + " ได้ " + rows.length + " แถว");
 
-  REPORT_TABS.forEach(t => {
-    try {
+  // รายการงานทั้งหมด — แท็บรวม → สรุปสั้น → รายสาขา
+  const jobs = [];
+  REPORT_TABS.forEach(t => jobs.push({
+    name: t.tab,
+    run: () => {
       const range = scopeRange(t);
       const sub = rows.filter(r => r.submit_date >= range.from && r.submit_date <= range.to);
-      const n = writeReportTab(t, sub, range);
-      Logger.log("  ✓ " + t.tab + "  (" + range.label + ")  " + n + " สาขา");
-    } catch (e) { Logger.log("  ✗ " + t.tab + " : " + e.message); }
-  });
+      return writeReportTab(t, sub, range) + " สาขา";
+    }
+  }));
+  if (SUMMARY_TAB) jobs.push({ name: SUMMARY_TAB, run: () => writeSummaryTab(rows) + " สาขา" });
+  BRANCH_TABS.forEach(code => jobs.push({
+    name: "สาขา " + code,
+    run: () => writeBranchTab(String(code),
+                 rows.filter(r => String(r.branch_code || "") === String(code))) + " วัน"
+  }));
 
-  BRANCH_TABS.forEach(code => {
-    try {
-      const sub = rows.filter(r => String(r.branch_code || "") === String(code));
-      const n = writeBranchTab(String(code), sub);
-      Logger.log("  ✓ สาขา " + code + "  " + n + " วัน");
-    } catch (e) { Logger.log("  ✗ สาขา " + code + " : " + e.message); }
-  });
+  // Apps Script ให้เวลารันละ 6 นาที — ทำไม่ทันจะจำไว้แล้วทำต่อรอบหน้า
+  const props = PropertiesService.getScriptProperties();
+  let i = parseInt(props.getProperty("rpt_resume") || "0", 10);
+  if (isNaN(i) || i >= jobs.length) i = 0;
+  if (i > 0) Logger.log("ทำต่อจากงานที่ " + (i + 1) + " ของ " + jobs.length);
 
-  if (SUMMARY_TAB) {
-    try {
-      const n = writeSummaryTab(rows);
-      Logger.log("  ✓ " + SUMMARY_TAB + "  " + n + " สาขา");
-    } catch (e) { Logger.log("  ✗ " + SUMMARY_TAB + " : " + e.message); }
+  for (; i < jobs.length; i++) {
+    if (new Date().getTime() - t0 > TIME_BUDGET_MS) {
+      props.setProperty("rpt_resume", String(i));
+      Logger.log("⏸ หมดเวลารอบนี้ — เหลืออีก " + (jobs.length - i) + " แท็บ ทำต่อรอบหน้า");
+      return;
+    }
+    try { Logger.log("  ✓ " + jobs[i].name + "  " + jobs[i].run()); }
+    catch (e) { Logger.log("  ✗ " + jobs[i].name + " : " + e.message); }
   }
 
-  Logger.log("✅ เสร็จทั้งหมด ใช้เวลา " +
+  props.deleteProperty("rpt_resume");
+  Logger.log("✅ เสร็จครบ " + jobs.length + " แท็บ ใช้เวลา " +
              ((new Date().getTime() - t0) / 1000).toFixed(1) + " วินาที");
+}
+
+// เริ่มสร้างใหม่ตั้งแต่แท็บแรก (ล้างตัวจำตำแหน่ง)
+function buildAllFromStart() {
+  PropertiesService.getScriptProperties().deleteProperty("rpt_resume");
+  buildAll();
 }
 
 /* ══════════════════════════════════════════════════════════════
