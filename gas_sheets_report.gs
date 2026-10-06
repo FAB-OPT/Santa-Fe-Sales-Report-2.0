@@ -32,7 +32,7 @@ const YEAR = 2026;
 
 // แท็บรวมทุกสาขา · scope = "year" | "month" | "day"
 const REPORT_TABS = [
-  { tab: "Total 2026", scope: "year" },
+  { tab: "Total 2569.", scope: "year" },
   { tab: "มกราคม 69", scope: "month", month: 1 },
   { tab: "กุมภาพันธ์ 69", scope: "month", month: 2 },
   { tab: "มีนาคม 69", scope: "month", month: 3 },
@@ -106,16 +106,17 @@ function buildAll() {
   // รายการงานทั้งหมด — แท็บรวม → สรุปสั้น → รายสาขา
   const jobs = [];
   REPORT_TABS.forEach(t => jobs.push({
-    name: t.tab,
+    name: t.tab, tabName: t.tab,
     run: () => {
       const range = scopeRange(t);
       const sub = rows.filter(r => r.submit_date >= range.from && r.submit_date <= range.to);
       return writeReportTab(t, sub, range) + " สาขา";
     }
   }));
-  if (SUMMARY_TAB) jobs.push({ name: SUMMARY_TAB, run: () => writeSummaryTab(rows) + " สาขา" });
+  if (SUMMARY_TAB) jobs.push({ name: SUMMARY_TAB, tabName: SUMMARY_TAB,
+                               run: () => writeSummaryTab(rows) + " สาขา" });
   BRANCH_TABS.forEach(code => jobs.push({
-    name: "สาขา " + code,
+    name: "สาขา " + code, tabName: String(code),
     run: () => writeBranchTab(String(code),
                  rows.filter(r => String(r.branch_code || "") === String(code))) + " วัน"
   }));
@@ -137,6 +138,8 @@ function buildAll() {
   }
 
   props.deleteProperty("rpt_resume");
+  try { orderTabs(jobs.map(j => j.tabName)); }
+  catch (e) { Logger.log("  (เรียงแท็บไม่สำเร็จ: " + e.message + ")"); }
   Logger.log("✅ เสร็จครบ " + jobs.length + " แท็บ ใช้เวลา " +
              ((new Date().getTime() - t0) / 1000).toFixed(1) + " วินาที");
 }
@@ -440,6 +443,26 @@ function writeSheet(tabName, title, header, body, opt) {
     "อัปเดตล่าสุด " + Utilities.formatDate(new Date(), "Asia/Bangkok", "d/M/yyyy HH:mm")
   );
   SpreadsheetApp.flush();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   เรียงลำดับแท็บ — ตามลำดับที่ตั้งไว้ใน REPORT_TABS แล้วตามด้วยสาขา
+   แท็บอื่นที่สคริปต์ไม่ได้สร้าง (BRANCHES / Sales / ใส่สูตร / Plan Sale)
+   จะถูกปล่อยไว้ด้านหน้าเหมือนเดิม ไม่ย้าย
+   ══════════════════════════════════════════════════════════════ */
+function orderTabs(names) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const managed = {};
+  names.forEach(n => { managed[String(n)] = true; });
+  let pos = ss.getSheets().filter(sh => !managed[sh.getName()]).length;
+  names.forEach(n => {
+    const sh = ss.getSheetByName(String(n));
+    if (!sh) return;
+    pos++;
+    ss.setActiveSheet(sh);
+    ss.moveActiveSheet(pos);
+  });
+  Logger.log("  เรียงแท็บแล้ว " + names.length + " แท็บ");
 }
 
 /* ══════════════════════════════════════════════════════════════
