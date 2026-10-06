@@ -720,12 +720,12 @@ function _colLetter(n) {
 // ════════════════════════════════════════════
 function setupTriggers() {
   ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger("syncSales").timeBased().everyMinutes(30).create();
-  ScriptApp.newTrigger("syncFast").timeBased().everyMinutes(30).create();   // Plan + Manpower
+  ScriptApp.newTrigger("syncSales").timeBased().everyHours(1).create();
+  ScriptApp.newTrigger("syncFast").timeBased().everyHours(1).create();      // Plan + Manpower
   ScriptApp.newTrigger("syncSlow").timeBased().everyMinutes(15).create();
   ScriptApp.newTrigger("syncPromoHourly").timeBased().everyHours(1).create();
   ScriptApp.newTrigger("nightlyFullSync").timeBased().atHour(2).everyDays(1).create();
-  Logger.log("✅ Sales 30 min · Fast 30 min · Slow 15 min · Promo 1 hr · Nightly 2 AM");
+  Logger.log("✅ Sales 1 hr · Fast 1 hr · Slow 15 min · Promo 1 hr · Nightly 2 AM");
 }
 
 function stopTriggers() {
