@@ -26,7 +26,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 // รหัสไฟล์ปลายทาง (ส่วนใน URL ระหว่าง /d/ กับ /edit) — ใช้กับทุกแท็บ
-const SHEET_ID = "ใส่รหัสไฟล์ตรงนี้";
+const SHEET_ID = "1yFJQ9o2n9LyGTxM1Ekw4WTXF7H8GHMZJerrxyll-h9c";
 
 const YEAR = 2026;
 
@@ -75,7 +75,7 @@ const BRANCH_HEADER = ["วันที่"].concat(METRIC_COLS).concat(["คน
    ══════════════════════════════════════════════════════════════ */
 function buildAll() {
   const t0 = new Date().getTime();
-  if (SHEET_ID.indexOf("ใส่รหัส") === 0) {
+  if (!SHEET_ID || SHEET_ID.indexOf("ใส่รหัส") === 0) {
     throw new Error("ยังไม่ได้ใส่ SHEET_ID — ดูหัวข้อ ตั้งค่า ด้านบนไฟล์");
   }
 
