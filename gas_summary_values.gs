@@ -6,14 +6,20 @@
  *   คำนวณสูตรใหม่ทุกครั้งที่เปิด ไฟล์นี้ย้ายการคำนวณไปไว้ที่ Apps Script
  *   แล้ววางผลลัพธ์เป็นตัวเลขนิ่ง ๆ ลงชีท เปิดบนมือถือเร็วเท่าเปิดตารางเปล่า
  *
- * วิธีติดตั้ง:
- *   1. เปิด Apps Script ของชีทหลัก (ไฟล์เดียวกับ gas_sync_v20.gs)
- *   2. กด + เพิ่มไฟล์สคริปต์ใหม่ แล้ววางโค้ดนี้ทั้งหมด
- *   3. เลือกฟังก์ชัน syncSummaryValues แล้วกด Run หนึ่งครั้ง (ครั้งแรกจะขออนุญาต)
- *   4. ถ้าจะให้อัปเดตเอง เลือกฟังก์ชัน setupSummaryTrigger แล้วกด Run
+ * ⚠️ ไฟล์นี้ยืนอยู่ได้ด้วยตัวเอง — แยกโปรเจกต์กับสคริปต์ซิงค์ (gas_sync_v20.gs)
+ *    ไม่ใช้ค่าหรือฟังก์ชันร่วมกันเลย จะพังหรือแก้อะไรก็ไม่กระทบการซิงค์เดิม
  *
- * ใช้ค่าคงที่ SUPABASE_URL / SUPABASE_KEY จาก gas_sync_v20.gs ในโปรเจกต์เดียวกัน
+ * วิธีติดตั้ง (โปรเจกต์ใหม่ แยกจากของเดิม):
+ *   1. เปิดชีทสรุป → ส่วนขยาย → Apps Script  (หรือสร้างโปรเจกต์เปล่าที่ script.google.com)
+ *   2. วางโค้ดนี้ทั้งไฟล์ทับของเดิมในนั้น
+ *   3. แก้ SUMMARY_TARGETS ให้ตรงกับไฟล์ที่ต้องการ
+ *   4. เลือกฟังก์ชัน syncSummaryValues แล้วกด Run (ครั้งแรกจะขออนุญาต)
+ *   5. อยากให้อัปเดตเอง เลือก setupSummaryTrigger แล้วกด Run
  */
+
+// ── Supabase (ชุดของไฟล์นี้เอง ไม่เกี่ยวกับโปรเจกต์ซิงค์) ──
+const SUM_SUPABASE_URL = "https://zroqklbobvixyohfaimc.supabase.co";
+const SUM_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb3FrbGJvYnZpeHlvaGZhaW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTUzNjMsImV4cCI6MjA5NDIzMTM2M30.BSwbqeQ1jsyvATpOkJ-wV04TGZacagaNpj6S4fPC-J4";
 
 const SUMMARY_YEAR = 2026;
 
@@ -122,7 +128,7 @@ function _summaryWriteTarget(target, allRows) {
 function _summaryFetchYear(year) {
   const PAGE = 1000;
   const from = year + "-01-01", to = year + "-12-31";
-  const base = SUPABASE_URL + "/rest/v1/sales_data" +
+  const base = SUM_SUPABASE_URL + "/rest/v1/sales_data" +
     "?select=branch_code,branch_name,district_manager,submit_date,plan_sale,actual_sale" +
     "&submit_time_slot=eq." + encodeURIComponent("สิ้นวัน") +
     "&submit_date=gte." + from + "&submit_date=lte." + to +
@@ -132,7 +138,7 @@ function _summaryFetchYear(year) {
   while (true) {
     const res = UrlFetchApp.fetch(base, {
       headers: {
-        apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY,
+        apikey: SUM_SUPABASE_KEY, Authorization: "Bearer " + SUM_SUPABASE_KEY,
         Range: offset + "-" + (offset + PAGE - 1), "Range-Unit": "items"
       },
       muteHttpExceptions: true
