@@ -749,7 +749,7 @@ function onOpen() {
     .addSeparator()
     .addItem("🌙 Full sync (reset delta)", "nightlyFullSync")
     .addSeparator()
-    .addItem("Setup auto (Sales 30m / Fast 30m / Slow 15m)", "setupTriggers")
+    .addItem("Setup auto (Sales 1h / Fast 1h / Slow 15m)", "setupTriggers")
     .addItem("Stop auto-sync", "stopTriggers")
     .addToUi();
 }
