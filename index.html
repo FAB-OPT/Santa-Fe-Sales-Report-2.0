@@ -7445,7 +7445,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           <select id="histBranchFilter" onchange="loadHistory()" style="display:none;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;min-width:180px"></select>
           <button class="btn btn-sm btn-outline" onclick="showForm()">← ส่งยอด</button>
         </div>
-        <!-- ช่วงวันที่ (45 วันย้อนหลัง · admin ย้อนได้ 90 วัน) + รอบ -->
+        <!-- ช่วงวันที่ (45 วันย้อนหลัง · admin ย้อนได้ 60 วัน) + รอบ -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">📅 จาก</label>
           <input type="date" id="histDateFrom" onchange="onHistDateChange(this, loadHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
@@ -8026,7 +8026,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>
         </div>
 
-        <!-- Date range — จาก / ถึง (จำกัด 45 วัน · admin 90 วัน) — รูปแบบเดียวกับหน้าประวัติ -->
+        <!-- Date range — จาก / ถึง (จำกัด 45 วัน · admin 60 วัน) — รูปแบบเดียวกับหน้าประวัติ -->
         <div class="hist-filter" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;padding:12px 14px;background:#fff;border:1px solid var(--bd);border-radius:10px">
           <label style="font-size:12.5px;font-weight:700;color:var(--txt2)">📅 จาก</label>
           <input type="date" id="ehDateFrom" onchange="onHistDateChange(this, loadEditHistory)" style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0f172a">
@@ -8789,10 +8789,10 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       /* ── ช่วงวันที่ย้อนหลังของหน้าประวัติ + ประวัติการแก้ไข — ปรับที่นี่ที่เดียว ──
          admin ย้อนได้ไกลกว่า role อื่น เพื่อตามแก้ข้อมูลเก่าที่ตกหล่นได้ */
       const HIST_LOOKBACK_DAYS       = 45;  // สาขา / BZM / VP — ย้อนหลังได้กี่วัน
-      const HIST_LOOKBACK_DAYS_ADMIN = 90;  // admin — ย้อนหลังได้กี่วัน
-      const HIST_DEFAULT_DAYS        = 30;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role — ไม่กระโดดไป 90 วัน)
+      const HIST_LOOKBACK_DAYS_ADMIN = 60;  // admin — ย้อนหลังได้กี่วัน
+      const HIST_DEFAULT_DAYS        = 30;  // ค่าเริ่มต้นตอนเปิดหน้า (ทุก role — ไม่กระโดดไปสุดเพดาน)
       const HIST_MAX_SPAN_DAYS       = 45;  // สาขา / BZM / VP — เลือกช่วงกว้างสุดกี่วันต่อครั้ง
-      const HIST_MAX_SPAN_DAYS_ADMIN = 90;  // admin — เท่ากับ lookback เพื่อให้ลากดูรวดเดียวได้ 90 วัน
+      const HIST_MAX_SPAN_DAYS_ADMIN = 60;  // admin — เท่ากับ lookback เพื่อให้ลากดูรวดเดียวได้ 60 วัน
       function isAdminUser()      { return S.role === "admin" || S.code === "ADMIN"; }
       function histLookbackDays() { return isAdminUser() ? HIST_LOOKBACK_DAYS_ADMIN : HIST_LOOKBACK_DAYS; }
       function histMaxSpanDays()  { return isAdminUser() ? HIST_MAX_SPAN_DAYS_ADMIN : HIST_MAX_SPAN_DAYS; }
@@ -13026,7 +13026,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (isBzm) { hint.textContent = `โซน: ${S.dm || "—"}`; hint.style.display = ""; }
           else { hint.textContent = ""; hint.style.display = "none"; }
         }
-        // default: 30 วันย้อนหลัง → วันนี้ · ย้อนได้ไกลสุดตาม role (สาขา 45 วัน · admin 90 วัน) + ล็อก min/max
+        // default: 30 วันย้อนหลัง → วันนี้ · ย้อนได้ไกลสุดตาม role (สาขา 45 วัน · admin 60 วัน) + ล็อก min/max
         const fromEl = document.getElementById("ehDateFrom");
         const toEl   = document.getElementById("ehDateTo");
         const today = todayStr();
@@ -17889,7 +17889,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       }
 
       /* ─────────────────────────────────────────
-         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกินเพดานตาม role (admin 90 วัน · role อื่น 45 วัน)
+         Validator ใช้ร่วมกัน: ช่วงวันต้องไม่เกินเพดานตาม role (admin 60 วัน · role อื่น 45 วัน)
          ถ้าเกิน → popup + clamp ฝั่งที่ "ไม่ได้" เพิ่งถูกแก้
            แก้ช่อง "จาก" → เลื่อน "ถึง" ตามลงมา
            แก้ช่อง "ถึง" → เลื่อน "จาก" ตามขึ้นมา
@@ -17930,7 +17930,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         populateBranchFilter("histBranchFilter");
         const queryCodes = getQueryBranchCodes("histBranchFilter"); // array | null
 
-        // ย้อนหลังได้ตาม role (admin 90 วัน · role อื่น 45 วัน) → วันนี้ — ล็อก min/max
+        // ย้อนหลังได้ตาม role (admin 60 วัน · role อื่น 45 วัน) → วันนี้ — ล็อก min/max
         const fromEl = document.getElementById("histDateFrom");
         const toEl   = document.getElementById("histDateTo");
         const today = todayStr();
