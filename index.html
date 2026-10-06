@@ -2835,6 +2835,14 @@
         flex-wrap: wrap;
       }
 
+      /* แถบเครื่องมือบนสุดหน้าแอดมิน — บนมือถือให้ปุ่มเต็มความกว้าง กันล้นขอบ */
+      body.is-touch .adm-top-tools { justify-content: stretch !important; }
+      body.is-touch .adm-top-tools > .btn { flex: 1; min-width: 0; }
+      @media (max-width: 640px) {
+        .adm-top-tools { justify-content: stretch !important; }
+        .adm-top-tools > .btn { flex: 1; min-width: 0; }
+      }
+
       .hist-title-note {
         font-size: 13px; font-weight: 600; color: var(--txt2);
         letter-spacing: 0; margin-left: 2px;
