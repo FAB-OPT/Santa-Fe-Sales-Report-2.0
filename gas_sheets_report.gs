@@ -230,8 +230,9 @@ function div(a, b) { return b ? a / b : ""; }
 function metrics(b) {
   const delivery  = b.grab + b.line + b.shopee;
   const tDelivery = b.tGrab + b.tLine + b.tShopee;
+  const plan = b.plan || "";     // ยังไม่ได้ลงเป้า → เว้นว่าง ไม่ใช่ 0.00
   return [
-    b.plan, b.a16, b.aEod, div(b.aEod, b.plan),
+    plan, b.a16, b.aEod, div(b.aEod, b.plan),
     b.dine, b.take, b.grab, b.line, b.shopee, delivery,
     b.tTotal, b.tDine, b.tTake, b.tGrab, b.tLine, b.tShopee, tDelivery,
     div(b.aEod, b.tTotal), div(b.dine, b.tDine), div(b.take, b.tTake), div(delivery, tDelivery),
@@ -297,7 +298,7 @@ function writeReportTab(target, rows, range) {
 
   writeSheet(target.tab, range.label, REPORT_HEADER, body, {
     pct: [7, 29],            // % และ %Col (คอลัมน์ที่เท่าไหร่ นับจาก 1)
-    numFrom: 4, frozenCols: 3
+    numFrom: 4, frozenCols: 3, metricFrom: 4, groups: true
   });
   return codes.length;
 }
@@ -352,7 +353,7 @@ function writeBranchTab(code, rows) {
   }
 
   writeSheet(code, "สาขา " + code + " — ปี " + YEAR, BRANCH_HEADER, body, {
-    pct: [5, 27], numFrom: 2, frozenCols: 1
+    pct: [5, 27], numFrom: 2, frozenCols: 1, metricFrom: 2, groups: true
   });
   return days;
 }
@@ -389,7 +390,7 @@ function writeSummaryTab(rows) {
     body.push(sum);
   }
   writeSheet(SUMMARY_TAB, "ยอดขายรายเดือน ปี " + YEAR, header, body,
-             { pct: [], numFrom: 4, frozenCols: 3 });
+             { pct: [], numFrom: 4, frozenCols: 3 });   // แท็บนี้ไม่มีกลุ่ม Sale/Trans
   return codes.length;
 }
 
@@ -411,18 +412,29 @@ function writeSheet(tabName, title, header, body, opt) {
 
   // ล้างเฉพาะตัวเลข — สีพื้นและกฎสีที่ตั้งไว้ยังอยู่ครบ
   sh.getRange(1, 1, sh.getMaxRows(), cols).clearContent();
+
+  // แถว 1 = แถบหัวกลุ่ม (Sale / Trans / Customer & Labour) · แถว 2 = ชื่อคอลัมน์
   sh.getRange(1, 1).setValue(title).setFontWeight("bold");
+  if (FORMAT_TABS && opt.groups) writeGroupBands(sh, opt.metricFrom, cols);
   const head = sh.getRange(2, 1, 1, cols).setValues([header]).setFontWeight("bold");
-  if (FORMAT_TABS) head.setBackground(C_HEAD).setFontColor("#ffffff");
+
+  if (FORMAT_TABS) {
+    paintHeader(sh, cols, opt);
+    head.setHorizontalAlignment("center").setWrap(true);
+  }
 
   if (body.length) {
     sh.getRange(3, 1, body.length, cols).setValues(body);
     if (FORMAT_TABS) {
       sh.getRange(3, opt.numFrom, body.length, cols - opt.numFrom + 1).setNumberFormat("#,##0.00");
       (opt.pct || []).forEach(c => sh.getRange(3, c, body.length, 1).setNumberFormat("0.00%"));
-      paintRows(sh, body, cols);
+      paintRows(sh, body, cols, opt);
       setPctRules(sh, body.length, cols, opt.pct || []);
     }
+  }
+  if (FORMAT_TABS) {
+    sh.getRange(1, 1, body.length + 3, cols)
+      .setFontFamily(FONT_NAME).setFontSize(FONT_SIZE);
   }
   sh.getRange(body.length + 4, 1).setValue(
     "อัปเดตล่าสุด " + Utilities.formatDate(new Date(), "Asia/Bangkok", "d/M/yyyy HH:mm")
@@ -448,18 +460,94 @@ const C_HEAD  = "#f26c1c";   // แถบหัวตาราง — ส้ม 
 const C_TOTAL = "#fff2a8";   // แถวรวม — เหลือง
 const C_MONTH = "#ffe0b2";   // หัวข้อเดือนในแท็บรายสาขา — ส้มอ่อน
 const C_PLAIN = "#ffffff";
+const C_NAME  = "#dbeeff";   // คอลัมน์ BZM / รหัส / สาขา — ฟ้าอ่อน
+const C_BAND  = "#d9d9d9";   // แถบหัวกลุ่ม Sale / Trans / Customer & Labour
+const C_ORG_H = "#f9cb9c";   // หัวคอลัมน์โทนส้ม
+const C_ORG_B = "#fce5cd";   // พื้นข้อมูลโทนส้ม
+const C_GRN_H = "#b6d7a8";   // หัวคอลัมน์โทนเขียว
+const C_GRN_B = "#d9ead3";   // พื้นข้อมูลโทนเขียว
+
+const FONT_NAME = "Arial";
+const FONT_SIZE = 10;
+
+/* สีประจำคอลัมน์ทั้ง 28 ตัว เรียงตาม METRIC_COLS
+   [สีหัวคอลัมน์, สีพื้นข้อมูล] — อยากเปลี่ยนสีไหนแก้บรรทัดนั้นได้เลย */
+const COL_TINT = [
+  [C_PLAIN, C_PLAIN],  // Plan Sale
+  [C_PLAIN, C_PLAIN],  // Actual Sale 16.00
+  [C_ORG_H, C_ORG_B],  // Actual Sale สิ้นวัน
+  [C_ORG_H, C_PLAIN],  // %
+  [C_PLAIN, C_PLAIN],  // Dine In
+  [C_PLAIN, C_PLAIN],  // Take away
+  [C_GRN_H, C_PLAIN],  // Grab
+  [C_GRN_H, C_PLAIN],  // Line Man
+  [C_GRN_H, C_PLAIN],  // Shopee Food
+  [C_GRN_H, C_GRN_B],  // Total Delivery
+  [C_ORG_H, C_ORG_B],  // Trans Total
+  [C_PLAIN, C_PLAIN],  // Trans Dine In
+  [C_PLAIN, C_PLAIN],  // Trans Take away
+  [C_GRN_H, C_PLAIN],  // Trans Grab
+  [C_GRN_H, C_PLAIN],  // Trans Line Man
+  [C_GRN_H, C_PLAIN],  // Trans Shopee Food
+  [C_GRN_H, C_GRN_B],  // Trans Delivery
+  [C_ORG_H, C_ORG_B],  // Ticket Avg.
+  [C_ORG_H, C_ORG_B],  // Ticket Dine In
+  [C_ORG_H, C_ORG_B],  // Ticket Take away
+  [C_ORG_H, C_ORG_B],  // Ticket Delivery
+  [C_PLAIN, C_PLAIN],  // Customer
+  [C_ORG_H, C_ORG_B],  // Customer Avg.
+  [C_PLAIN, C_PLAIN],  // Labour(hour)
+  [C_PLAIN, C_PLAIN],  // Labour(Baht)
+  [C_ORG_H, C_ORG_B],  // %Col
+  [C_ORG_H, C_ORG_B],  // Productivity Trans
+  [C_ORG_H, C_ORG_B]   // Productivity Sale
+];
+
+// แถบหัวกลุ่มด้านบน — [ชื่อกลุ่ม, คอลัมน์แรก, คอลัมน์สุดท้าย] นับในกลุ่ม METRIC_COLS
+const COL_GROUPS = [["Sale", 1, 10], ["Trans", 11, 21], ["Customer & Labour", 22, 28]];
+
+// แถบหัวกลุ่มด้านบนสุด — รวมช่องแล้วใส่ชื่อกลุ่ม
+function writeGroupBands(sh, metricFrom, cols) {
+  const row = sh.getRange(1, 1, 1, cols);
+  try { row.breakApart(); } catch (e) {}
+  row.setBackground(C_BAND).setHorizontalAlignment("center").setFontWeight("bold");
+  sh.getRange(1, 1, 1, metricFrom - 1).setBackground(C_NAME);
+  COL_GROUPS.forEach(g => {
+    const a = metricFrom + g[1] - 1, b = metricFrom + g[2] - 1;
+    if (b > cols) return;
+    const r = sh.getRange(1, a, 1, b - a + 1);
+    try { r.merge(); } catch (e) {}
+    r.setValue(g[0]);
+  });
+}
+
+// สีหัวคอลัมน์ตามพาเลต COL_TINT
+function paintHeader(sh, cols, opt) {
+  const mf = opt.metricFrom || opt.numFrom;
+  const bg = [];
+  for (let c = 1; c <= cols; c++) {
+    const i = c - mf;
+    bg.push((i >= 0 && i < COL_TINT.length) ? COL_TINT[i][0] : C_NAME);
+  }
+  sh.getRange(2, 1, 1, cols).setBackgrounds([bg]);
+}
 
 // ทาสีพื้นทั้งตารางในคำสั่งเดียว — เร็วกว่าทาทีละแถว
-function paintRows(sh, body, cols) {
+function paintRows(sh, body, cols, opt) {
+  const mf = (opt && (opt.metricFrom || opt.numFrom)) || 1;
   const colors = body.map(r => {
     const first = String(r[0] || "");
     const third = String(r[2] || "");
-    let c = C_PLAIN;
-    if (first === "Total" || first.indexOf("รวม") === 0 || third.indexOf("รวม") === 0) c = C_TOTAL;
-    else if (first.indexOf(" " + YEAR) > 0) c = C_MONTH;      // "มกราคม 2026"
-    else if (first === "สัดส่วน") c = C_MONTH;
+    let flat = "";
+    if (first === "Total" || first.indexOf("รวม") === 0 || third.indexOf("รวม") === 0) flat = C_TOTAL;
+    else if (first.indexOf(" " + YEAR) > 0 || first === "สัดส่วน") flat = C_MONTH;
     const row = [];
-    for (let i = 0; i < cols; i++) row.push(c);
+    for (let c = 1; c <= cols; c++) {
+      if (flat) { row.push(flat); continue; }
+      const i = c - mf;
+      if (c < mf) row.push(C_NAME);                                   // BZM / รหัส / สาขา / วันที่
+      else row.push((i >= 0 && i < COL_TINT.length) ? COL_TINT[i][1] : C_PLAIN);
+    }
     return row;
   });
   sh.getRange(3, 1, body.length, cols).setBackgrounds(colors);
