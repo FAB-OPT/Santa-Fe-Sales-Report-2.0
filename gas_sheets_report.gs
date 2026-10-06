@@ -43,6 +43,10 @@ const BRANCH_TABS = ["5001"];
 // แท็บสรุปสั้น สาขา × เดือน — ใส่ "" ถ้าไม่ต้องการ
 const SUMMARY_TAB = "สรุปรายเดือน";
 
+// true  = สคริปต์ทาสีและจัดรูปแบบตัวเลขให้ทุกครั้งที่รัน
+// false = ไม่แตะหน้าตาเลย — แต่งชีทเองได้ตามใจ สีอยู่ถาวร สคริปต์เติมแค่ตัวเลข
+const FORMAT_TABS = true;
+
 /* ── ไม่ต้องแก้ตั้งแต่บรรทัดนี้ลงไป ───────────────────────────── */
 
 const SUPA_URL = "https://zroqklbobvixyohfaimc.supabase.co";
@@ -368,14 +372,20 @@ function writeSheet(tabName, title, header, body, opt) {
   if (sh.getMaxRows() < need)    sh.insertRowsAfter(sh.getMaxRows(), need - sh.getMaxRows());
   if (sh.getMaxColumns() < cols) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
 
+  // ล้างเฉพาะตัวเลข — สีพื้นและกฎสีที่ตั้งไว้ยังอยู่ครบ
   sh.getRange(1, 1, sh.getMaxRows(), cols).clearContent();
   sh.getRange(1, 1).setValue(title).setFontWeight("bold");
-  sh.getRange(2, 1, 1, cols).setValues([header]).setFontWeight("bold");
+  const head = sh.getRange(2, 1, 1, cols).setValues([header]).setFontWeight("bold");
+  if (FORMAT_TABS) head.setBackground(C_HEAD).setFontColor("#ffffff");
 
   if (body.length) {
     sh.getRange(3, 1, body.length, cols).setValues(body);
-    sh.getRange(3, opt.numFrom, body.length, cols - opt.numFrom + 1).setNumberFormat("#,##0.00");
-    (opt.pct || []).forEach(c => sh.getRange(3, c, body.length, 1).setNumberFormat("0.00%"));
+    if (FORMAT_TABS) {
+      sh.getRange(3, opt.numFrom, body.length, cols - opt.numFrom + 1).setNumberFormat("#,##0.00");
+      (opt.pct || []).forEach(c => sh.getRange(3, c, body.length, 1).setNumberFormat("0.00%"));
+      paintRows(sh, body, cols);
+      setPctRules(sh, body.length, cols, opt.pct || []);
+    }
   }
   sh.getRange(body.length + 4, 1).setValue(
     "อัปเดตล่าสุด " + Utilities.formatDate(new Date(), "Asia/Bangkok", "d/M/yyyy HH:mm")
@@ -392,4 +402,48 @@ function setupTrigger() {
     .forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger("buildAll").timeBased().everyHours(1).create();
   Logger.log("✅ ตั้งให้สร้างรายงานใหม่ทุก 1 ชั่วโมง");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   สี
+   ══════════════════════════════════════════════════════════════ */
+const C_HEAD  = "#f26c1c";   // แถบหัวตาราง — ส้ม ตัวหนังสือขาว
+const C_TOTAL = "#fff2a8";   // แถวรวม — เหลือง
+const C_MONTH = "#ffe0b2";   // หัวข้อเดือนในแท็บรายสาขา — ส้มอ่อน
+const C_PLAIN = "#ffffff";
+
+// ทาสีพื้นทั้งตารางในคำสั่งเดียว — เร็วกว่าทาทีละแถว
+function paintRows(sh, body, cols) {
+  const colors = body.map(r => {
+    const first = String(r[0] || "");
+    const third = String(r[2] || "");
+    let c = C_PLAIN;
+    if (first === "Total" || first.indexOf("รวม") === 0 || third.indexOf("รวม") === 0) c = C_TOTAL;
+    else if (first.indexOf(" " + YEAR) > 0) c = C_MONTH;      // "มกราคม 2026"
+    else if (first === "สัดส่วน") c = C_MONTH;
+    const row = [];
+    for (let i = 0; i < cols; i++) row.push(c);
+    return row;
+  });
+  sh.getRange(3, 1, body.length, cols).setBackgrounds(colors);
+}
+
+// กฎสีตามค่า: ตั้งครั้งเดียว อยู่ถาวร ไม่ถูกล้างตอนเขียนรอบถัดไป
+//   ≥ 100% เขียว · 80–99.99% ส้ม · < 80% แดง
+function setPctRules(sh, rowCount, cols, pctCols) {
+  if (!pctCols.length) return;
+  const ranges = pctCols.map(c => sh.getRange(3, c, rowCount, 1));
+  const mk = (type, val, bg, fg) => {
+    let b = SpreadsheetApp.newConditionalFormatRule();
+    b = (type === "ge") ? b.whenNumberGreaterThanOrEqualTo(val)
+      : (type === "lt") ? b.whenNumberLessThan(val)
+      : b.whenNumberBetween(val[0], val[1]);
+    return b.setBackground(bg).setFontColor(fg).setRanges(ranges).build();
+  };
+  const rules = [
+    mk("ge", 1,            "#b7e1cd", "#0b5d3b"),
+    mk("bt", [0.8, 0.9999],"#fce8b2", "#7a4b1d"),
+    mk("lt", 0.8,          "#f4c7c3", "#8c1d18")
+  ];
+  sh.setConditionalFormatRules(rules);
 }
