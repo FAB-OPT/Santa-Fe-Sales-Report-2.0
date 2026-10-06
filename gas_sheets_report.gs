@@ -102,6 +102,8 @@ function buildAll() {
 
   const rows = fetchYear(YEAR);
   Logger.log("ดึงข้อมูลปี " + YEAR + " ได้ " + rows.length + " แถว");
+  PLAN = fetchPlan(YEAR);
+  Logger.log("ดึงเป้าจากตาราง plan_sale ได้ " + PLAN.count + " แถว");
 
   // รายการงานทั้งหมด — แท็บรวม → สรุปสั้น → รายสาขา
   const jobs = [];
@@ -183,6 +185,54 @@ function fetchYear(year) {
   return all;
 }
 
+/* เป้ารายวันต่อสาขา — อ่านจากตาราง plan_sale โดยตรง
+   ไม่ใช้ช่อง plan_sale ที่ติดมากับแถวส่งยอด เพราะครึ่งปีแรกเป็น 0
+   (ตอนนั้นระบบยังไม่มีฟีเจอร์ Plan Sale ตัวเลขเลยไม่ถูกบันทึกไว้) */
+var PLAN = { byKey: {}, count: 0 };
+
+function fetchPlan(year) {
+  const PAGE = 1000;
+  const url = SUPA_URL + "/rest/v1/plan_sale?select=branch_code,plan_date,plan_amount" +
+    "&plan_date=gte." + year + "-01-01&plan_date=lte." + year + "-12-31&order=plan_date.asc";
+  const byKey = {};
+  let n = 0, offset = 0;
+  while (true) {
+    const res = UrlFetchApp.fetch(url, {
+      headers: {
+        apikey: SUPA_KEY, Authorization: "Bearer " + SUPA_KEY,
+        Range: offset + "-" + (offset + PAGE - 1), "Range-Unit": "items"
+      },
+      muteHttpExceptions: true
+    });
+    const code = res.getResponseCode();
+    if (code === 416) break;
+    if (code !== 200 && code !== 206) throw new Error("plan_sale HTTP " + code);
+    const data = JSON.parse(res.getContentText());
+    data.forEach(r => {
+      const k = String(r.branch_code || "") + "|" + String(r.plan_date || "");
+      byKey[k] = (byKey[k] || 0) + (Number(r.plan_amount) || 0);
+      n++;
+    });
+    if (data.length < PAGE) break;
+    offset += PAGE;
+    if (offset > 500000) break;
+  }
+  return { byKey: byKey, count: n };
+}
+
+// รวมเป้าของสาขาหนึ่งในช่วงวันที่ที่กำหนด
+function planSum(code, from, to) {
+  let sum = 0;
+  const prefix = String(code) + "|";
+  for (const k in PLAN.byKey) {
+    if (k.indexOf(prefix) !== 0) continue;
+    const d = k.slice(prefix.length);
+    if (d >= from && d <= to) sum += PLAN.byKey[k];
+  }
+  return sum;
+}
+function planOf(code, date) { return PLAN.byKey[String(code) + "|" + String(date)] || 0; }
+
 function scopeRange(t) {
   const pad = n => (n < 10 ? "0" + n : "" + n);
   if (t.scope === "year")  return { from: YEAR + "-01-01", to: YEAR + "-12-31", label: "ปี " + YEAR };
@@ -214,7 +264,7 @@ function addRow(b, r) {
   const n = v => Number(v) || 0;
   // รอบ 16.00 เป็นยอดระหว่างวัน เก็บแค่ยอดขาย ไม่เอาช่องทาง/trans มารวมซ้ำ
   if (r.submit_time_slot === "16.00") { b.a16 += n(r.actual_sale); return; }
-  b.plan += n(r.plan_sale);       b.aEod   += n(r.actual_sale);
+  b.aEod += n(r.actual_sale);     // เป้าไม่เอาจากแถวนี้ — ใช้ตาราง plan_sale แทน
   b.dine += n(r.sale_dine_in);    b.take   += n(r.sale_take_away);
   b.grab += n(r.sale_grab);       b.line   += n(r.sale_lineman);
   b.shopee += n(r.sale_shopeefood);
@@ -268,6 +318,7 @@ function writeReportTab(target, rows, range) {
   });
 
   const codes = Object.keys(by).sort();
+  codes.forEach(c => { by[c].plan = planSum(c, range.from, range.to); });   // เป้าจากตาราง plan_sale
   const easy  = toSet(EASY_CODES);
   const main  = codes.filter(c => !easy[c]).map(c => by[c]);
   const sfe   = codes.filter(c =>  easy[c]).map(c => by[c]);
@@ -334,11 +385,16 @@ function writeBranchTab(code, rows) {
 
     const monthSum = emptyBucket();
     inMonth.forEach(d => {
+      byDate[d].plan = planOf(code, d);          // เป้าของวันนั้นจากตาราง plan_sale
       addBucket(monthSum, byDate[d]);
       body.push([thaiDate(d)].concat(metrics(byDate[d])).concat([whoByDate[d] || ""]));
       days++;
     });
 
+    // เป้ารวมทั้งเดือน = ทุกวันที่มีเป้า ไม่ใช่เฉพาะวันที่ส่งยอด
+    const mLast = new Date(YEAR, m, 0).getDate();
+    monthSum.plan = planSum(code, YEAR + "-" + mm + "-01",
+                            YEAR + "-" + mm + "-" + (mLast < 10 ? "0" + mLast : mLast));
     body.push(["รวม " + TH_MONTHS[m - 1]].concat(metrics(monthSum)).concat([""]));
 
     // บรรทัดสัดส่วนช่องทาง (เทียบยอดสิ้นวันของทั้งเดือน)
