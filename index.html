@@ -6073,6 +6073,20 @@ body { background: var(--bg); color: var(--txt); }
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(242,108,28,.15), 0 2px 6px rgba(15,23,42,.06);
 }
+.dash3-brand {
+        display: inline-flex; gap: 2px; padding: 3px;
+        background: var(--bg-2); border: 1px solid var(--bd); border-radius: 999px;
+      }
+      .dash3-brand button {
+        border: 0; background: none; cursor: pointer; font-family: inherit;
+        font-size: 12.5px; font-weight: 700; color: var(--txt2);
+        padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+      }
+      .dash3-brand button.on { background: var(--brand); color: #fff; }
+      @media (max-width: 640px) {
+        .dash3-brand { width: 100%; justify-content: stretch; }
+        .dash3-brand button { flex: 1; padding: 7px 8px; font-size: 12px; }
+      }
 .dash2-kpi-lbl {
   font-size: 12px; font-weight: 700; color: var(--txt2);
   margin-bottom: 10px;
@@ -7505,6 +7519,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <div class="dash3-sub" id="dashPageSub">ภาพรวมผลการขาย</div>
           </div>
           <div class="dash3-controls">
+            <div class="dash3-brand" id="dashBrandSw" style="display:none">
+              <button type="button" data-b="all"  class="on" onclick="ddSetBrand('all')">ทั้งหมด</button>
+              <button type="button" data-b="sf"   onclick="ddSetBrand('sf')">Santa Fe</button>
+              <button type="button" data-b="easy" onclick="ddSetBrand('easy')">Easy</button>
+            </div>
             <select id="dashBranchFilter" class="dash3-branch" onchange="_ddDropdownChanged()" style="display:none"></select>
             <button class="dash3-icon-btn" onclick="loadDash()" title="รีเฟรช">🔄</button>
           </div>
@@ -13838,6 +13857,11 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function populateBranchFilter(selectId) {
         const sel = document.getElementById(selectId);
         if (!sel) return null;
+        // ปุ่มสลับแบรนด์ — เฉพาะหน้าแดชบอร์ดและเฉพาะคนที่เห็นหลายสาขา
+        if (selectId === "dashBranchFilter") {
+          const sw = document.getElementById("dashBrandSw");
+          if (sw) sw.style.display = (S.role === "branch" || S.role === "franchise") ? "none" : "inline-flex";
+        }
         // branch user → ไม่ต้องเลือก (เห็นเฉพาะของตัวเอง)
         if (S.role === "branch") { sel.style.display = "none"; return S.code; }
         sel.style.display = "inline-block";
@@ -13962,25 +13986,25 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         if (!grid) return;
         grid.innerHTML = `
           <div class="dash2-kpi">
-            <div class="dash2-kpi-lbl">ยอดขายจริง</div>
+            <div class="dash2-kpi-lbl">Actual Sale</div>
             <div class="dash2-kpi-val">฿${fmt(actCur)}</div>
             <div class="dash2-kpi-hint">${hintActual}</div>
             ${chgBadge(actCur, actPrev)}
           </div>
           <div class="dash2-kpi">
-            <div class="dash2-kpi-lbl">จำนวนบิล</div>
+            <div class="dash2-kpi-lbl">Trans</div>
             <div class="dash2-kpi-val">${fmt(trnCur)}</div>
             <div class="dash2-kpi-hint">${hintTrans}</div>
             ${chgBadge(trnCur, trnPrev)}
           </div>
           <div class="dash2-kpi">
-            <div class="dash2-kpi-lbl">% ของเป้า</div>
+            <div class="dash2-kpi-lbl">% of Plan</div>
             <div class="dash2-kpi-val">${pctPlanCur !== null ? pctPlanCur.toFixed(1) + '%' : '-'}</div>
             <div class="dash2-kpi-hint">${hintPctPlan}</div>
             ${chgBadge(pctPlanCur, pctPlanPrev)}
           </div>
           <div class="dash2-kpi">
-            <div class="dash2-kpi-lbl">ค่าแรง (%)</div>
+            <div class="dash2-kpi-lbl">Labour (%)</div>
             <div class="dash2-kpi-val">${labPctCur !== null ? labPctCur.toFixed(1) + '%' : '-'}</div>
             <div class="dash2-kpi-hint">${hintLabPct}</div>
             ${chgBadge(labPctCur, labPctPrev, { lowerIsBetter: true })}
@@ -14143,9 +14167,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const salePerDay  = daysSub > 0 ? totalActual / daysSub : null;
 
         list.innerHTML = `
-          <div class="dash2-quick-row"><span class="dash2-quick-lbl">ยอดเฉลี่ย/บิล</span><span class="dash2-quick-val">${ticketAvg !== null ? '฿' + ticketAvg.toFixed(2) : '-'}</span></div>
-          <div class="dash2-quick-row"><span class="dash2-quick-lbl">จำนวนบิล/วัน</span><span class="dash2-quick-val">${transPerDay !== null ? fmt(Math.round(transPerDay)) : '-'}</span></div>
-          <div class="dash2-quick-row"><span class="dash2-quick-lbl">ยอดขาย/วัน</span><span class="dash2-quick-val">${salePerDay !== null ? '฿' + fmt(Math.round(salePerDay)) : '-'}</span></div>
+          <div class="dash2-quick-row"><span class="dash2-quick-lbl">Ticket Avg.</span><span class="dash2-quick-val">${ticketAvg !== null ? '฿' + ticketAvg.toFixed(2) : '-'}</span></div>
+          <div class="dash2-quick-row"><span class="dash2-quick-lbl">Trans/วัน</span><span class="dash2-quick-val">${transPerDay !== null ? fmt(Math.round(transPerDay)) : '-'}</span></div>
+          <div class="dash2-quick-row"><span class="dash2-quick-lbl">Actual Sale/วัน</span><span class="dash2-quick-val">${salePerDay !== null ? '฿' + fmt(Math.round(salePerDay)) : '-'}</span></div>
           <div class="dash2-quick-row"><span class="dash2-quick-lbl">จำนวนวันที่ส่งข้อมูล</span><span class="dash2-quick-val">${daysSub} / ${days} วัน</span></div>`;
       }
 
@@ -14154,6 +14178,29 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
          อ่านจาก _dashRows (EOD) + _dashPlanByBranch + BRANCH_DM_MAP
       ════════════════════════════════════════════ */
       let _ddView = { level: "company", zone: null, branch: null };
+      /* แบรนด์: "all" ทุกสาขา · "sf" Santa Fe (รหัสไม่ขึ้นต้น 55) · "easy" Santa Fe Easy (รหัสขึ้นต้น 55) */
+      let _ddBrand = "all";
+      function _isEasyCode(code) { return String(code || "").indexOf("55") === 0; }
+      function _ddBrandOk(code) {
+        if (_ddBrand === "easy") return _isEasyCode(code);
+        if (_ddBrand === "sf")   return !_isEasyCode(code);
+        return true;
+      }
+      function _ddBrandLabel() {
+        return _ddBrand === "easy" ? "Santa Fe Easy" : (_ddBrand === "sf" ? "Santa Fe" : "");
+      }
+      function ddSetBrand(b) {
+        if (_ddBrand === b) return;
+        _ddBrand = b;
+        const sw = document.getElementById("dashBrandSw");
+        if (sw) sw.querySelectorAll("button").forEach(el =>
+          el.classList.toggle("on", el.getAttribute("data-b") === b));
+        // เปลี่ยนแบรนด์ = เปลี่ยนขอบเขต → กลับไปภาพรวมบริษัทก่อน
+        _ddView = { level: "company", zone: null, branch: null };
+        _ddViewLocked = false;
+        _ddSyncDropdown();
+        renderActive(true);
+      }
       let _ddRange = { startDate: null, endDate: null, periodDays: 30 };
 
       // ── 3 พาร์ทตามช่วงเวลา (วัน / สัปดาห์ / เดือน) ──
@@ -14228,14 +14275,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _ddCodes() {
         // ตัดสาขาที่ยังไม่ระบุโซน (dm ว่าง) ออกจาก dashboard
         return [...new Set((_dashRows || []).map(r => r.branch_code)
-          .filter(bc => bc && (BRANCH_DM_MAP[bc] || {}).dm))];
+          .filter(bc => bc && (BRANCH_DM_MAP[bc] || {}).dm && _ddBrandOk(bc)))];
       }
       // ── ทะเบียนสาขา — ใช้เป็นฐานของ "เป้า" ──
       // _ddCodes() สร้างจากแถวยอดขาย จึงมีแต่สาขาที่ส่งยอด ถ้าเอามาคิดเป้า
       // สาขาที่ไม่ส่งจะหลุดออกจากตัวหาร ทำให้ %เป้าสูงกว่าความจริง
       // BRANCH_DM_MAP ตอนล็อกอินถูกแทนที่ด้วยตาราง branches จาก DB แล้ว = สาขาที่ใช้งานจริง
       function _ddRoster() {
-        return Object.keys(BRANCH_DM_MAP).filter(bc => (BRANCH_DM_MAP[bc] || {}).dm);
+        return Object.keys(BRANCH_DM_MAP).filter(bc => (BRANCH_DM_MAP[bc] || {}).dm && _ddBrandOk(bc));
       }
       function _ddRosterZones() {
         const m = {};
@@ -14298,14 +14345,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const labPct = a.actual > 0 ? a.labBaht / a.actual : 0;
         const dp = a.actual - plan;
         const cards = [
-          { hero: true, lbl: "💰 ยอดขายจริง", val: "฿" + fmt(Math.round(a.actual)), sub: "เป้า ฿" + fmt(Math.round(plan)) },
-          { lbl: "🎯 % ของเป้า", val: plan > 0 ? (pct * 100).toFixed(1) + "%" : "-",
-            sub: (plan > 0 ? (dp >= 0 ? "▲ +" : "▼ ") + "฿" + fmt(Math.round(Math.abs(dp))) : "ยังไม่มีเป้า"),
+          { hero: true, lbl: "💰 Actual Sale", val: "฿" + fmt(Math.round(a.actual)), sub: "Plan Sale ฿" + fmt(Math.round(plan)) },
+          { lbl: "🎯 % of Plan", val: plan > 0 ? (pct * 100).toFixed(1) + "%" : "-",
+            sub: (plan > 0 ? (dp >= 0 ? "▲ +" : "▼ ") + "฿" + fmt(Math.round(Math.abs(dp))) : "ยังไม่มี Plan Sale"),
             subColor: plan > 0 ? _ddAchvColor(pct) : null },
-          { lbl: "🧾 จำนวนบิล", val: fmt(a.bills), sub: "ลูกค้า " + fmt(a.cust) + " คน" },
-          { lbl: "💵 บิลเฉลี่ย", val: a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-", sub: "ต่อบิล" },
-          { lbl: "🙋 ค่าเฉลี่ยต่อคน", val: a.cust > 0 ? "฿" + fmt(Math.round(perCust)) : "-", sub: "ต่อลูกค้า" },
-          { lbl: "👥 ค่าแรง",
+          { lbl: "🧾 Trans", val: fmt(a.bills), sub: "Customer " + fmt(a.cust) },
+          { lbl: "💵 Ticket Avg.", val: a.bills > 0 ? "฿" + fmt(Math.round(ticket)) : "-", sub: "ต่อ Trans" },
+          { lbl: "🙋 per Customer", val: a.cust > 0 ? "฿" + fmt(Math.round(perCust)) : "-", sub: "ต่อ Customer" },
+          { lbl: "👥 Labour",
             val: "฿" + fmt(Math.round(a.labBaht)),
             sub: (a.actual > 0 ? (labPct * 100).toFixed(1) + "%" : "-") + " · " + fmt(Math.round(a.labHr)) + " ชม." }
         ];
@@ -14557,7 +14604,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <span class="dd-bar-val">฿${fmt(Math.round(i.actual))}<i style="color:${base}">${pctTxt}</i></span>
           </button>`;
         }).join("");
-        return `<div class="dd-bar-head"><span>สาขา / โซน</span><span>ยอดขายจริง</span><span>จริง · %เป้า</span></div><div class="dd-bar-scroll">${rows}</div>`;
+        return `<div class="dd-bar-head"><span>สาขา / โซน</span><span>Actual Sale</span><span>Actual · % of Plan</span></div><div class="dd-bar-scroll">${rows}</div>`;
       }
 
       function _ddBranchHero(rows, codes, map, slots, subBars) {
@@ -14766,9 +14813,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             <tr style="background:#f1f5f9 !important">
               <th ${thSty}>ช่องทาง</th>
               <th ${thSty}>%</th>
-              <th ${thSty}>ยอดขาย (฿)</th>
-              <th ${thSty}>จำนวนบิล</th>
-              <th ${thSty}>บิลเฉลี่ย</th>
+              <th ${thSty}>Actual Sale (฿)</th>
+              <th ${thSty}>Trans</th>
+              <th ${thSty}>Ticket Avg.</th>
             </tr>
           </thead>
           <tbody>${body}</tbody>
@@ -14882,7 +14929,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           });
           const datasets = [{
             type: "bar",
-            label: "ยอดขายจริง",
+            label: "Actual Sale",
             data: monthVals,
             backgroundColor: barColors,
             borderRadius: 6,
@@ -14996,7 +15043,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           if (dayPlan > 0) return v >= dayPlan ? "rgba(34,197,94,0.85)" : "rgba(242,108,28,0.85)";
           return "rgba(148,163,184,0.65)";
         });
-        const datasets = [{ type: "bar", label: "ยอดขายจริง", data: s.data, backgroundColor: colors, borderRadius: 4, borderSkipped: false, order: 2 }];
+        const datasets = [{ type: "bar", label: "Actual Sale", data: s.data, backgroundColor: colors, borderRadius: 4, borderSkipped: false, order: 2 }];
         if (hasAnyPlan) {
           datasets.unshift({
             type: "line", label: "เป้า/วัน",
@@ -15076,9 +15123,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           </div>`;
         }).join("");
         const summaryRow = `<div class="dd-chan-summary">
-          <div><span class="dd-chan-stat-lbl">ยอดขายจริง</span><b>฿${fmt(Math.round(total))}</b></div>
-          <div><span class="dd-chan-stat-lbl">บิลทั้งหมด</span><b>${fmt(totalTrans)}</b></div>
-          <div><span class="dd-chan-stat-lbl">เฉลี่ย/บิล</span><b>${totalTrans > 0 ? '฿' + fmt(Math.round(total / totalTrans)) : '-'}</b></div>
+          <div><span class="dd-chan-stat-lbl">Actual Sale</span><b>฿${fmt(Math.round(total))}</b></div>
+          <div><span class="dd-chan-stat-lbl">Trans</span><b>${fmt(totalTrans)}</b></div>
+          <div><span class="dd-chan-stat-lbl">Ticket Avg.</span><b>${totalTrans > 0 ? '฿' + fmt(Math.round(total / totalTrans)) : '-'}</b></div>
         </div>`;
         box.innerHTML = `
           <div class="dd-chan-donut-wrap">
@@ -15087,7 +15134,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                 <canvas id="${canvasId}"></canvas>
                 <div class="dd-chan-donut-center">
                   <div class="dd-chan-donut-val">฿${fmt(Math.round(total))}</div>
-                  <div class="dd-chan-donut-lbl">ยอดขายจริง</div>
+                  <div class="dd-chan-donut-lbl">Actual Sale</div>
                 </div>
               </div>
             </div>
@@ -15163,6 +15210,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       function _ddGoCompany() { _ddView = { level: "company", zone: null, branch: null }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
       function _ddGoZone() { _ddView = { level: "zone", zone: _ddView.zone, branch: null }; _ddViewLocked = true; _ddSyncDropdown(); renderActive(false); }
 
+      // บอกบนหัวหน้าว่ากำลังดูแบรนด์ไหน
+      function _ddSyncBrandTitle() {
+        const sub = document.getElementById("dashPageSub");
+        if (!sub) return;
+        const b = _ddBrandLabel();
+        sub.textContent = b ? ("ภาพรวมผลการขาย · " + b) : "ภาพรวมผลการขาย";
+      }
+
       function _ddCrumb() {
         const role = (typeof S !== "undefined" && S && S.role) || "";
         if (role === "branch" || role === "franchise") {
@@ -15211,6 +15266,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
       // ── รีเซ็ต/guard เอนทิตี (ใช้ร่วม) แล้ววาดทั้ง 3 พาร์ท ──
       // วาดเฉพาะช่วงที่ active (แท็บที่เลือก) · ใช้ข้อมูลของช่วงนั้นเป็นแหล่งโครงโซน/สาขา
       function renderActive(reset) {
+        _ddSyncBrandTitle();
         const sec = _secActive;
         const C = _cap(sec);
         const role = (typeof S !== "undefined" && S && S.role) || "";
@@ -15293,9 +15349,9 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         let topPanel, rows, codes;
         if (_ddView.level === "company") {
           codes = _ddRoster();
-          rows = d.rows;
+          rows = d.rows.filter(r => _ddBrandOk(r.branch_code));   // กรองตามแบรนด์ที่เลือก
           _secItems[sec].zones = Object.keys(zones).map(z => {
-            const zr = d.rows.filter(r => _ddZoneOf(r.branch_code) === z);
+            const zr = rows.filter(r => _ddZoneOf(r.branch_code) === z);
             const a = _ddAgg(zr);
             const pl = _secPlan(map, zones[z]);
             // labelShort: ชื่อแรก (เช่น "นิรุต เจริญศิลป์ (พี่รุต)" → "นิรุต") — โชว์บนมือถือ
@@ -15458,7 +15514,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           trendSub = "🟩 ถึงเป้า · 🟧 ต่ำกว่าเป้า (เทียบเป้าเฉลี่ย/วัน)";
         } else {
           trendTitle = "📈 แนวโน้มยอดขายรายวัน";
-          trendSub = "ยอดขายจริงรายวันในช่วงที่เลือก";
+          trendSub = "Actual Sale รายวันในช่วงที่เลือก";
         }
 
         const isDayMode = (sec === 'day');
