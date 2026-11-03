@@ -6073,6 +6073,25 @@ body { background: var(--bg); color: var(--txt); }
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(242,108,28,.15), 0 2px 6px rgba(15,23,42,.06);
 }
+/* แถบจังหวะใต้การ์ด KPI — ยอดเทียบกับเวลาที่ผ่านไปในช่วงนั้น */
+.dd-pace {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        margin: 2px 0 14px; padding: 10px 16px; border-radius: 12px;
+        background: var(--surface); border: 1px solid var(--bd);
+        font-size: 12.5px; color: var(--txt2); line-height: 1.5;
+      }
+      .dd-pace b { color: var(--txt); font-weight: 800; }
+      .dd-pace-sep  { color: #cbd5e1; }
+      .dd-pace-bad  { color: #b91c1c; font-weight: 800; }
+      .dd-pace-good { color: #15803d; font-weight: 800; }
+      .dd-pace-mute { color: #94a3b8; font-weight: 700; }
+      .dd-pace.is-behind { border-left: 4px solid #ef4444; }
+      .dd-pace.is-ahead  { border-left: 4px solid #22c55e; }
+      @media (max-width: 640px) {
+        .dd-pace { font-size: 12px; padding: 10px 12px; gap: 4px; }
+        .dd-pace-sep { display: none; }
+        .dd-pace > span { flex: 1 1 100%; }
+      }
 .dash3-brand {
         display: inline-flex; gap: 2px; padding: 3px;
         background: var(--bg-2); border: 1px solid var(--bd); border-radius: 999px;
@@ -14337,6 +14356,41 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         return a;
       }
 
+      /* แถบจังหวะ — ตอบคำถาม "ตามเป้าอยู่ไหม" ด้วยการเทียบยอดกับเวลาที่ผ่านไป
+         ใช้เฉพาะช่วงที่ยาวกว่า 1 วันและยังไม่จบช่วง (เดือน/ปี/กำหนดเอง/สัปดาห์) */
+      function _ddPaceStrip(actual, plan, sec) {
+        const d = _secData[sec];
+        if (!d || !d.range || !d.range.startDate || !d.range.endDate) return "";
+        const DAY = 86400000;
+        const st = new Date(d.range.startDate + "T00:00:00");
+        const en = new Date(d.range.endDate + "T00:00:00");
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const total = Math.round((en - st) / DAY) + 1;
+        if (total < 2) return "";                       // รายวัน ไม่ต้องมีจังหวะ
+        let done = Math.round((today - st) / DAY) + 1;  // นับวันนี้เป็นวันที่ผ่านไปแล้ว
+        if (done > total) done = total;
+        if (done < 1) return "";                        // ช่วงอนาคต
+        const ratio    = done / total;
+        const expected = plan * ratio;
+        const project  = actual / done * total;
+        const behind   = expected - actual;
+        const cls = behind > 0 ? "is-behind" : "is-ahead";
+        const pct = v => plan > 0 ? (v / plan * 100).toFixed(1) + "%" : "-";
+        const money = v => "฿" + fmt(Math.round(v));
+        const tail = (plan > 0)
+          ? (behind > 0
+              ? `<span class="dd-pace-bad">ตามหลังจังหวะ ${money(behind)}</span>`
+              : `<span class="dd-pace-good">นำจังหวะ ${money(-behind)}</span>`)
+          : `<span class="dd-pace-mute">ยังไม่มี Plan Sale ในช่วงนี้</span>`;
+        return `<div class="dd-pace ${cls}">
+          <span><b>${done} / ${total} วัน</b> ของช่วงนี้ (${(ratio * 100).toFixed(0)}%)</span>
+          ${plan > 0 ? `<span class="dd-pace-sep">·</span><span>ควรทำได้แล้ว <b>${money(expected)}</b></span>` : ""}
+          <span class="dd-pace-sep">·</span>
+          <span>ตามจังหวะนี้จบช่วงจะได้ <b>${money(project)}</b>${plan > 0 ? ` (${pct(project)} ของเป้า)` : ""}</span>
+          <span class="dd-pace-sep">·</span>${tail}
+        </div>`;
+      }
+
       function _ddKpiCards(a, codes, map) {
         const plan = _ddPlan(codes, map);
         const pct    = plan > 0 ? a.actual / plan : 0;
@@ -15616,6 +15670,17 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           : '';
         kpiEl.innerHTML = _ddKpiCards(_agg, codes, map);
         _syncPromoCards(kpiEl);
+        // แถบจังหวะ วางใต้แถว KPI (ไม่อยู่ในกริด จึงไม่กวนการ์ด)
+        {
+          const holderId = 'secPace' + C;
+          let pace = document.getElementById(holderId);
+          if (!pace) {
+            pace = document.createElement('div');
+            pace.id = holderId;
+            if (kpiEl.parentNode) kpiEl.parentNode.insertBefore(pace, kpiEl.nextSibling);
+          }
+          pace.innerHTML = _ddPaceStrip(_agg.actual, _ddPlan(codes, map), sec);
+        }
 
         // ── สำหรับ company/zone view บน month/year → เพิ่ม "สรุปยอดขายช่วง" (สัปดาห์ที่ 1-5 / มกราคม-ธันวาคม) ──
         let _periodPanel = '';
