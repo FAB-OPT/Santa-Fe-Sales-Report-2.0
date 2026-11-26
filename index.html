@@ -6594,6 +6594,12 @@ body { background: var(--bg); color: var(--txt); }
   box-shadow: 0 6px 14px -6px rgba(15,23,42,.10);
 }
 .dd-chan-stat.is-empty { opacity: .45; }
+/* ช่องทางแบ่ง 3 กลุ่ม Dine in · Takeaway · Delivery — แพลตฟอร์มของ Delivery เป็นแถวย่อยเยื้องเข้าใต้กลุ่ม */
+.dd-chan-stat.is-grp .dd-chan-stat-name b { font-weight: 800; }
+.dd-chan-stat.is-sub { margin-left: 26px; padding-top: 7px; padding-bottom: 7px; background: rgba(15, 23, 42, .018); }
+.dd-chan-stat.is-sub .dd-chan-stat-name b { font-weight: 600; font-size: .95em; }
+.dd-chan-stat.is-sub .dd-chan-stat-name::before { content: "↳"; color: var(--txt2, #94a3b8); margin-right: 2px; font-weight: 700; }
+@media (max-width: 480px) { .dd-chan-stat.is-sub { margin-left: 14px; } }
 
 .dd-chan-stat-name {
   display: inline-flex; align-items: center; gap: 10px;
@@ -15091,10 +15097,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const _st = useCustom ? _secChanCharts[sec] : _secCharts[sec];
         if (_st && _st.trend) { _st.trend.destroy(); _st.trend = null; }
         const a = _ddAgg(rows);
-        const items = CHANNEL_DEFS.map(c => ({
-          label: c.label, color: c.color,
-          value: a.sale[c.key], trans: a.trans[c.key]
-        })).sort((x, y) => y.value - x.value);
+        const pick = k => { const c = CHANNEL_DEFS.find(x => x.key === k); return { label: c.label, color: c.color, value: a.sale[k] || 0, trans: a.trans[k] || 0 }; };
+        /* 3 กลุ่มหลัก: Dine in · Takeaway · Delivery (= Grab + Lineman + Shopee Food) แล้วแยกแพลตฟอร์มใต้ Delivery */
+        const platforms = ["sale_grab", "sale_lineman", "sale_shopeefood"].map(pick).sort((x, y) => y.value - x.value);
+        const groups = [
+          Object.assign(pick("sale_dine_in"), { label: "Dine in" }),
+          Object.assign(pick("sale_take_away"), { label: "Takeaway" }),
+          { label: "Delivery", color: "#6366f1", value: platforms.reduce((s, t) => s + t.value, 0), trans: platforms.reduce((s, t) => s + t.trans, 0), subs: platforms }
+        ];
+        const items = groups.flatMap(g => g.subs ? g.subs : [g]);   // โดนัท: เรียงตามกลุ่ม แพลตฟอร์ม Delivery อยู่ติดกัน
         const breakdownSum = items.reduce((s, t) => s + t.value, 0);
         const totalTrans   = items.reduce((s, t) => s + (t.trans || 0), 0);
         // ยอดหัวการ์ดใช้ actual_sale (ตรงกับ KPI ด้านบน) · % ของแต่ละช่องทางคิดจากผลบวกช่องทาง
@@ -15108,13 +15119,13 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         }
         const segmentItems = items;
         // กราฟวงกลม (donut) ฝั่งซ้าย · ตารางสถิติฝั่งขวา (บิล · ยอด · ค่าเฉลี่ย/บิล)
-        const legendRows = segmentItems.map(t => {
+        const legendRows = groups.flatMap(g => [Object.assign({ _cls: ' is-grp' }, g), ...(g.subs || []).map(t => Object.assign({ _cls: ' is-sub' }, t))]).map(t => {
           const pct = pctBase > 0 ? (t.value / pctBase) * 100 : 0;
           const avg = t.trans > 0 ? Math.round(t.value / t.trans) : 0;
           const isEmpty = t.value <= 0 && (!t.trans || t.trans <= 0);
           const billCell = `<span class="dd-chan-stat-cell dd-chan-stat-bills"><span class="dd-chan-stat-val">${fmt(t.trans || 0)}</span><span class="dd-chan-stat-lbl">บิล</span></span>`;
           const avgCell  = `<span class="dd-chan-stat-cell dd-chan-stat-avg"><span class="dd-chan-stat-val">${avg ? '฿' + fmt(avg) : '-'}</span><span class="dd-chan-stat-lbl">/บิล</span></span>`;
-          return `<div class="dd-chan-stat${isEmpty ? ' is-empty' : ''}" style="--c:${t.color}">
+          return `<div class="dd-chan-stat${t._cls || ''}${isEmpty ? ' is-empty' : ''}" style="--c:${t.color}">
             <span class="dd-chan-stat-name"><span class="dd-chan-stat-dot" style="background:${t.color}"></span><b>${escHtml(t.label)}</b></span>
             <span class="dd-chan-stat-cell dd-chan-stat-amount"><span class="dd-chan-stat-val">฿${fmt(Math.round(t.value))}</span></span>
             <span class="dd-chan-stat-pct">${pct.toFixed(1)}%</span>
