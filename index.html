@@ -6454,6 +6454,22 @@ body { background: var(--bg); color: var(--txt); }
 /* เฉพาะแถบสัปดาห์/เดือน (compact) เท่านั้นที่ดัน label ไปทางขวา */
 .dd-rounds-bars-compact .dd-rb-row { padding-left: 24px; }
 .dd-rounds-bars-compact .dd-rb-label { padding-left: 10px; }
+/* สรุปยอดขาย แบบ 5: 2 แท่ง (16:00 / สิ้นวัน) มี % ของเป้าในแท่ง · เส้นตั้งท้ายแท่ง = เป้า · ป้าย % โตอยู่ระหว่างสองแท่ง · บรรทัดล่าง เป้า / ขาดอีก */
+.ddv5 { display: grid; gap: 12px; container-type: inline-size; text-align: left; }
+.ddv5-r { display: grid; grid-template-columns: 90px minmax(0, 1fr) 140px; gap: 12px; align-items: center; }
+.ddv5-n { font-weight: 700; color: #475569; font-size: 14.5px; white-space: nowrap; }
+.ddv5-tr { position: relative; height: 28px; border-radius: 8px; background: #f1f5f9; }
+.ddv5-tr i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 9px; color: #fff; font-weight: 800; font-size: 12.5px; font-style: normal; white-space: nowrap; }
+.ddv5-tr::after { content: ""; position: absolute; right: 0; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: #334155; }
+.ddv5-a { text-align: right; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+.ddv5-g { padding-left: 102px; }
+.ddv5-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 13.5px; color: #64748b; }
+.ddv5-foot b { color: #0f172a; font-variant-numeric: tabular-nums; }
+@container (max-width: 460px) {
+  .ddv5-r { grid-template-columns: 70px minmax(0, 1fr); row-gap: 4px; }
+  .ddv5-a { grid-column: 2; text-align: left; font-size: 17px; }
+  .ddv5-g { padding-left: 0; }
+}
 .dd-rb-track {
   position: relative;
   height: 14px;
@@ -14703,11 +14719,21 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           const growthTag = growthPct !== null
             ? ` <span class="dd-rb-growth" title="เติบโตเทียบรอบ 16:00">↑ +${growthPct.toFixed(1)}% จาก 16:00</span>`
             : '';
-          // เหลือเฉพาะกราฟแท่ง 2 รอบ (16:00 / สิ้นวัน) — เต็มความกว้างการ์ด
+          // แบบ 5: 2 แท่ง 16:00 / สิ้นวัน · % ของเป้าในแท่ง · เส้นเป้าท้ายแท่ง · ป้าย % โตระหว่างสองแท่ง · บรรทัดล่าง เป้า / ขาดอีก
+          const eodCol = (pctEod >= 100) ? '#16a34a' : '#ea580c';
+          const big = aEod > 0 ? aEod : a16, gapAmt = p - big;
+          const bar = (name, val, pctV, col) => `<div class="ddv5-r">
+              <span class="ddv5-n">${name}</span>
+              <div class="ddv5-tr">${val > 0 ? `<i style="width:${Math.max(Math.min(pctV, 100), 14).toFixed(2)}%;background:${col}">${pctV.toFixed(1)}%</i>` : ''}</div>
+              <span class="ddv5-a" style="color:${val > 0 ? col : '#94a3b8'}">${val > 0 ? '฿' + fmt(Math.round(val)) : 'ยังไม่ส่ง'}</span>
+            </div>`;
           return `<div class="dd-hero dd-hero-day">
-            <div class="dd-rounds-bars">
-              ${rowBar('🕓', '16:00',   a16,  pct16,  '#fbbf24', bills16,  false)}
-              ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c', billsEod, false, growthTag)}
+            <div class="ddv5">
+              ${bar('🕓 16:00', a16, pct16, '#f5b417')}
+              ${growthTag ? `<div class="ddv5-g">${growthTag}</div>` : ''}
+              ${bar('🌙 สิ้นวัน', aEod, pctEod, eodCol)}
+              <div class="ddv5-foot"><span>เส้นตั้งท้ายแท่ง = เป้า <b>฿${fmt(Math.round(p))}</b></span>
+                <span>${big <= 0 ? '' : gapAmt > 0 ? `ขาดอีก <b>฿${fmt(Math.round(gapAmt))}</b>` : `เกินเป้า <b style="color:#16a34a">฿${fmt(Math.round(-gapAmt))}</b>`}</span></div>
             </div>
             ${_subBlock()}
           </div>`;
