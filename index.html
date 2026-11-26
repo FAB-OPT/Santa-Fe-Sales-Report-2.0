@@ -15363,7 +15363,15 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const zones = _ddRosterZones();
         const map = d.planByBranch;
 
-        let topPanel, rows, codes;
+        let topPanel, rows, codes, summaryPanel = '';
+        /* การ์ดสรุปยอดขาย (แท่งรอบ 16:00 / สิ้นวัน + % โตจาก 16:00) ของทั้งกลุ่มสาขา — ภาพรวมทุกสาขา และรายโซน (BZM) แบบเดียวกับหน้าสาขา */
+        const _groupSummary = (gRows, gCodes, sub) => {
+          const pl = _ddPlan(gCodes, map);
+          const sum = (slot, f) => gRows.filter(r => r.submit_time_slot === slot).reduce((t, r) => t + (parseFloat(r[f]) || 0), 0);
+          const slots = pl > 0 ? { act16: sum("16.00", "actual_sale"), actEod: sum("สิ้นวัน", "actual_sale"), plan: pl,
+                                   bills16: sum("16.00", "total_trans"), billsEod: sum("สิ้นวัน", "total_trans") } : null;
+          return _ddPanel("📊 สรุปยอดขาย", sub, _ddBranchHero(gRows, gCodes, map, slots));
+        };
         if (_ddView.level === "company") {
           codes = _ddRoster();
           rows = d.rows.filter(r => _ddBrandOk(r.branch_code));   // กรองตามแบรนด์ที่เลือก
@@ -15376,6 +15384,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
             return { id: z, label: z, labelShort, code: null, n: zones[z].length, actual: a.actual, pct: pl > 0 ? a.actual / pl : 0 };
           }).sort((x, y) => y.actual - x.actual);
           topPanel = _ddPanel("🏆 เปรียบเทียบยอดขายรายโซน (BZM)", "คลิกที่โซนเพื่อเจาะดูสาขาภายใน", _ddBarList(_secItems[sec].zones, "_ddDrillZone", sec));
+          summaryPanel = _groupSummary(rows, codes, "สถานะเทียบเป้าในช่วงนี้ · ทุกสาขา (" + codes.length + " สาขา)");
         } else if (_ddView.level === "zone") {
           codes = zones[_ddView.zone] || [];
           rows = d.rows.filter(r => codes.includes(r.branch_code));
@@ -15412,6 +15421,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
                      closedReason: (cl === 1 ? _clReason[bc] : "") };
           }).sort((x, y) => y.actual - x.actual);
           topPanel = _ddPanel("🏬 สาขาในโซน " + escHtml(_ddView.zone), _listCodes.length + " สาขา · คลิกที่สาขาเพื่อดูรายละเอียด", _ddBarList(_secItems[sec].branches, "_ddDrillBranch", sec));
+          summaryPanel = _groupSummary(rows, codes, "สถานะเทียบเป้าในช่วงนี้ · โซน " + escHtml(_ddView.zone) + " (" + codes.length + " สาขา)");
         } else {
           codes = [_ddView.branch];
           rows = d.rows.filter(r => r.branch_code === _ddView.branch);
@@ -15723,6 +15733,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           bodyEl.innerHTML = `
             ${_closedRow}
             ${_pendingRow}
+            ${summaryPanel ? `<div class="dash3-row dash3-row-full">${summaryPanel}</div>` : ''}
             <div class="dash3-row">${topPanel}</div>
             ${channelMega}`;
         } else {
@@ -15738,6 +15749,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           bodyEl.innerHTML =
             `${_closedRow}
              ${_pendingRow}
+             ${summaryPanel ? `<div class="dash3-row dash3-row-full">${summaryPanel}</div>` : ''}
              <div class="dash3-row dash3-row-full">${topPanel}</div>
              ${periodRow}
              ${channelRow}
