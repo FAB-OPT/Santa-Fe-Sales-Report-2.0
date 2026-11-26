@@ -14617,7 +14617,49 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
         const a = _ddAgg(rows);
         const plan = _ddPlan(codes, map);
 
-        // ── Day mode (มี slots) → 2 แท่งแนวนอน (16:00 / สิ้นวัน) + เปอร์เซ็นต์ใหญ่แทนไอคอน ──
+        // ── subBars: รายสัปดาห์ (โหมดเดือน) / รายเดือน (โหมดปี) — ใช้ได้ทั้งแบบแท่งรอบ (16:00/สิ้นวัน) และแบบแท่งเดียว ──
+        const _subBlock = () => {
+        if (!(Array.isArray(subBars) && subBars.length)) return '';
+        {
+          // อ้างอิงความกว้างแท่งจากยอดจริง — สูงสุดในกลุ่ม = 100% ของ track (เห็นเปรียบเทียบยอดได้)
+          const _maxRefVal = subBars.reduce((m, b) => Math.max(m, b.val || 0, b.plan || 0), 0);
+          const _rowBar = (b) => {
+            const pctV  = b.plan > 0 ? (b.val / b.plan) * 100 : 0;     // % ของเป้า — ใช้กับ %/สี
+            const fillW = _maxRefVal > 0 ? (b.val / _maxRefVal) * 100 : 0; // ความกว้าง — อิงยอดจริง
+            const sent = b.val > 0;
+            const overshoot = pctV >= 100;
+            // ≥ 100% = ถึงเป้า (เขียว) · 80–99% = amber · < 80% = ส้มแบรนด์ · ไม่มียอด = เทา
+            const fillColor = overshoot ? '#16a34a' : (pctV >= 80 ? '#f59e0b' : (b.val > 0 ? '#fb923c' : '#cbd5e1'));
+            // ทะลุเป้า → แสดง % เป็นเลขเขียวตัวเดียว (เช่น 101.7%) · ไม่มีป้ายแยก
+            const pctTxt = b.plan > 0
+              ? (overshoot
+                  ? `<span style="color:#15803d;font-weight:800">${pctV.toFixed(1)}%</span>`
+                  : `<span style="color:var(--txt2);font-weight:600">${pctV.toFixed(0)}%</span>`)
+              : '';
+            const valHtml = sent
+              ? `<b style="color:${fillColor}">฿${fmt(Math.round(b.val))}</b>${pctTxt ? ' ' + pctTxt : ''}`
+              : `<span style="color:var(--txt3)">ยังไม่มียอด</span>`;
+            const sub = b.sub ? `<span class="dd-rb-sub">${escHtml(b.sub)}</span>` : '';
+            return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}">
+              <span class="dd-rb-label">${escHtml(b.label)}${sub}</span>
+              <div class="dd-rb-track">
+                <div class="dd-rb-fill" style="width:${fillW.toFixed(2)}%;background:${fillColor}"></div>
+              </div>
+              <span class="dd-rb-val">${valHtml}</span>
+            </div>`;
+          };
+          // ถ้าทุก row ไม่มี sub chip → ใช้ label คอลัมน์แคบ (ชิดซ้ายมากขึ้น)
+          const _hasAnySub = subBars.some(b => b && b.sub);
+          const _compactVar = _hasAnySub ? 'dd-rounds-bars-with-chip' : 'dd-rounds-bars-narrow';
+          return `
+            <div class="dd-hero-slot-divider"></div>
+            <div class="dd-rounds-bars dd-rounds-bars-compact ${_compactVar}">
+              ${subBars.map(_rowBar).join('')}
+            </div>`;
+        }
+        };
+
+        // ── มี slots (ทุกแท็บ: วัน/สัปดาห์/เดือน/ปี/กำหนดเอง) → 2 แท่งแนวนอน (16:00 / สิ้นวัน) + % โตจาก 16:00 · เดือน/ปีมีแท่งย่อยต่อท้าย ──
         if (slots && slots.plan > 0) {
           const p     = slots.plan;
           const a16   = Math.max(0, slots.act16 || 0);
@@ -14667,6 +14709,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               ${rowBar('🕓', '16:00',   a16,  pct16,  '#fbbf24', bills16,  false)}
               ${rowBar('🌙', 'สิ้นวัน', aEod, pctEod, '#ea580c', billsEod, false, growthTag)}
             </div>
+            ${_subBlock()}
           </div>`;
         }
 
@@ -14718,44 +14761,7 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
               ${r('🌙', 'สิ้นวัน รวม', aEod, pctEod, colEod,    fillWEod, growthTag)}
             </div>`;
         }
-        // ── subBars: รายสัปดาห์ (โหมดเดือน) / รายเดือน (โหมดปี) ──
-        if (Array.isArray(subBars) && subBars.length) {
-          // อ้างอิงความกว้างแท่งจากยอดจริง — สูงสุดในกลุ่ม = 100% ของ track (เห็นเปรียบเทียบยอดได้)
-          const _maxRefVal = subBars.reduce((m, b) => Math.max(m, b.val || 0, b.plan || 0), 0);
-          const _rowBar = (b) => {
-            const pctV  = b.plan > 0 ? (b.val / b.plan) * 100 : 0;     // % ของเป้า — ใช้กับ %/สี
-            const fillW = _maxRefVal > 0 ? (b.val / _maxRefVal) * 100 : 0; // ความกว้าง — อิงยอดจริง
-            const sent = b.val > 0;
-            const overshoot = pctV >= 100;
-            // ≥ 100% = ถึงเป้า (เขียว) · 80–99% = amber · < 80% = ส้มแบรนด์ · ไม่มียอด = เทา
-            const fillColor = overshoot ? '#16a34a' : (pctV >= 80 ? '#f59e0b' : (b.val > 0 ? '#fb923c' : '#cbd5e1'));
-            // ทะลุเป้า → แสดง % เป็นเลขเขียวตัวเดียว (เช่น 101.7%) · ไม่มีป้ายแยก
-            const pctTxt = b.plan > 0
-              ? (overshoot
-                  ? `<span style="color:#15803d;font-weight:800">${pctV.toFixed(1)}%</span>`
-                  : `<span style="color:var(--txt2);font-weight:600">${pctV.toFixed(0)}%</span>`)
-              : '';
-            const valHtml = sent
-              ? `<b style="color:${fillColor}">฿${fmt(Math.round(b.val))}</b>${pctTxt ? ' ' + pctTxt : ''}`
-              : `<span style="color:var(--txt3)">ยังไม่มียอด</span>`;
-            const sub = b.sub ? `<span class="dd-rb-sub">${escHtml(b.sub)}</span>` : '';
-            return `<div class="dd-rb-row${sent ? '' : ' dd-rb-empty'}">
-              <span class="dd-rb-label">${escHtml(b.label)}${sub}</span>
-              <div class="dd-rb-track">
-                <div class="dd-rb-fill" style="width:${fillW.toFixed(2)}%;background:${fillColor}"></div>
-              </div>
-              <span class="dd-rb-val">${valHtml}</span>
-            </div>`;
-          };
-          // ถ้าทุก row ไม่มี sub chip → ใช้ label คอลัมน์แคบ (ชิดซ้ายมากขึ้น)
-          const _hasAnySub = subBars.some(b => b && b.sub);
-          const _compactVar = _hasAnySub ? 'dd-rounds-bars-with-chip' : 'dd-rounds-bars-narrow';
-          slotBarsHtml = `
-            <div class="dd-hero-slot-divider"></div>
-            <div class="dd-rounds-bars dd-rounds-bars-compact ${_compactVar}">
-              ${subBars.map(_rowBar).join('')}
-            </div>`;
-        }
+        slotBarsHtml += _subBlock();
 
         return `<div class="dd-hero dd-hero-noico">
           <div class="dd-hero-main">
@@ -15413,15 +15419,14 @@ body.is-touch .mob-nav-inner > .mob-nav-btn { flex:1 0 64px; display:flex; flex-
           let _heroSlots = null;
           let _heroSubBars = null;
           const _isBranchUser = (role === 'branch' || role === 'franchise');
-          if (sec === 'week') {
-            // สัปดาห์ → สรุปรอบ 16:00 / สิ้นวัน ของทั้งสัปดาห์
-            const _periodPlan = _ddPlan(codes, map);
+          /* ทุกแท็บ (วัน/สัปดาห์/เดือน/ปี/กำหนดเอง) → แท่งรอบ 16:00 / สิ้นวัน ของทั้งช่วง เทียบเป้าของช่วง (แบบเดียวกับรายวัน) */
+          { const _periodPlan = _ddPlan(codes, map);
             if (_periodPlan > 0) {
-              const _sum16  = rows.filter(r => r.submit_time_slot === "16.00").reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0);
-              const _sumEod = rows.filter(r => r.submit_time_slot === "สิ้นวัน").reduce((s, r) => s + (parseFloat(r.actual_sale) || 0), 0);
-              _heroSlots = { act16: _sum16, actEod: _sumEod, plan: _periodPlan, bills16: 0, billsEod: 0 };
-            }
-          } else if (sec === 'month') {
+              const _sum = (slot, f) => rows.filter(r => r.submit_time_slot === slot).reduce((s, r) => s + (parseFloat(r[f]) || 0), 0);
+              _heroSlots = { act16: _sum("16.00", "actual_sale"), actEod: _sum("สิ้นวัน", "actual_sale"), plan: _periodPlan,
+                             bills16: _sum("16.00", "total_trans"), billsEod: _sum("สิ้นวัน", "total_trans") };
+            } }
+          if (sec === 'month') {
             // เดือน → 4-5 แท่งรายอาทิตย์
             const _first = new Date(d.range.startDate + 'T00:00:00');
             const _Y = _first.getFullYear(); const _M = _first.getMonth();
